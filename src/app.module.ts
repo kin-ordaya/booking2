@@ -17,7 +17,7 @@ import { CursoModule } from './curso/curso.module';
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
-      logging: true,
+      logging: true
     }),
     CursoModule,
   ],
