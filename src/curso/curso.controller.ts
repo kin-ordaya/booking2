@@ -11,7 +11,8 @@ import {
 import { CursoService } from './curso.service';
 import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
-import { PaginationDto } from './dto/pagination.dto';
+import { PaginationDto } from '../dtos/pagination.dto';
+import { PaginationCursoDto } from './dto/pagination.dto';
 
 @Controller('curso')
 export class CursoController {
@@ -23,8 +24,8 @@ export class CursoController {
   }
 
   @Get()
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.cursoService.findAll(paginationDto);
+  findAll(@Query() paginationCursoDto: PaginationCursoDto) {
+    return this.cursoService.findAll(paginationCursoDto);
   }
 
   @Get(':id')

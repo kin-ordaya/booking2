@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Eap } from 'src/eap/entities/eap.entity';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Curso {
@@ -19,4 +20,8 @@ export class Curso {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   descripcion: string;
+
+  @ManyToOne(() => Eap, (eap) => eap.cursos, { nullable: true })
+  @JoinColumn({ name: 'eap_id' })
+  eap: Eap;
 }

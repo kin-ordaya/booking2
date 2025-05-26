@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { IsIn, IsNumber, IsOptional } from 'class-validator';
 import { PaginationDto } from 'src/dtos/pagination.dto';
 
-export class PaginationCursoDto extends PaginationDto {
+export class PaginationFacultadDto extends PaginationDto {
   @IsOptional()
   @IsNumber()
   @IsIn([1, 2, 3, 4], {

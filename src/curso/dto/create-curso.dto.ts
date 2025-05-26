@@ -15,4 +15,8 @@ export class CreateCursoDto {
   @IsString({ message: 'El campo descripcion debe ser de tipo string' })
   @MaxLength(100, { message: 'El campo descripcion no puede tener mas de 100 caracteres' })
   descripcion?: string;
+
+  @IsNotEmpty()
+  @IsString({ message: 'El campo facultad_id debe ser de tipo string' })
+  eap_id: string;
 }

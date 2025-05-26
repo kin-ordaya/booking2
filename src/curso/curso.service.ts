@@ -9,17 +9,20 @@ import { UpdateCursoDto } from './dto/update-curso.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Curso } from './entities/curso.entity';
 import { Not, Repository } from 'typeorm';
-import { PaginationDto } from './dto/pagination.dto';
+import { PaginationCursoDto } from './dto/pagination.dto';
+import { Eap } from 'src/eap/entities/eap.entity';
 
 @Injectable()
 export class CursoService {
   constructor(
     @InjectRepository(Curso)
     private readonly cursoRepository: Repository<Curso>,
+    @InjectRepository(Eap)
+    private readonly eapRepository: Repository<Eap>,
   ) {}
 
   async create(createCursoDto: CreateCursoDto) {
-    const { codigo, nombre, descripcion } = createCursoDto;
+    const { codigo, nombre, descripcion, eap_id } = createCursoDto;
     try {
       // Validar si el codigo ya existe
       const cursoExistente = await this.cursoRepository.findOne({
@@ -30,10 +33,19 @@ export class CursoService {
         throw new ConflictException('Ya existe un curso con ese codigo');
       }
 
+      const eap = await this.eapRepository.findOne({
+        where: { id: eap_id },
+        select: ['id'],
+      });
+      if (!eap) {
+        throw new NotFoundException('No existe un eap con ese id');
+      }
+
       const curso = this.cursoRepository.create({
         codigo,
         nombre,
         descripcion,
+        eap: { id: eap_id },
       });
       await this.cursoRepository.save(curso);
 
@@ -44,9 +56,9 @@ export class CursoService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationCursoDto: PaginationCursoDto) {
     try {
-      const { page, limit, sort, search } = paginationDto;
+      const { page, limit, sort, search } = paginationCursoDto;
 
       const query = this.cursoRepository.createQueryBuilder('curso');
 
@@ -59,10 +71,10 @@ export class CursoService {
             query.orderBy('curso.nombre', 'DESC');
             break;
           case '3':
-            query.andWhere('curso.estado = 1');
+            query.andWhere('curso.estado = :estado', { estado: 1 });
             break;
           case '4':
-            query.andWhere('curso.estado = 0');
+            query.andWhere('curso.estado = :estado', { estado: 0 });
             break;
         }
       }
@@ -150,7 +162,7 @@ export class CursoService {
     try {
       const curso = await this.cursoRepository.findOne({
         where: { id: id },
-        select: ['id'],
+        select: ['id', 'estado'],
       });
       if (!curso) {
         throw new NotFoundException('No existe un curso con ese id');
