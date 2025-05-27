@@ -11,7 +11,7 @@ import {
 import { CursoService } from './curso.service';
 import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
-import { PaginationDto } from '../dtos/pagination.dto';
+import { PaginationDto } from '../common/dtos/pagination.dto';
 import { PaginationCursoDto } from './dto/pagination.dto';
 
 @Controller('curso')

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsNumber, IsOptional } from 'class-validator';
-import { PaginationDto } from 'src/dtos/pagination.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 export class PaginationFacultadDto extends PaginationDto {
   @IsOptional()

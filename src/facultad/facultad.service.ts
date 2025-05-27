@@ -9,7 +9,7 @@ import { UpdateFacultadDto } from './dto/update-facultad.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Facultad } from './entities/facultad.entity';
 import { Not, Repository } from 'typeorm';
-import { PaginationDto } from 'src/dtos/pagination.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { PaginationFacultadDto } from './dto/pagination.dto';
 
 @Injectable()
