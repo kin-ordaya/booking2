@@ -1,5 +1,16 @@
+import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { Eap } from 'src/eap/entities/eap.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Plan } from 'src/plan/entities/plan.entity';
+import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Curso {
@@ -24,4 +35,14 @@ export class Curso {
   @ManyToOne(() => Eap, (eap) => eap.cursos, { nullable: true })
   @JoinColumn({ name: 'eap_id' })
   eap: Eap;
+
+  @ManyToOne(() => Plan, (plan) => plan.cursos, { nullable: true })
+  @JoinColumn({ name: 'plan_id' })
+  plan: Plan;
+
+  @OneToMany(() => CursoModalidad, (cursoModalidad) => cursoModalidad.curso)
+  curso_modalidad: CursoModalidad[];
+
+  @OneToMany(() => RecursoCurso, (recursoCurso) => recursoCurso.curso)
+  recurso_curso: RecursoCurso[];
 }

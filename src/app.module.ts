@@ -4,6 +4,18 @@ import { ConfigModule } from '@nestjs/config';
 import { CursoModule } from './curso/curso.module';
 import { FacultadModule } from './facultad/facultad.module';
 import { EapModule } from './eap/eap.module';
+import { PlanModule } from './plan/plan.module';
+import { ContactoModule } from './contacto/contacto.module';
+import { ProveedorModule } from './proveedor/proveedor.module';
+import { TipoRecursoModule } from './tipo_recurso/tipo_recurso.module';
+import { RecursoModule } from './recurso/recurso.module';
+import { ModalidadModule } from './modalidad/modalidad.module';
+import { CursoModalidadModule } from './curso_modalidad/curso_modalidad.module';
+import { RecursoCursoModule } from './recurso_curso/recurso_curso.module';
+import { UsuarioModule } from './usuario/usuario.module';
+import { RolModule } from './rol/rol.module';
+import { CargoModule } from './cargo/cargo.module';
+import { DocumentoIdentidadModule } from './documento_identidad/documento_identidad.module';
 
 @Module({
   imports: [
@@ -24,6 +36,18 @@ import { EapModule } from './eap/eap.module';
     CursoModule,
     FacultadModule,
     EapModule,
+    PlanModule,
+    ContactoModule,
+    ProveedorModule,
+    TipoRecursoModule,
+    RecursoModule,
+    ModalidadModule,
+    CursoModalidadModule,
+    RecursoCursoModule,
+    UsuarioModule,
+    RolModule,
+    CargoModule,
+    DocumentoIdentidadModule,
   ],
 })
 export class AppModule {}
