@@ -1,12 +1,13 @@
-import { Cargo } from 'src/cargo/entities/cargo.entity';
 import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 @Entity()
@@ -57,11 +58,7 @@ export class Usuario {
   @JoinColumn({ name: 'documento_identidad_id' })
   documento_identidad: DocumentoIdentidad;
 
-  @ManyToOne(() => Rol, (rol) => rol.usuario)
-  @JoinColumn({ name: 'rol_id' })
-  rol: Rol;
+  @OneToMany(()=> RolUsuario, (rolUsuario) => rolUsuario.usuario)
+  rol_usuario: RolUsuario[];
 
-  @ManyToOne(() => Cargo, (cargo) => cargo.usuario, { nullable: true })
-  @JoinColumn({ name: 'cargo_id' })
-  cargo?: Cargo;
 }

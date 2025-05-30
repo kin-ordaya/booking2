@@ -1,5 +1,6 @@
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
+import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import {
   Column,
@@ -46,4 +47,7 @@ export class Recurso {
 
   @OneToMany(() => RecursoCurso, (recursoCurso) => recursoCurso.recurso)
   recurso_curso: RecursoCurso[];
+
+  @OneToMany(() => Responsable, (responsable) => responsable.recurso)
+  responsable: Responsable[];
 }

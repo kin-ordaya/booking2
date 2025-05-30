@@ -1,6 +1,16 @@
+import { Clase } from 'src/clase/entities/clase.entity';
 import { Curso } from 'src/curso/entities/curso.entity';
 import { Modalidad } from 'src/modalidad/entities/modalidad.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Responsable } from 'src/responsable/entities/responsable.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 @Entity()
 export class CursoModalidad {
   @PrimaryGeneratedColumn('uuid')
@@ -19,4 +29,10 @@ export class CursoModalidad {
   @ManyToOne(() => Modalidad, (modalidad) => modalidad.curso_modalidad)
   @JoinColumn({ name: 'modalidad_id' })
   modalidad: Curso;
+
+  @OneToMany(() => Clase, (clase) => clase.cursoModalidad)
+  clase: Clase[];
+
+  @OneToMany(() => Responsable, (responsable) => responsable.cursoModalidad)
+  responsable: Responsable[];
 }

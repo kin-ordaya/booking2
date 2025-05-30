@@ -1,4 +1,4 @@
-import { Usuario } from 'src/usuario/entities/usuario.entity';
+import { Aula } from 'src/aula/entities/aula.entity';
 import {
   Column,
   CreateDateColumn,
@@ -6,8 +6,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+
 @Entity()
-export class Cargo {
+export class Campus {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -17,9 +18,12 @@ export class Cargo {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 50 })
   nombre: string;
 
-  @OneToMany(() => Usuario, (usuario) => usuario.cargo)
-  usuario: Usuario[];
+  @Column({ type: 'varchar', length: 50 })
+  codigo: string;
+
+  @OneToMany(() => Aula, (aula) => aula.campus)
+  aula: Aula[];
 }

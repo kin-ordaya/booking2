@@ -14,8 +14,13 @@ import { CursoModalidadModule } from './curso_modalidad/curso_modalidad.module';
 import { RecursoCursoModule } from './recurso_curso/recurso_curso.module';
 import { UsuarioModule } from './usuario/usuario.module';
 import { RolModule } from './rol/rol.module';
-import { CargoModule } from './cargo/cargo.module';
 import { DocumentoIdentidadModule } from './documento_identidad/documento_identidad.module';
+import { CampusModule } from './campus/campus.module';
+import { RolUsuarioModule } from './rol_usuario/rol_usuario.module';
+import { ResponsableModule } from './responsable/responsable.module';
+import { ClaseModule } from './clase/clase.module';
+import { AulaModule } from './aula/aula.module';
+import { EstudianteModule } from './estudiante/estudiante.module';
 
 @Module({
   imports: [
@@ -46,8 +51,13 @@ import { DocumentoIdentidadModule } from './documento_identidad/documento_identi
     RecursoCursoModule,
     UsuarioModule,
     RolModule,
-    CargoModule,
     DocumentoIdentidadModule,
+    CampusModule,
+    RolUsuarioModule,
+    ResponsableModule,
+    ClaseModule,
+    AulaModule,
+    EstudianteModule,
   ],
 })
 export class AppModule {}
