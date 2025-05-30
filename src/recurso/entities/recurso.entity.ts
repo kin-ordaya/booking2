@@ -1,5 +1,7 @@
+import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
+import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import {
@@ -50,4 +52,10 @@ export class Recurso {
 
   @OneToMany(() => Responsable, (responsable) => responsable.recurso)
   responsable: Responsable[];
+
+  @OneToMany(() => Reserva, (reserva) => reserva.recurso)
+  reserva: Reserva[];
+
+  @OneToMany(() => Credencial, (credencial) => credencial.recurso)
+  credencial: Credencial[];
 }

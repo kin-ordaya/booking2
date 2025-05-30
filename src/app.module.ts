@@ -21,6 +21,10 @@ import { ResponsableModule } from './responsable/responsable.module';
 import { ClaseModule } from './clase/clase.module';
 import { AulaModule } from './aula/aula.module';
 import { EstudianteModule } from './estudiante/estudiante.module';
+import { MatriculaClaseModule } from './matricula_clase/matricula_clase.module';
+import { ReservaModule } from './reserva/reserva.module';
+import { DetalleReservaModule } from './detalle_reserva/detalle_reserva.module';
+import { CredencialModule } from './credencial/credencial.module';
 
 @Module({
   imports: [
@@ -58,6 +62,10 @@ import { EstudianteModule } from './estudiante/estudiante.module';
     ClaseModule,
     AulaModule,
     EstudianteModule,
+    MatriculaClaseModule,
+    ReservaModule,
+    DetalleReservaModule,
+    CredencialModule,
   ],
 })
 export class AppModule {}

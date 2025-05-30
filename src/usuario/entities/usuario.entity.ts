@@ -1,4 +1,5 @@
 import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
+import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
@@ -58,7 +59,9 @@ export class Usuario {
   @JoinColumn({ name: 'documento_identidad_id' })
   documento_identidad: DocumentoIdentidad;
 
-  @OneToMany(()=> RolUsuario, (rolUsuario) => rolUsuario.usuario)
+  @OneToMany(() => RolUsuario, (rolUsuario) => rolUsuario.usuario)
   rol_usuario: RolUsuario[];
 
+  @OneToMany(() => Reserva, (reserva) => reserva.usuario)
+  reserva: Reserva[];
 }
