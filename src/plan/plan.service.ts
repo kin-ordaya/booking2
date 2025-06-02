@@ -1,6 +1,6 @@
 import {
-  BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePlanDto } from './dto/create-plan.dto';
@@ -8,7 +8,6 @@ import { UpdatePlanDto } from './dto/update-plan.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Plan } from './entities/plan.entity';
 import { Not, Repository } from 'typeorm';
-import { isUUID } from 'class-validator';
 
 @Injectable()
 export class PlanService {
@@ -28,8 +27,8 @@ export class PlanService {
       });
       return await this.planRepository.save(plan);
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -37,21 +36,20 @@ export class PlanService {
     try {
       return await this.planRepository.find();
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async findOne(id: string) {
     try {
-
       if (!(await this.planRepository.existsBy({ id: id }))) {
         throw new NotFoundException('No existe un plan con ese id');
       }
       return await this.planRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -74,28 +72,26 @@ export class PlanService {
       });
       return await this.planRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
     try {
-
-      const updateResult = await this.planRepository
+      const result = await this.planRepository
         .createQueryBuilder()
         .update()
-        .set({ estado: () => '1 - estado' }) // Toggle directo en SQL
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
         .where('id = :id', { id })
         .execute();
 
-      if (updateResult.affected === 0) {
-        throw new NotFoundException('Plan no encontrada');
-      }
-      return await this.planRepository.findOneBy({ id });
+      if (result.affected === 0)
+        throw new NotFoundException('Facultad no encontrada');
+      return this.planRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 }

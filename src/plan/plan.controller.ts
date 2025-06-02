@@ -11,6 +11,7 @@ import {
 import { PlanService } from './plan.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('plan')
 export class PlanController {
@@ -34,7 +35,7 @@ export class PlanController {
   @Patch(':id')
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() updatePlanDto: UpdatePlanDto,
+    @Body(new AtLeastOneFieldPipe()) updatePlanDto: UpdatePlanDto,
   ) {
     return this.planService.update(id, updatePlanDto);
   }

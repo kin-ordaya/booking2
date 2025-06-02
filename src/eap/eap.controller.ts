@@ -11,6 +11,7 @@ import {
 import { EapService } from './eap.service';
 import { CreateEapDto } from './dto/create-eap.dto';
 import { UpdateEapDto } from './dto/update-eap.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('eap')
 export class EapController {
@@ -32,7 +33,10 @@ export class EapController {
   }
 
   @Patch(':id')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() updateEapDto: UpdateEapDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe()) updateEapDto: UpdateEapDto,
+  ) {
     return this.eapService.update(id, updateEapDto);
   }
 

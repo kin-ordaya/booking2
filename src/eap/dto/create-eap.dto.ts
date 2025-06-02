@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateEapDto {
   @IsNotEmpty()
@@ -9,6 +9,6 @@ export class CreateEapDto {
   nombre: string;
 
   @IsNotEmpty()
-  @IsString({ message: 'El campo facultad_id debe ser de tipo string' })
+  @IsUUID('4', { message: 'El campo facultad_id debe ser de tipo uuid' })
   facultad_id: string;
 }

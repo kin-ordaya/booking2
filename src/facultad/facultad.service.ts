@@ -1,7 +1,7 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateFacultadDto } from './dto/create-facultad.dto';
@@ -9,7 +9,6 @@ import { UpdateFacultadDto } from './dto/update-facultad.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Facultad } from './entities/facultad.entity';
 import { Not, Repository } from 'typeorm';
-import { isUUID } from 'class-validator';
 
 @Injectable()
 export class FacultadService {
@@ -31,8 +30,8 @@ export class FacultadService {
       });
       return await this.facultadRepository.save(facultad);
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -40,8 +39,8 @@ export class FacultadService {
     try {
       return await this.facultadRepository.find();
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -55,8 +54,8 @@ export class FacultadService {
         where: { id: id },
       });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -80,28 +79,26 @@ export class FacultadService {
 
       return await this.facultadRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
     try {
-      const updateResult = await this.facultadRepository
+      const result = await this.facultadRepository
         .createQueryBuilder()
         .update()
-        .set({ estado: () => '1 - estado' }) // Toggle directo en SQL
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
         .where('id = :id', { id })
         .execute();
 
-      if (updateResult.affected === 0) {
+      if (result.affected === 0)
         throw new NotFoundException('Facultad no encontrada');
-      }
-
-      return await this.facultadRepository.findOneBy({ id });
+      return this.facultadRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 }

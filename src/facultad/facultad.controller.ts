@@ -13,6 +13,7 @@ import { FacultadService } from './facultad.service';
 import { CreateFacultadDto } from './dto/create-facultad.dto';
 import { UpdateFacultadDto } from './dto/update-facultad.dto';
 import { PaginationFacultadDto } from './dto/pagination.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('facultad')
 export class FacultadController {
@@ -36,7 +37,7 @@ export class FacultadController {
   @Patch(':id')
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() updateFacultadDto: UpdateFacultadDto,
+    @Body(new AtLeastOneFieldPipe()) updateFacultadDto: UpdateFacultadDto,
   ) {
     return this.facultadService.update(id, updateFacultadDto);
   }

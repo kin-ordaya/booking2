@@ -1,7 +1,7 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateEapDto } from './dto/create-eap.dto';
@@ -10,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { Eap } from './entities/eap.entity';
 import { Facultad } from 'src/facultad/entities/facultad.entity';
-import { isUUID } from 'class-validator';
 
 @Injectable()
 export class EapService {
@@ -39,8 +38,8 @@ export class EapService {
       });
       return await this.eapRepository.save(eap);
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -48,14 +47,13 @@ export class EapService {
     try {
       return await this.eapRepository.find();
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async findOne(id: string) {
     try {
-
       if (!(await this.eapRepository.existsBy({ id: id }))) {
         throw new NotFoundException('No existe un eap con ese id');
       }
@@ -64,17 +62,23 @@ export class EapService {
         where: { id: id },
       });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async update(id: string, updateEapDto: UpdateEapDto) {
     try {
-      const { nombre } = updateEapDto;
+      const { nombre, facultad_id } = updateEapDto;
 
       if (!(await this.eapRepository.existsBy({ id: id }))) {
         throw new NotFoundException('No existe un eap con ese id');
+      }
+
+      if (facultad_id) {
+        if (! await this.facultadRepository.existsBy({ id: facultad_id })) {
+          throw new NotFoundException('No existe una facultad con ese id');
+        }
       }
 
       if (nombre) {
@@ -84,30 +88,30 @@ export class EapService {
       }
       await this.eapRepository.update(id, {
         nombre,
+        facultad: { id: facultad_id },
       });
       return await this.eapRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
     try {
-      const updateResult = await this.eapRepository
+      const result = await this.eapRepository
         .createQueryBuilder()
         .update()
-        .set({ estado: () => '1 - estado' }) // Toggle directo en SQL
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
         .where('id = :id', { id })
         .execute();
 
-      if (updateResult.affected === 0) {
-        throw new NotFoundException('Eap no encontrada');
-      }
-      return await this.eapRepository.findOneBy({ id });
+      if (result.affected === 0)
+        throw new NotFoundException('Facultad no encontrada');
+      return this.eapRepository.findOneBy({ id });
     } catch (error) {
-      console.error(error);
-      throw error;
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 }
