@@ -154,7 +154,7 @@ export class ContactoService {
     }
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} contacto`;
   }
 }

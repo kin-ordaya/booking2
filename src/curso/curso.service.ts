@@ -63,22 +63,27 @@ export class CursoService {
 
   async findAll(paginationCursoDto: PaginationCursoDto) {
     try {
-      const { page, limit, sort, search } = paginationCursoDto;
+      const { page, limit, sort_name, sort_state, search } = paginationCursoDto;
 
       const query = this.cursoRepository.createQueryBuilder('curso');
 
-      if (sort) {
-        switch (sort.toString()) {
+      if (sort_name) {
+        switch (sort_name.toString()) {
           case '1':
             query.orderBy('curso.nombre', 'ASC');
             break;
           case '2':
             query.orderBy('curso.nombre', 'DESC');
             break;
-          case '3':
+        }
+      }
+      
+      if (sort_state) {
+        switch (sort_state.toString()) {
+          case '1':
             query.andWhere('curso.estado = :estado', { estado: 1 });
             break;
-          case '4':
+          case '2':
             query.andWhere('curso.estado = :estado', { estado: 0 });
             break;
         }
