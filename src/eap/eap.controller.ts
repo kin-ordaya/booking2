@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { EapService } from './eap.service';
 import { CreateEapDto } from './dto/create-eap.dto';
 import { UpdateEapDto } from './dto/update-eap.dto';
@@ -18,17 +27,17 @@ export class EapController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.eapService.findOne(+id);
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.eapService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEapDto: UpdateEapDto) {
-    return this.eapService.update(+id, updateEapDto);
+  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() updateEapDto: UpdateEapDto) {
+    return this.eapService.update(id, updateEapDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.eapService.remove(+id);
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.eapService.remove(id);
   }
 }

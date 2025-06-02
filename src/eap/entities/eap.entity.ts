@@ -23,7 +23,7 @@ export class Eap {
   @Column({ type: 'varchar', length: 100 })
   nombre: string;
 
-  @ManyToOne(() => Facultad, (facultad) => facultad.eaps, { nullable: false })
+  @ManyToOne(() => Facultad, (facultad) => facultad.eaps)
   @JoinColumn({ name: 'facultad_id' })
   facultad: Facultad;
 

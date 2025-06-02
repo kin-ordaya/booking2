@@ -1,26 +1,101 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Plan } from './entities/plan.entity';
+import { Not, Repository } from 'typeorm';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class PlanService {
-  create(createPlanDto: CreatePlanDto) {
-    return 'This action adds a new plan';
+  constructor(
+    @InjectRepository(Plan)
+    private readonly planRepository: Repository<Plan>,
+  ) {}
+
+  async create(createPlanDto: CreatePlanDto) {
+    try {
+      const { nombre } = createPlanDto;
+      if (await this.planRepository.existsBy({ nombre })) {
+        throw new NotFoundException('Ya existe un plan con ese nombre');
+      }
+      const plan = this.planRepository.create({
+        nombre,
+      });
+      return await this.planRepository.save(plan);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
-  findAll() {
-    return `This action returns all plan`;
+  async findAll() {
+    try {
+      return await this.planRepository.find();
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} plan`;
+  async findOne(id: string) {
+    try {
+
+      if (!(await this.planRepository.existsBy({ id: id }))) {
+        throw new NotFoundException('No existe un plan con ese id');
+      }
+      return await this.planRepository.findOneBy({ id });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
-  update(id: number, updatePlanDto: UpdatePlanDto) {
-    return `This action updates a #${id} plan`;
+  async update(id: string, updatePlanDto: UpdatePlanDto) {
+    try {
+      const { nombre } = updatePlanDto;
+
+      if (!(await this.planRepository.existsBy({ id: id }))) {
+        throw new NotFoundException('No existe un plan con ese id');
+      }
+
+      if (nombre) {
+        if (await this.planRepository.existsBy({ id: Not(id), nombre })) {
+          throw new NotFoundException('Ya existe un plan con ese nombre');
+        }
+      }
+
+      await this.planRepository.update(id, {
+        nombre,
+      });
+      return await this.planRepository.findOneBy({ id });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} plan`;
+  async remove(id: string) {
+    try {
+
+      const updateResult = await this.planRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => '1 - estado' }) // Toggle directo en SQL
+        .where('id = :id', { id })
+        .execute();
+
+      if (updateResult.affected === 0) {
+        throw new NotFoundException('Plan no encontrada');
+      }
+      return await this.planRepository.findOneBy({ id });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 }
