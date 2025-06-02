@@ -8,7 +8,7 @@ export class PaginationCursoDto extends PaginationDto {
   @IsOptional()
   @IsNumber()
   @IsIn([1, 2], {
-    message: 'El campo sort debe ser 1(ASC), 2(DESC)',
+    message: 'Ordernar por nombre asc=1, desc=2',
   })
   @Type(() => Number)
   sort_name?: number;
@@ -17,7 +17,7 @@ export class PaginationCursoDto extends PaginationDto {
   @IsOptional()
   @IsNumber()
   @IsIn([1, 2], {
-    message: 'El campo sort debe ser 1(Activo) o 2(Inactivo)',
+    message: 'Ordernar por estado activo=1, inactivo=2',
   })
   sort_state?: number;
 }
