@@ -1,8 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ContactoService } from './contacto.service';
 import { CreateContactoDto } from './dto/create-contacto.dto';
 import { UpdateContactoDto } from './dto/update-contacto.dto';
 import { PaginationContactoDto } from './dto/pagination-contacto.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('contacto')
 export class ContactoController {
@@ -19,17 +30,20 @@ export class ContactoController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contactoService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateContactoDto: UpdateContactoDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe()) updateContactoDto: UpdateContactoDto,
+  ) {
     return this.contactoService.update(id, updateContactoDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contactoService.remove(id);
   }
 }

@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Contacto } from './entities/contacto.entity';
 import { Not, Repository } from 'typeorm';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
+import e from 'express';
 
 @Injectable()
 export class ContactoService {
@@ -82,10 +83,13 @@ export class ContactoService {
         }
       }
 
-      if(search) {
-        query.where('contacto.nombres LIKE :search OR contacto.apellidos LIKE :search', {
-          search: `%${search}%`,
-        });
+      if (search) {
+        query.where(
+          'contacto.nombres LIKE :search OR contacto.apellidos LIKE :search',
+          {
+            search: `%${search}%`,
+          },
+        );
       }
       const [results, count] = await query
         .skip((page - 1) * limit)
@@ -101,7 +105,6 @@ export class ContactoService {
           totalPages: Math.ceil(count / limit),
         },
       };
-
     } catch (error) {
       throw new InternalServerErrorException('Error inesperado', {
         cause: error,
@@ -112,7 +115,9 @@ export class ContactoService {
   async findOne(id: string) {
     try {
       if (!id)
-        throw new BadRequestException('El ID del contacto no puede estar vacío');
+        throw new BadRequestException(
+          'El ID del contacto no puede estar vacío',
+        );
 
       const contacto = await this.contactoRepository.findOneBy({ id });
       if (!contacto) throw new NotFoundException('Contacto no encontrado');
@@ -149,12 +154,84 @@ export class ContactoService {
       if (nombres !== undefined) {
         updateData.nombres = nombres;
       }
+      if (apellidos !== undefined) {
+        updateData.apellidos = apellidos;
+      }
+      if (telefono !== undefined) {
+        const telefonoExists = await this.contactoRepository.existsBy({
+          id: Not(id),
+          telefono,
+        });
+
+        if (telefonoExists) {
+          throw new ConflictException('Ya existe un contacto con ese telefono');
+        }
+        updateData.telefono = telefono;
+      }
+      if (correo !== undefined) {
+        const correoExists = await this.contactoRepository.existsBy({
+          id: Not(id),
+          correo,
+        });
+
+        if (correoExists) {
+          throw new ConflictException('Ya existe un contacto con ese correo');
+        }
+        updateData.correo = correo;
+      }
+      if (proveedor_id !== undefined) {
+        const proveedorExists = await this.proveedorRepository.existsBy({
+          id: proveedor_id,
+        });
+
+        if (!proveedorExists) {
+          throw new NotFoundException('No existe un proveedor con ese id');
+        }
+        updateData.proveedor = { id: proveedor_id };
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return contacto;
+      }
+
+      await this.contactoRepository.update(id, updateData);
+      return await this.contactoRepository.findOneBy({ id });
     } catch (error) {
-      
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} contacto`;
+  async remove(id: string) {
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID del contacto no puede estar vacío',
+        );
+
+      const result = await this.contactoRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
+
+      if (result.affected === 0)
+        throw new NotFoundException('Contacto no encontrado');
+      return this.contactoRepository.findOneBy({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 }

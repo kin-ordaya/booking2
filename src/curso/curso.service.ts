@@ -65,7 +65,16 @@ export class CursoService {
     try {
       const { page, limit, sort_name, sort_state, search } = paginationCursoDto;
 
-      const query = this.cursoRepository.createQueryBuilder('curso');
+      const query = this.cursoRepository
+        .createQueryBuilder('curso')
+        .leftJoinAndSelect('curso.plan', 'plan')
+        .select([
+          'curso.id',
+          'curso.nombre',
+          'curso.codigo',
+          'curso.estado',
+          'plan.nombre', 
+        ]);
 
       if (sort_name) {
         switch (sort_name.toString()) {
@@ -77,7 +86,7 @@ export class CursoService {
             break;
         }
       }
-      
+
       if (sort_state) {
         switch (sort_state.toString()) {
           case '1':

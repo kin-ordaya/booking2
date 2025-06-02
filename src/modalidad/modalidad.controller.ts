@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ModalidadService } from './modalidad.service';
 import { CreateModalidadDto } from './dto/create-modalidad.dto';
 import { UpdateModalidadDto } from './dto/update-modalidad.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('modalidad')
 export class ModalidadController {
@@ -18,17 +28,20 @@ export class ModalidadController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.modalidadService.findOne(+id);
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.modalidadService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateModalidadDto: UpdateModalidadDto) {
-    return this.modalidadService.update(+id, updateModalidadDto);
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe()) updateModalidadDto: UpdateModalidadDto,
+  ) {
+    return this.modalidadService.update(id, updateModalidadDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.modalidadService.remove(+id);
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.modalidadService.remove(id);
   }
 }
