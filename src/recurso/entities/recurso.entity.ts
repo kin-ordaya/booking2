@@ -36,7 +36,7 @@ export class Recurso {
   @Column({ type: 'varchar', length: 255 })
   link_declaracion: string;
 
-  @Column({ type: 'float' })
+  @Column({ type: 'int' })
   tiempo_reserva: number;
 
   @ManyToOne(() => TipoRecurso, (tipoRecurso) => tipoRecurso.recursos)
