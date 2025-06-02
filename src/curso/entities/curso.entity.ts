@@ -30,7 +30,7 @@ export class Curso {
   nombre: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  descripcion: string;
+  descripcion?: string;
 
   @ManyToOne(() => Eap, (eap) => eap.cursos, { nullable: true })
   @JoinColumn({ name: 'eap_id' })

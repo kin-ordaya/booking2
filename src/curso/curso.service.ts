@@ -11,6 +11,7 @@ import { Curso } from './entities/curso.entity';
 import { Not, Repository } from 'typeorm';
 import { PaginationCursoDto } from './dto/pagination.dto';
 import { Eap } from 'src/eap/entities/eap.entity';
+import { Plan } from 'src/plan/entities/plan.entity';
 
 @Injectable()
 export class CursoService {
@@ -19,40 +20,43 @@ export class CursoService {
     private readonly cursoRepository: Repository<Curso>,
     @InjectRepository(Eap)
     private readonly eapRepository: Repository<Eap>,
+    @InjectRepository(Plan)
+    private readonly planRepository: Repository<Plan>,
   ) {}
 
   async create(createCursoDto: CreateCursoDto) {
-    const { codigo, nombre, descripcion, eap_id } = createCursoDto;
     try {
-      // Validar si el codigo ya existe
-      const cursoExistente = await this.cursoRepository.findOne({
-        where: { codigo: codigo },
-      });
+      const { codigo, eap_id, plan_id } = createCursoDto;
 
-      if (cursoExistente) {
-        throw new ConflictException('Ya existe un curso con ese codigo');
-      }
+      const [codigoExiste, planExiste, eapExiste] = await Promise.all([
+        this.cursoRepository.existsBy({ codigo }),
+        this.planRepository.existsBy({ id: plan_id }),
+        eap_id ? this.eapRepository.existsBy({ id: eap_id }) : true,
+      ]);
 
-      const eap = await this.eapRepository.findOne({
-        where: { id: eap_id },
-        select: ['id'],
-      });
-      if (!eap) {
-        throw new NotFoundException('No existe un eap con ese id');
-      }
+      if (codigoExiste) throw new ConflictException('Código ya existe');
 
+      if (!planExiste) throw new NotFoundException('Plan no encontrado');
+      
+      if (eap_id && !eapExiste)
+        throw new NotFoundException('EAP no encontrado');
+
+      // Creación del curso
       const curso = this.cursoRepository.create({
-        codigo,
-        nombre,
-        descripcion,
-        eap: { id: eap_id },
+        ...createCursoDto,
+        eap: eap_id ? { id: eap_id } : undefined,
+        plan: { id: plan_id },
       });
-      await this.cursoRepository.save(curso);
 
-      return curso;
+      return await this.cursoRepository.save(curso);
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al crear curso');
     }
   }
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -17,7 +18,7 @@ export class FacultadService {
     private readonly facultadRepository: Repository<Facultad>,
   ) {}
 
-  async create(createFacultadDto: CreateFacultadDto) {
+  async create(createFacultadDto: CreateFacultadDto): Promise<Facultad> {
     try {
       const { nombre } = createFacultadDto;
 
@@ -30,31 +31,39 @@ export class FacultadService {
       });
       return await this.facultadRepository.save(facultad);
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof ConflictException) throw error;
       throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async findAll() {
     try {
-      return await this.facultadRepository.find();
+      return await this.facultadRepository.find({
+        order: { nombre: 'ASC' },
+      });
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error inesperado', {
+        cause: error,
+      });
     }
   }
 
   async findOne(id: string) {
     try {
-      if (!(await this.facultadRepository.existsBy({ id: id }))) {
-        throw new NotFoundException('No existe una facultad con ese id');
-      }
+      if (!id)
+        throw new BadRequestException(
+          'El ID de la facultad no puede estar vacío',
+        );
 
-      return await this.facultadRepository.findOne({
-        where: { id: id },
-      });
+      const facultad = await this.facultadRepository.findOneBy({ id });
+      if (!facultad) throw new NotFoundException('Facultad no encontrada');
+      return facultad;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       throw new InternalServerErrorException('Error inesperado');
     }
   }
@@ -63,14 +72,33 @@ export class FacultadService {
     try {
       const { nombre } = updateFacultadDto;
 
-      if (!(await this.facultadRepository.existsBy({ id: id }))) {
-        throw new NotFoundException('No existe una facultad con ese id');
+      if (!id)
+        throw new BadRequestException(
+          'El ID de la facultad no puede estar vacío',
+        );
+
+      const facultad = await this.facultadRepository.findOneBy({ id });
+      if (!facultad) {
+        throw new NotFoundException('Facultad no encontrada');
       }
 
-      if (nombre) {
-        if (await this.facultadRepository.existsBy({ id: Not(id), nombre })) {
-          throw new ConflictException('Ya existe un facultad con ese nombre');
+      const updateData: any = {};
+
+      if (nombre !== undefined) {
+        const nombreExists = await this.facultadRepository.existsBy({
+          id: Not(id),
+          nombre,
+        });
+
+        if (nombreExists) {
+          throw new ConflictException('Ya existe una facultad con ese nombre');
         }
+
+        updateData.nombre = nombre;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return facultad;
       }
 
       await this.facultadRepository.update(id, {
@@ -79,13 +107,24 @@ export class FacultadService {
 
       return await this.facultadRepository.findOneBy({ id });
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
     try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID de la facultad no puede estar vacío',
+        );
+
       const result = await this.facultadRepository
         .createQueryBuilder()
         .update()
@@ -97,7 +136,11 @@ export class FacultadService {
         throw new NotFoundException('Facultad no encontrada');
       return this.facultadRepository.findOneBy({ id });
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       throw new InternalServerErrorException('Error inesperado');
     }
   }

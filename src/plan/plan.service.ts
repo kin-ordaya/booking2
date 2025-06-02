@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -16,39 +18,50 @@ export class PlanService {
     private readonly planRepository: Repository<Plan>,
   ) {}
 
-  async create(createPlanDto: CreatePlanDto) {
+  async create(createPlanDto: CreatePlanDto): Promise<Plan> {
     try {
       const { nombre } = createPlanDto;
+
       if (await this.planRepository.existsBy({ nombre })) {
-        throw new NotFoundException('Ya existe un plan con ese nombre');
+        throw new ConflictException('Ya existe un plan con ese nombre');
       }
       const plan = this.planRepository.create({
         nombre,
       });
       return await this.planRepository.save(plan);
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof ConflictException) throw error;
       throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async findAll() {
     try {
-      return await this.planRepository.find();
+      return await this.planRepository.find({
+        order: { nombre: 'ASC' },
+      });
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error inesperado', {
+        cause: error,
+      });
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Plan> {
     try {
-      if (!(await this.planRepository.existsBy({ id: id }))) {
-        throw new NotFoundException('No existe un plan con ese id');
-      }
-      return await this.planRepository.findOneBy({ id });
+      if (!id)
+        throw new BadRequestException('El ID del plan no puede estar vacío');
+
+      const plan = await this.planRepository.findOneBy({ id });
+      if (!plan) throw new NotFoundException('Plan no encontrado');
+      return plan;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error inesperado');
     }
   }
@@ -57,28 +70,56 @@ export class PlanService {
     try {
       const { nombre } = updatePlanDto;
 
-      if (!(await this.planRepository.existsBy({ id: id }))) {
-        throw new NotFoundException('No existe un plan con ese id');
+      if (!id) {
+        throw new BadRequestException('El ID del plan no puede estar vacío');
       }
 
-      if (nombre) {
-        if (await this.planRepository.existsBy({ id: Not(id), nombre })) {
-          throw new NotFoundException('Ya existe un plan con ese nombre');
+      const plan = await this.planRepository.findOneBy({ id });
+      if (!plan) {
+        throw new NotFoundException('Plan no encontrado');
+      }
+
+      const updateData: any = {};
+
+      if (nombre !== undefined) {
+        const nombreExists = await this.planRepository.existsBy({
+          id: Not(id),
+          nombre,
+        });
+
+        if (nombreExists) {
+          throw new ConflictException('Ya existe un plan con ese nombre');
         }
+
+        updateData.nombre = nombre;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return plan;
       }
 
       await this.planRepository.update(id, {
         nombre,
       });
+
       return await this.planRepository.findOneBy({ id });
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
     try {
+      if (!id)
+        throw new BadRequestException('El ID del plan no puede estar vacío');
+
       const result = await this.planRepository
         .createQueryBuilder()
         .update()
@@ -90,7 +131,11 @@ export class PlanService {
         throw new NotFoundException('Facultad no encontrada');
       return this.planRepository.findOneBy({ id });
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       throw new InternalServerErrorException('Error inesperado');
     }
   }

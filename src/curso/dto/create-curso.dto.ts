@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateCursoDto {
   @IsNotEmpty()
@@ -16,7 +16,11 @@ export class CreateCursoDto {
   @MaxLength(100, { message: 'El campo descripcion no puede tener mas de 100 caracteres' })
   descripcion?: string;
 
+  @IsOptional()
+  @IsUUID('4', { message: 'El campo eap_id debe ser de tipo uuid' })
+  eap_id?: string;
+
   @IsNotEmpty()
-  @IsString({ message: 'El campo facultad_id debe ser de tipo string' })
-  eap_id: string;
+  @IsUUID('4', { message: 'El campo plan_id debe ser de tipo uuid' })
+  plan_id: string;
 }
