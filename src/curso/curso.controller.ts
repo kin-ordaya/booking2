@@ -7,12 +7,13 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CursoService } from './curso.service';
 import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
-import { PaginationDto } from '../common/dtos/pagination.dto';
 import { PaginationCursoDto } from './dto/pagination.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('curso')
 export class CursoController {
@@ -29,17 +30,20 @@ export class CursoController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.cursoService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCursoDto: UpdateCursoDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe()) updateCursoDto: UpdateCursoDto,
+  ) {
     return this.cursoService.update(id, updateCursoDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.cursoService.remove(id);
   }
 }

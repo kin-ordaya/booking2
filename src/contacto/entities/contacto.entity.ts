@@ -5,7 +5,6 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 @Entity()
@@ -25,7 +24,7 @@ export class Contacto {
   @Column({ type: 'varchar', length: 100, nullable: true })
   apellidos?: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 20 })
   telefono: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })

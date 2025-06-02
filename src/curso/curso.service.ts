@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -24,7 +25,7 @@ export class CursoService {
     private readonly planRepository: Repository<Plan>,
   ) {}
 
-  async create(createCursoDto: CreateCursoDto) {
+  async create(createCursoDto: CreateCursoDto): Promise<Curso> {
     try {
       const { codigo, eap_id, plan_id } = createCursoDto;
 
@@ -37,7 +38,7 @@ export class CursoService {
       if (codigoExiste) throw new ConflictException('Código ya existe');
 
       if (!planExiste) throw new NotFoundException('Plan no encontrado');
-      
+
       if (eap_id && !eapExiste)
         throw new NotFoundException('EAP no encontrado');
 
@@ -104,94 +105,129 @@ export class CursoService {
         },
       };
     } catch (error) {
-      console.log(error);
-      throw error;
+      throw new InternalServerErrorException(
+        'Ocurrió un error al recuperar las Cursos',
+        { cause: error },
+      );
     }
   }
 
   async findOne(id: string) {
     try {
-      return await this.cursoRepository.findOne({
-        where: { id: id },
-      });
+      if (!id)
+        throw new BadRequestException('El ID del curso no puede estar vacío');
+      const curso = await this.cursoRepository.findOneBy({ id });
+      if (!curso) throw new NotFoundException('Curso no encontrado');
+      return curso;
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async update(id: string, updateCursoDto: UpdateCursoDto) {
-    const { codigo } = updateCursoDto;
     try {
-      const curso = await this.cursoRepository.findOne({
-        where: { id: id },
-        select: ['id'],
-      });
+      const { codigo, nombre, descripcion, eap_id, plan_id } = updateCursoDto;
+
+      if (!id) {
+        throw new BadRequestException('El ID del curso no puede estar vacío');
+      }
+
+      const curso = await this.cursoRepository.findOneBy({ id });
       if (!curso) {
         throw new NotFoundException('No existe un curso con ese id');
       }
 
-      if (codigo) {
-        const codigoExistente = await this.cursoRepository.findOne({
-          where: { id: Not(id), codigo: codigo },
-          select: ['id'],
+      const updateData: any = {};
+
+      if (codigo !== undefined) {
+        const codigoExistente = await this.cursoRepository.existsBy({
+          id: Not(id),
+          codigo,
         });
+
         if (codigoExistente) {
           throw new ConflictException('Ya existe un curso con ese codigo');
         }
+        updateData.codigo = codigo;
       }
 
-      const cursoActualizado = await this.cursoRepository.update(id, {
-        ...updateCursoDto,
-      });
+      if (eap_id !== undefined) {
+        const eapExists = await this.eapRepository.existsBy({
+          id: eap_id,
+        });
 
-      if (cursoActualizado.affected === 0) {
-        throw new InternalServerErrorException(
-          'No se pudo actualizar el curso',
-        );
+        if (!eapExists) {
+          throw new NotFoundException('No existe una EAP con ese ID');
+        }
+        updateData.eap = { id: eap_id };
       }
 
-      const cursoActualizadoFinal = await this.cursoRepository.findOne({
-        where: { id: id },
-      });
+      if (plan_id !== undefined) {
+        const planExists = await this.planRepository.existsBy({
+          id: plan_id,
+        });
 
-      return cursoActualizadoFinal;
+        if (!planExists) {
+          throw new NotFoundException('No existe un plan con ese ID');
+        }
+        updateData.plan = { id: plan_id };
+      }
+
+      if (nombre !== undefined) {
+        updateData.nombre = nombre;
+      }
+
+      if (descripcion !== undefined) {
+        updateData.descripcion = descripcion;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return curso;
+      }
+
+      await this.cursoRepository.update(id, updateData);
+
+      return await this.cursoRepository.findOneBy({ id });
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
     try {
-      const curso = await this.cursoRepository.findOne({
-        where: { id: id },
-        select: ['id', 'estado'],
-      });
-      if (!curso) {
-        throw new NotFoundException('No existe un curso con ese id');
-      }
-      const nuevoEstado = curso.estado === 1 ? 0 : 1;
+      if (!id)
+        throw new BadRequestException('El ID del curso no puede estar vacío');
 
-      const cursoEliminado = await this.cursoRepository.update(id, {
-        estado: nuevoEstado,
-      });
+      const result = await this.cursoRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
 
-      if (cursoEliminado.affected === 0) {
-        throw new InternalServerErrorException(
-          'No se pudo actualizar el curso',
-        );
-      }
-
-      const cursoEliminadoFinal = await this.cursoRepository.findOne({
-        where: { id: id },
-        select: ['id', 'estado'],
-      });
-
-      return cursoEliminadoFinal;
+      if (result.affected === 0)
+        throw new NotFoundException('Curso no encontrado');
+      return this.cursoRepository.findOneBy({ id });
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 }
