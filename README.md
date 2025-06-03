@@ -42,13 +42,19 @@ $ docker-compose up -d
 $ docker-compose down
 ```
 ```bash
+# Correr el proyecto
 $ npm run start:dev
 ```
-
+```bash
+# Instalar de pino para logging
 $ npm i nestjs-pino pino-http pino-pretty
-
+```
+```bash
+# Instalar de bcryptjs para encriptar la contraseña
 $ npm i bcryptjs
-
+```
+```bash
+# Instalar de @nestjs/jwt para usar JWT
 $ npm install --save @nestjs/jwt
-
+```
 
