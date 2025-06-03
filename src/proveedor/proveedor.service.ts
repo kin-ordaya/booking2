@@ -126,7 +126,30 @@ export class ProveedorService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} proveedor`;
+  async remove(id: string) {
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID del proveedor no puede estar vacío',
+        );
+
+      const result = await this.proveedorRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
+
+      if (result.affected === 0)
+        throw new NotFoundException('Proveedor no encontrado');
+      return this.proveedorRepository.findOneBy({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 }

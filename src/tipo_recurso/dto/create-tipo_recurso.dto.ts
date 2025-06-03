@@ -1,1 +1,3 @@
-export class CreateTipoRecursoDto {}
+export class CreateTipoRecursoDto {
+    
+}
