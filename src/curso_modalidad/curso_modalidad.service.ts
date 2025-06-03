@@ -54,8 +54,15 @@ export class CursoModalidadService {
 
   async findAll(paginationCursoModalidadDto: PaginationCursoModalidadDto) {
     try {
-      const { page, limit, sort_name, sort_state, search } =
-        paginationCursoModalidadDto;
+      const {
+        page,
+        limit,
+        sort_name,
+        sort_state,
+        modalidad_id,
+        plan_id,
+        search,
+      } = paginationCursoModalidadDto;
 
       const query = this.cursoModalidadRepository
         .createQueryBuilder('cursoModalidad')
@@ -80,6 +87,17 @@ export class CursoModalidadService {
       if (sort_state) {
         query.andWhere('cursoModalidad.estado = :estado', {
           estado: sort_state === 1 ? 1 : 0,
+        });
+      }
+      if(modalidad_id){
+        query.andWhere('cursoModalidad.modalidad.id = :modalidad_id', {
+          modalidad_id
+        });
+      }
+
+      if(plan_id){
+        query.andWhere('curso.plan.id = :plan_id', {
+          plan_id
         });
       }
 

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsNumber, IsOptional } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsUUID } from 'class-validator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 export class PaginationCursoDto extends PaginationDto {
@@ -19,5 +19,6 @@ export class PaginationCursoDto extends PaginationDto {
   @IsIn([1, 2], {
     message: 'Ordernar por estado activo=1, inactivo=2',
   })
+  @Type(() => Number)
   sort_state?: number;
 }
