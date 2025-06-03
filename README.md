@@ -1,6 +1,6 @@
-```bash
-# Advertencia
-$ ⚠️ Este código es solo para fines demostrativos en Replit. No está autorizado su uso, redistribución ni modificación sin consentimiento del autor.
+## Advertencia
+``bash
+⚠️ Este código es solo para fines demostrativos en Replit. No está autorizado su uso, redistribución ni modificación sin consentimiento del autor.
 ```
 ## Instalación
 
