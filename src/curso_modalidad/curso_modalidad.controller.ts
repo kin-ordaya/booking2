@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { CursoModalidadService } from './curso_modalidad.service';
 import { CreateCursoModalidadDto } from './dto/create-curso_modalidad.dto';
 import { UpdateCursoModalidadDto } from './dto/update-curso_modalidad.dto';
+import { PaginationCursoModalidadDto } from './dto/pagination-curso_modalidad.dto';
 
 @Controller('curso-modalidad')
 export class CursoModalidadController {
@@ -13,8 +23,8 @@ export class CursoModalidadController {
   }
 
   @Get()
-  findAll() {
-    return this.cursoModalidadService.findAll();
+  findAll(@Query() paginationCursoModalidadDto: PaginationCursoModalidadDto) {
+    return this.cursoModalidadService.findAll(paginationCursoModalidadDto);
   }
 
   @Get(':id')
@@ -23,7 +33,10 @@ export class CursoModalidadController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCursoModalidadDto: UpdateCursoModalidadDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCursoModalidadDto: UpdateCursoModalidadDto,
+  ) {
     return this.cursoModalidadService.update(+id, updateCursoModalidadDto);
   }
 
