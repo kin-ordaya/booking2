@@ -18,7 +18,7 @@ export class TipoRecurso {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 50 })
   nombre: string;
 
   @OneToMany(() => Recurso, (recurso) => recurso.tipoRecurso)

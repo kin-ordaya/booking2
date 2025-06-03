@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { TipoRecursoService } from './tipo_recurso.service';
 import { CreateTipoRecursoDto } from './dto/create-tipo_recurso.dto';
 import { UpdateTipoRecursoDto } from './dto/update-tipo_recurso.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('tipo-recurso')
 export class TipoRecursoController {
@@ -18,17 +28,20 @@ export class TipoRecursoController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tipoRecursoService.findOne(+id);
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.tipoRecursoService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTipoRecursoDto: UpdateTipoRecursoDto) {
-    return this.tipoRecursoService.update(+id, updateTipoRecursoDto);
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe()) updateTipoRecursoDto: UpdateTipoRecursoDto,
+  ) {
+    return this.tipoRecursoService.update(id, updateTipoRecursoDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tipoRecursoService.remove(+id);
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.tipoRecursoService.remove(id);
   }
 }
