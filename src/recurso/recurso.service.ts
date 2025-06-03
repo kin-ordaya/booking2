@@ -11,7 +11,7 @@ import { CreateRecursoDto } from './dto/create-recurso.dto';
 import { UpdateRecursoDto } from './dto/update-recurso.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Recurso } from './entities/recurso.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 
@@ -139,21 +139,113 @@ export class RecursoService {
 
   async update(id: string, updateRecursoDto: UpdateRecursoDto) {
     try {
-      const { nombre, descripcion, cantidad_credenciales, link_declaracion, tiempo_reserva, tipo_recurso_id, proveedor_id } = updateRecursoDto;
-      
-      if(!id)
+      const {
+        nombre,
+        descripcion,
+        cantidad_credenciales,
+        link_declaracion,
+        tiempo_reserva,
+        tipo_recurso_id,
+        proveedor_id,
+      } = updateRecursoDto;
+
+      if (!id)
         throw new BadRequestException('El ID del recurso no puede estar vacío');
 
       const recurso = await this.recursoRepository.findOneBy({ id });
       if (!recurso) {
         throw new NotFoundException('Recurso no encontrado');
       }
+
+      const updateData: any = {};
+
+      if (nombre !== undefined) {
+        const nombreExists = await this.recursoRepository.existsBy({
+          id: Not(id),
+          nombre,
+        });
+
+        if (nombreExists) {
+          throw new ConflictException('Ya existe un recurso con ese nombre');
+        }
+        updateData.nombre = nombre;
+      }
+      if (proveedor_id !== undefined) {
+        const proveedorExists = await this.proveedorRepository.existsBy({
+          id: proveedor_id,
+        });
+
+        if (!proveedorExists) {
+          throw new NotFoundException('No existe un proveedor con ese id');
+        }
+        updateData.proveedor = { id: proveedor_id };
+      }
+
+      if (tipo_recurso_id !== undefined) {
+        const tipoRecursoExists = await this.tipoRecursoRepository.existsBy({
+          id: tipo_recurso_id,
+        });
+
+        if (!tipoRecursoExists) {
+          throw new NotFoundException('No existe un tipoRecurso con ese id');
+        }
+        updateData.tipoRecurso = { id: tipo_recurso_id };
+      }
+
+      if (descripcion !== undefined) {
+        updateData.descripcion = descripcion;
+      }
+      if (cantidad_credenciales !== undefined) {
+        updateData.cantidad_credenciales = cantidad_credenciales;
+      }
+      if (link_declaracion !== undefined) {
+        updateData.link_declaracion = link_declaracion;
+      }
+      if (tiempo_reserva !== undefined) {
+        updateData.tiempo_reserva = tiempo_reserva;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return recurso;
+      }
+
+      await this.recursoRepository.update(id, updateData);
+
+      return await this.recursoRepository.findOneBy({ id });
     } catch (error) {
-      
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async remove(id: string) {
-    return `This action removes a #${id} recurso`;
+    try {
+      if (!id)
+        throw new BadRequestException('El ID del recurso no puede estar vacío');
+
+      const result = await this.recursoRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
+
+      if (result.affected === 0)
+        throw new NotFoundException('Recurso no encontrado');
+      return this.recursoRepository.findOneBy({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 }
