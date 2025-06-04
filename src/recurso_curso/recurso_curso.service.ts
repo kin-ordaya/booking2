@@ -69,56 +69,67 @@ export class RecursoCursoService {
   }
 
   async findAll(paginationRecursoCursoDto: PaginationRecursoCursoDto) {
-    try {
-      const { page, limit, search, curso_id } = paginationRecursoCursoDto;
+  try {
+    const { page, limit, sort_name, sort_state, search, curso_id } =
+      paginationRecursoCursoDto;
 
-      const query = this.recursoCursoRepository
-        .createQueryBuilder('recursoCurso')
-        .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
-        .leftJoinAndSelect('recursoCurso.curso', 'curso')
-        .leftJoinAndSelect('recurso.proveedor', 'proveedor')
-        .select([
-          'recursoCurso.id',
-          'recurso.id',
-          'recurso.nombre',
-          'recurso.cantidad_credenciales',
-          'proveedor.nombre',
-          'curso.id as curso_id',
-          'curso.nombre as curso_nombre',
-        ]);
+    const query = this.recursoCursoRepository
+      .createQueryBuilder('recursoCurso')
+      .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
+      .leftJoinAndSelect('recursoCurso.curso', 'curso')
+      .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+      .select([
+        'recursoCurso.id',
+        'recurso.id',
+        'recurso.nombre',
+        'recurso.cantidad_credenciales',
+        'proveedor.nombre',
+        'curso.id as curso_id',
+        'curso.nombre as curso_nombre',
+      ]);
 
-      if (curso_id) {
-        query.andWhere('curso.id = :curso_id', {
-          curso_id,
-        });
-      }
+    if (sort_name) {
+      query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+    }
 
-      if (search) {
-        query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search)', {
-          search: `%${search}%`,
-        });
-      }
-
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
-
-      return {
-        results,
-        meta: {
-          count,
-          page,
-          limit,
-          totalPages: Math.ceil(count / limit),
-        },
-      };
-    } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
+    if (sort_state) {
+      query.andWhere('recursoCurso.estado = :estado', {
+        estado: sort_state === 1 ? 1 : 0,
       });
     }
+
+    if (curso_id) {
+      query.andWhere('curso.id = :curso_id', {
+        curso_id,
+      });
+    }
+
+    if (search) {
+      query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search))', { // Paréntesis corregido
+        search: `%${search}%`,
+      });
+    }
+
+    const [results, count] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      results,
+      meta: {
+        count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit),
+      },
+    };
+  } catch (error) {
+    throw new InternalServerErrorException('Error inesperado', {
+      cause: error,
+    });
   }
+}
 
   async findOne(id: string) {
     try {
