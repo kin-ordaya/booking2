@@ -89,15 +89,16 @@ export class CursoModalidadService {
           estado: sort_state === 1 ? 1 : 0,
         });
       }
-      if (modalidad_id) {
-        query.andWhere('cursoModalidad.modalidad.id = :modalidad_id', {
-          modalidad_id,
+
+      if (modalidad_id?.length) {
+        query.andWhere('cursoModalidad.modalidad.id IN (:...modalidad_ids)', {
+          modalidad_ids: modalidad_id,
         });
       }
 
-      if (plan_id) {
-        query.andWhere('curso.plan.id = :plan_id', {
-          plan_id,
+      if (plan_id?.length) {
+        query.andWhere('curso.plan.id IN (:...plan_ids)', {
+          plan_ids: plan_id,
         });
       }
 

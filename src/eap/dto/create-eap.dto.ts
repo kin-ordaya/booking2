@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateEapDto {
@@ -6,6 +7,7 @@ export class CreateEapDto {
   @MaxLength(100, {
     message: 'El campo nombre no puede tener mas de 100 caracteres',
   })
+  @Transform(({ value }) => value?.toUpperCase().trim())
   nombre: string;
 
   @IsNotEmpty()
