@@ -19,16 +19,16 @@ export class RecursoCursoController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.recursoCursoService.findOne(+id);
+    return this.recursoCursoService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRecursoCursoDto: UpdateRecursoCursoDto) {
-    return this.recursoCursoService.update(+id, updateRecursoCursoDto);
+    return this.recursoCursoService.update(id, updateRecursoCursoDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.recursoCursoService.remove(+id);
+    return this.recursoCursoService.remove(id);
   }
 }

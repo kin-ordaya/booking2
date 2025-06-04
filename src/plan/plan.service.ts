@@ -75,6 +75,7 @@ export class PlanService {
       }
 
       const plan = await this.planRepository.findOneBy({ id });
+      
       if (!plan) {
         throw new NotFoundException('Plan no encontrado');
       }

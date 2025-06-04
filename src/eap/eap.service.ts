@@ -164,6 +164,7 @@ export class EapService {
 
       if (result.affected === 0)
         throw new NotFoundException('Facultad no encontrada');
+      
       return this.eapRepository.findOneBy({ id });
     } catch (error) {
       if (

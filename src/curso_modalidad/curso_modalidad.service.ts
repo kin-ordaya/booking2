@@ -1,5 +1,7 @@
 import { PaginationCursoModalidadDto } from './dto/pagination-curso_modalidad.dto';
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -29,10 +31,17 @@ export class CursoModalidadService {
     try {
       const { curso_id, modalidad_id } = createCursoModalidadDto;
 
-      const [cursoExiste, modalidadExiste] = await Promise.all([
-        this.cursoRepository.existsBy({ id: curso_id }),
-        this.modalidadRepository.existsBy({ id: modalidad_id }),
-      ]);
+      const [cursoModalidadExist, cursoExiste, modalidadExiste] =
+        await Promise.all([
+          this.cursoModalidadRepository.existsBy({ curso: { id: curso_id } }),
+          this.cursoRepository.existsBy({ id: curso_id }),
+          this.modalidadRepository.existsBy({ id: modalidad_id }),
+        ]);
+
+      if (cursoModalidadExist)
+        throw new ConflictException(
+          'Ya existe una asignacion de curso a modalidad',
+        );
 
       if (!cursoExiste) throw new NotFoundException('Curso no encontrado');
 
@@ -71,6 +80,7 @@ export class CursoModalidadService {
         .leftJoinAndSelect('cursoModalidad.modalidad', 'modalidad')
         .select([
           'cursoModalidad.id',
+          'cursoModalidad.estado',
           'curso.id',
           'curso.codigo',
           'curso.nombre',
@@ -136,15 +146,129 @@ export class CursoModalidadService {
     }
   }
 
-  async findOne(id: string) {
-    return `This action returns a #${id} cursoModalidad`;
+  async findOne(id: string): Promise<CursoModalidad> {
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID del cursoModalidad no puede estar vacío',
+        );
+
+      const cursoModalidad = await this.cursoModalidadRepository.findOneBy({
+        id,
+      });
+      if (!cursoModalidad)
+        throw new NotFoundException('CursoModalidad no encontrado');
+      return cursoModalidad;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 
   async update(id: string, updateCursoModalidadDto: UpdateCursoModalidadDto) {
-    return `This action updates a #${id} cursoModalidad`;
+    try {
+      const { curso_id, modalidad_id } = updateCursoModalidadDto;
+
+      if (!id) {
+        throw new BadRequestException(
+          'El ID del cursoModalidad no puede estar vacío',
+        );
+      }
+
+      const cursoModalidad = await this.cursoModalidadRepository.findOne({
+        where: { id },
+        relations: ['curso', 'modalidad'],
+      });
+      if (!cursoModalidad) {
+        throw new NotFoundException('CursoModalidad no encontrado');
+      }
+
+      const newCursoId =
+        curso_id !== undefined ? curso_id : cursoModalidad.curso.id;
+      const newModalidadId =
+        modalidad_id !== undefined ? modalidad_id : cursoModalidad.modalidad.id;
+
+      if (curso_id !== undefined) {
+        const cursoExists = await this.cursoRepository.existsBy({
+          id: curso_id,
+        });
+        if (!cursoExists) {
+          throw new NotFoundException('No existe un curso con ese id');
+        }
+      }
+
+      if (modalidad_id !== undefined) {
+        const modalidadExists = await this.modalidadRepository.existsBy({
+          id: modalidad_id,
+        });
+        if (!modalidadExists) {
+          throw new NotFoundException('No existe una modalidad con ese id');
+        }
+      }
+
+      const existingAssignment = await this.cursoModalidadRepository.findOne({
+        where: {
+          id: Not(id),
+          curso: { id: newCursoId },
+          modalidad: { id: newModalidadId },
+        },
+      });
+      if (existingAssignment) {
+        throw new ConflictException(
+          'Ya existe una asignación de este curso a este modalidad',
+        );
+      }
+
+      const updateData: any = {};
+      if (curso_id !== undefined) updateData.curso = { id: curso_id };
+      if (modalidad_id !== undefined)
+        updateData.modalidad = { id: modalidad_id };
+
+      await this.cursoModalidadRepository.update(id, updateData);
+      
+      return await this.cursoModalidadRepository.findOneBy({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 
   async remove(id: string) {
-    return `This action removes a #${id} cursoModalidad`;
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID del cursoModalidad no puede estar vacío',
+        );
+
+      const result = await this.cursoModalidadRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
+
+      if (result.affected === 0)
+        throw new NotFoundException('CursoModalidad no encontrado');
+
+      return this.cursoModalidadRepository.findOneBy({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 }
