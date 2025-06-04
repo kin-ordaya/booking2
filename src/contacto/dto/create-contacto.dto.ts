@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
   IsOptional,
@@ -9,6 +10,7 @@ import {
 export class CreateContactoDto {
   @IsNotEmpty()
   @IsString({ message: 'El campo nombres debe ser de tipo string' })
+  @Transform(({ value }) => value?.toUpperCase().trim())
   @MaxLength(50, {
     message: 'El campo nombres no puede tener mas de 50 caracteres',
   })
@@ -19,6 +21,7 @@ export class CreateContactoDto {
   @MaxLength(100, {
     message: 'El campo apellidos no puede tener mas de 100 caracteres',
   })
+  @Transform(({ value }) => value?.toUpperCase().trim())
   apellidos?: string;
 
   @IsNotEmpty()

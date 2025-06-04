@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -12,6 +12,7 @@ import {
 export class CreateRecursoDto {
   @IsNotEmpty()
   @IsString({ message: 'El campo nombre debe ser de tipo string' })
+  @Transform(({ value }) => value?.toUpperCase().trim())
   nombre: string;
 
   @IsOptional()

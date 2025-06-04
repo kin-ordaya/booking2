@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer";
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 
 export class CreateModalidadDto {
@@ -6,5 +7,6 @@ export class CreateModalidadDto {
     @MaxLength(50, {
         message: 'El campo nombre no puede tener mas de 50 caracteres',
     })
+    @Transform(({ value }) => value?.toUpperCase().trim())
     nombre: string;
 }
