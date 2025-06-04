@@ -1,3 +1,4 @@
+import { PaginationRecursoCursoDto } from './dto/pagination-recurso_curso.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -67,12 +68,51 @@ export class RecursoCursoService {
     }
   }
 
-  async findAll() {
+  async findAll(paginationRecursoCursoDto: PaginationRecursoCursoDto) {
     try {
-      return await this.recursoCursoRepository.find({
-        relations: ['recurso', 'curso'],
-        order: { asignacion: 'ASC' },
-      });
+      const { page, limit, search, curso_id } = paginationRecursoCursoDto;
+
+      const query = this.recursoCursoRepository
+        .createQueryBuilder('recursoCurso')
+        .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
+        .leftJoinAndSelect('recursoCurso.curso', 'curso')
+        .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+        .select([
+          'recursoCurso.id',
+          'recurso.id',
+          'recurso.nombre',
+          'recurso.cantidad_credenciales',
+          'proveedor.nombre',
+          'curso.id as curso_id',
+          'curso.nombre as curso_nombre',
+        ]);
+
+      if (curso_id) {
+        query.andWhere('curso.id = :curso_id', {
+          curso_id,
+        });
+      }
+
+      if (search) {
+        query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search)', {
+          search: `%${search}%`,
+        });
+      }
+
+      const [results, count] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return {
+        results,
+        meta: {
+          count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
     } catch (error) {
       throw new InternalServerErrorException('Error inesperado', {
         cause: error,
@@ -196,7 +236,7 @@ export class RecursoCursoService {
 
       if (result.affected === 0)
         throw new NotFoundException('Recurso curso no encontrado');
-      
+
       return this.recursoCursoRepository.findOneBy({ id });
     } catch (error) {
       if (

@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { RecursoCursoService } from './recurso_curso.service';
 import { CreateRecursoCursoDto } from './dto/create-recurso_curso.dto';
 import { UpdateRecursoCursoDto } from './dto/update-recurso_curso.dto';
+import { PaginationRecursoCursoDto } from './dto/pagination-recurso_curso.dto';
 
 @Controller('recurso-curso')
 export class RecursoCursoController {
@@ -13,8 +14,8 @@ export class RecursoCursoController {
   }
 
   @Get()
-  findAll() {
-    return this.recursoCursoService.findAll();
+  findAll(@Query() paginationRecursoCursoDto: PaginationRecursoCursoDto) {
+    return this.recursoCursoService.findAll(paginationRecursoCursoDto);
   }
 
   @Get(':id')
