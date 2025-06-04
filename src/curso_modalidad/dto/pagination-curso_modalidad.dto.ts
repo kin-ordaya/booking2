@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsIn, IsNumber, IsOptional, IsUUID } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsIn, IsNumber, IsOptional, IsUUID } from 'class-validator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 export class PaginationCursoModalidadDto extends PaginationDto {
@@ -22,11 +22,29 @@ export class PaginationCursoModalidadDto extends PaginationDto {
   @Type(() => Number)
   sort_state?: number;
 
+  @ApiProperty({
+    description: 'Filtros por uno o más IDs de modalidad',
+    type: () => [String],
+    required: false,
+  })
   @IsOptional()
-  @IsUUID('4', { message: 'El campo facultad_id debe ser de tipo uuid' })
-  modalidad_id?: string;
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value : (value?.split(',').filter(Boolean) ?? []),
+  )
+  @IsArray()
+  @Type(() => String)
+  modalidad_id?: string[];
 
+  @ApiProperty({
+    description: 'Filtros por uno o más IDs de plan',
+    type: () => [String],
+    required: false,
+  })
   @IsOptional()
-  @IsUUID('4', { message: 'El campo plan_id debe ser de tipo uuid' })
-  plan_id?: string;
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value : (value?.split(',').filter(Boolean) ?? []),
+  )
+  @IsArray()
+  @Type(() => String)
+  plan_id?: string[];
 }
