@@ -29,7 +29,7 @@ export class CursoModalidadController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.cursoModalidadService.findOne(+id);
+    return this.cursoModalidadService.findOne(id);
   }
 
   @Patch(':id')
@@ -37,11 +37,11 @@ export class CursoModalidadController {
     @Param('id') id: string,
     @Body() updateCursoModalidadDto: UpdateCursoModalidadDto,
   ) {
-    return this.cursoModalidadService.update(+id, updateCursoModalidadDto);
+    return this.cursoModalidadService.update(id, updateCursoModalidadDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.cursoModalidadService.remove(+id);
+    return this.cursoModalidadService.remove(id);
   }
 }

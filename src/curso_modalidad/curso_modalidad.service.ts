@@ -89,21 +89,21 @@ export class CursoModalidadService {
           estado: sort_state === 1 ? 1 : 0,
         });
       }
-      if(modalidad_id){
+      if (modalidad_id) {
         query.andWhere('cursoModalidad.modalidad.id = :modalidad_id', {
-          modalidad_id
+          modalidad_id,
         });
       }
 
-      if(plan_id){
+      if (plan_id) {
         query.andWhere('curso.plan.id = :plan_id', {
-          plan_id
+          plan_id,
         });
       }
 
       if (search) {
         query.andWhere(
-          '(curso.codigo LIKE :search OR curso.nombre LIKE :search OR modalidad.nombre LIKE :search)',
+          '(UPPER(curso.codigo) LIKE UPPER(:search) OR UPPER(curso.nombre) LIKE UPPER(:search) OR UPPER(modalidad.nombre) LIKE UPPER(:search))',
           { search: `%${search}%` },
         );
       }
@@ -135,15 +135,15 @@ export class CursoModalidadService {
     }
   }
 
-  findOne(id: number) {
+  async findOne(id: string) {
     return `This action returns a #${id} cursoModalidad`;
   }
 
-  update(id: number, updateCursoModalidadDto: UpdateCursoModalidadDto) {
+  async update(id: string, updateCursoModalidadDto: UpdateCursoModalidadDto) {
     return `This action updates a #${id} cursoModalidad`;
   }
 
-  remove(id: number) {
+  async remove(id: string) {
     return `This action removes a #${id} cursoModalidad`;
   }
 }
