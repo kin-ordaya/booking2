@@ -94,7 +94,7 @@ export class RecursoService {
 
       if (search) {
         query.where(
-          'recurso.nombre LIKE :search OR recurso.descripcion LIKE :search',
+          'UPPER(recurso.nombre) LIKE UPPEr(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }

@@ -85,7 +85,7 @@ export class ContactoService {
 
       if (search) {
         query.where(
-          'contacto.nombres LIKE :search OR contacto.apellidos LIKE :search',
+          '(UPPER(contacto.nombres) LIKE UPPER(:search) OR UPPER(contacto.apellidos) LIKE UPPER(:search))',
           {
             search: `%${search}%`,
           },

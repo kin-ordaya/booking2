@@ -99,7 +99,7 @@ export class CursoService {
       }
 
       if (search) {
-        query.where('curso.codigo LIKE :search OR curso.nombre LIKE :search', {
+        query.where('UPPER(curso.codigo) LIKE UPPER(:search) OR UPPER(curso.nombre) LIKE UPPER(:search)', {
           search: `%${search}%`,
         });
       }
