@@ -22,11 +22,15 @@ export class CursoModalidad {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @ManyToOne(() => Curso, (curso) => curso.curso_modalidad)
+  @ManyToOne(() => Curso, (curso) => curso.curso_modalidad, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'curso_id' })
   curso: Curso;
 
-  @ManyToOne(() => Modalidad, (modalidad) => modalidad.curso_modalidad)
+  @ManyToOne(() => Modalidad, (modalidad) => modalidad.curso_modalidad, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'modalidad_id' })
   modalidad: Curso;
 

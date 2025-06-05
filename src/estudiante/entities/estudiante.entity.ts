@@ -46,7 +46,9 @@ export class Estudiante {
 
   @ManyToOne(
     () => DocumentoIdentidad,
-    (documentoIdentidad) => documentoIdentidad.usuario,
+    (documentoIdentidad) => documentoIdentidad.usuario, {
+    nullable: false,
+  }
   )
   @JoinColumn({ name: 'documento_identidad_id' })
   documento_identidad: DocumentoIdentidad;

@@ -13,11 +13,15 @@ export class RolUsuario {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @ManyToOne(() => Usuario, (usuario) => usuario.rol_usuario)
+  @ManyToOne(() => Usuario, (usuario) => usuario.rol_usuario, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'usuario_id' })
   usuario: Usuario;
 
-  @ManyToOne(() => Rol, (rol) => rol.rol_usuario)
+  @ManyToOne(() => Rol, (rol) => rol.rol_usuario, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'rol_id' })
   rol: Rol;
 

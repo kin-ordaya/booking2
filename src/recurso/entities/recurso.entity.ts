@@ -3,6 +3,7 @@ import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
+import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import {
   Column,
@@ -39,11 +40,21 @@ export class Recurso {
   @Column({ type: 'int' })
   tiempo_reserva: number;
 
-  @ManyToOne(() => TipoRecurso, (tipoRecurso) => tipoRecurso.recursos)
+  // @Column({ type: 'varchar', length: 50, nullable: true })
+  // credencial_tipo?:string
+
+  @Column({ type: 'int' })
+  capacidad: number;
+
+  @ManyToOne(() => TipoRecurso, (tipoRecurso) => tipoRecurso.recursos, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'tipo_recurso_id' })
   tipoRecurso: TipoRecurso;
 
-  @ManyToOne(() => Proveedor, (proveedor) => proveedor.recursos)
+  @ManyToOne(() => Proveedor, (proveedor) => proveedor.recursos, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;
 
@@ -58,4 +69,10 @@ export class Recurso {
 
   @OneToMany(() => Credencial, (credencial) => credencial.recurso)
   credencial: Credencial[];
+
+  @ManyToOne(() => TipoAcceso, (tipoAcceso) => tipoAcceso.recursos, {
+    nullable: false,
+  })
+  @JoinColumn({ name: 'tipo_acceso_id' })
+  tipoAcceso: TipoAcceso;
 }

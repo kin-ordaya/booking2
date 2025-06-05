@@ -1,4 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCredencialDto } from './dto/create-credencial.dto';
 import { UpdateCredencialDto } from './dto/update-credencial.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,11 +23,7 @@ export class CredencialService {
   ) {}
 
   async create(createCredencialDto: CreateCredencialDto) {
-    try {
-      const { usuario, clave, capacidad, tipo, recurso_id } = createCredencialDto;
-    } catch (error) {
-      
-    }
+    return `This action create a credencial`;
   }
 
   findAll() {

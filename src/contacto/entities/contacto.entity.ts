@@ -30,7 +30,9 @@ export class Contacto {
   @Column({ type: 'varchar', length: 100, nullable: true })
   correo?: string;
 
-  @ManyToOne(() => Proveedor, (proveedor) => proveedor.contactos)
+  @ManyToOne(() => Proveedor, (proveedor) => proveedor.contactos, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;
 }

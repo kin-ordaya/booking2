@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -34,6 +35,11 @@ export class CreateRecursoDto {
   @IsPositive({ message: 'El campo tiempo_reserva debe ser positivo' })
   @Type(() => Number)
   tiempo_reserva: number;
+
+  @IsNotEmpty()
+  @IsString({ message: 'El campo credencial_tipo debe ser de tipo string' })
+  @IsIn(['KEY','USERPASS'])
+  credencial_tipo: string;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo tipo_recurso_id debe ser de tipo uuid' })

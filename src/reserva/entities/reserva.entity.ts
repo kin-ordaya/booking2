@@ -29,15 +29,21 @@ export class Reserva {
   @Column({ type: 'int'})
   cantidad: number;
 
-  @ManyToOne(() => Clase, (clase) => clase.reserva)
+  @ManyToOne(() => Clase, (clase) => clase.reserva, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'clase_id' })
   clase: Clase;
 
-  @ManyToOne(() => Recurso, (recurso) => recurso.reserva)
+  @ManyToOne(() => Recurso, (recurso) => recurso.reserva, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'recurso_id' })
   recurso: Recurso;
 
-  @ManyToOne(() => Usuario, (usuario) => usuario.reserva)
+  @ManyToOne(() => Usuario, (usuario) => usuario.reserva, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'usuario_id' })
   usuario: Usuario;
 

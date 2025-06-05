@@ -12,11 +12,15 @@ export class RecursoCurso {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @ManyToOne(() => Recurso, (recurso) => recurso.recurso_curso)
+  @ManyToOne(() => Recurso, (recurso) => recurso.recurso_curso, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'recurso_id' })
   recurso: Recurso;
 
-  @ManyToOne(() => Curso, (curso) => curso.recurso_curso)
+  @ManyToOne(() => Curso, (curso) => curso.recurso_curso, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'curso_id' })
   curso: Curso;
 }

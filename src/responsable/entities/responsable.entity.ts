@@ -22,7 +22,9 @@ export class Responsable {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.responsable)
+  @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.responsable, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'rol_usuario_id' })
   rolUsuario: RolUsuario;
 
@@ -32,13 +34,14 @@ export class Responsable {
   @JoinColumn({ name: 'recurso_id' })
   recurso?: Recurso;
 
-  @ManyToOne(() => Clase, (clase) => clase.responsable, {nullable: true})
+  @ManyToOne(() => Clase, (clase) => clase.responsable, { nullable: true })
   @JoinColumn({ name: 'clase_id' })
   clase?: Clase;
 
   @ManyToOne(
     () => CursoModalidad,
-    (cursoModalidad) => cursoModalidad.responsable, {nullable: true}
+    (cursoModalidad) => cursoModalidad.responsable,
+    { nullable: true },
   )
   @JoinColumn({ name: 'curso_modalidad_id' })
   cursoModalidad?: CursoModalidad;

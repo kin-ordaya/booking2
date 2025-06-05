@@ -36,7 +36,9 @@ export class Curso {
   @JoinColumn({ name: 'eap_id' })
   eap?: Eap;
 
-  @ManyToOne(() => Plan, (plan) => plan.cursos)
+  @ManyToOne(() => Plan, (plan) => plan.cursos, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'plan_id' })
   plan: Plan;
 

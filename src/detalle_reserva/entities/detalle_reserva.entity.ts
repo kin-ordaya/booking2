@@ -20,11 +20,15 @@ export class DetalleReserva {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @ManyToOne(()=> Reserva, (reserva) => reserva.detalle_reserva)
+  @ManyToOne(()=> Reserva, (reserva) => reserva.detalle_reserva, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'reserva_id' })
   reserva: Reserva;
 
-  @ManyToOne(()=> Credencial, (credencial) => credencial.detalle_reserva)
+  @ManyToOne(()=> Credencial, (credencial) => credencial.detalle_reserva, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'credencial_id' })
   credencial: Credencial;
 }

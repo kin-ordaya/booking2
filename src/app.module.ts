@@ -25,6 +25,7 @@ import { MatriculaClaseModule } from './matricula_clase/matricula_clase.module';
 import { ReservaModule } from './reserva/reserva.module';
 import { DetalleReservaModule } from './detalle_reserva/detalle_reserva.module';
 import { CredencialModule } from './credencial/credencial.module';
+import { TipoAccesoModule } from './tipo_acceso/tipo_acceso.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { CredencialModule } from './credencial/credencial.module';
     ResponsableModule,
     RolModule,
     RolUsuarioModule,
+    TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
   ],

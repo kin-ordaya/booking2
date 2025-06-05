@@ -52,11 +52,15 @@ export class Clase {
   @Column({ type: 'date' })
   fin: Date;
 
-  @ManyToOne(() => CursoModalidad, (cursoModalidad) => cursoModalidad.clase)
+  @ManyToOne(() => CursoModalidad, (cursoModalidad) => cursoModalidad.clase, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'curso_modalidad_id' })
   cursoModalidad: CursoModalidad;
 
-  @ManyToOne(() => Aula, (aula) => aula.clase)
+  @ManyToOne(() => Aula, (aula) => aula.clase, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'aula_id' })
   aula: Aula;
 

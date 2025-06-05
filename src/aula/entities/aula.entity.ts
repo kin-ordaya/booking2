@@ -32,7 +32,9 @@ export class Aula {
   @Column({ type: 'varchar', length: 10 })
   pabellon: string;
 
-  @ManyToOne(() => Campus, (campus) => campus.aula)
+  @ManyToOne(() => Campus, (campus) => campus.aula, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'campus_id' })
   campus: Campus;
 

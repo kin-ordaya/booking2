@@ -12,11 +12,15 @@ export class MatriculaClase {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @ManyToOne(() => Clase, (clase) => clase.matricula_clase)
+  @ManyToOne(() => Clase, (clase) => clase.matricula_clase, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'clase_id' })
   clase: Clase;
 
-  @ManyToOne(() => Estudiante, (estudiante) => estudiante.matricula_clase)
+  @ManyToOne(() => Estudiante, (estudiante) => estudiante.matricula_clase, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'estudiante_id' })
   estudiante: Estudiante;
   
