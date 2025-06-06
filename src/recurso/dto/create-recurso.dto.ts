@@ -36,10 +36,16 @@ export class CreateRecursoDto {
   @Type(() => Number)
   tiempo_reserva: number;
 
+  // @IsNotEmpty()
+  // @IsString({ message: 'El campo credencial_tipo debe ser de tipo string' })
+  // @IsIn(['KEY','USERPASS'])
+  // credencial_tipo: string;
+
   @IsNotEmpty()
-  @IsString({ message: 'El campo credencial_tipo debe ser de tipo string' })
-  @IsIn(['KEY','USERPASS'])
-  credencial_tipo: string;
+  @IsInt({ message: 'El campo capacidad debe ser de tipo int' })
+  @IsPositive({ message: 'El campo capacidad debe ser positivo' })
+  @Type(() => Number)
+  capacidad: number;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo tipo_recurso_id debe ser de tipo uuid' })
@@ -48,4 +54,8 @@ export class CreateRecursoDto {
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo proveedor_id debe ser de tipo uuid' })
   proveedor_id: string;
+
+  @IsNotEmpty()
+  @IsUUID('4', { message: 'El campo tipo_acceso_id debe ser de tipo uuid' })
+  tipo_acceso_id: string;
 }

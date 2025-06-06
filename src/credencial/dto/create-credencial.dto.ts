@@ -24,12 +24,12 @@ export class CreateCredencialDto {
   @Type(() => Number)
   capacidad: number;
 
-  @IsNotEmpty()
-  @IsString({ message: 'El campo tipo debe ser de tipo string' })
-  @IsIn(['GENERAL', 'DOCENTE', 'ESTUDIANTE'], {
-    message: 'El campo tipo debe ser GENERAL, DOCENTE o ESTUDIANTE',
-  })
-  tipo: string;
+  // @IsNotEmpty()
+  // @IsString({ message: 'El campo tipo debe ser de tipo string' })
+  // @IsIn(['GENERAL', 'DOCENTE', 'ESTUDIANTE'], {
+  //   message: 'El campo tipo debe ser GENERAL, DOCENTE o ESTUDIANTE',
+  // })
+  // tipo: string;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })

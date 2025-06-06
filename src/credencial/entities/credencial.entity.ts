@@ -27,8 +27,8 @@ export class Credencial {
   @Column({ type: 'varchar', length: 100 })
   clave: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  tipo: string;
+  // @Column({ type: 'varchar', length: 50 })
+  // tipo: string;
 
   @ManyToOne(() => Recurso, (recurso) => recurso.credencial, {
     nullable: false,

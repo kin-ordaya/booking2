@@ -2,7 +2,6 @@ import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -14,6 +13,7 @@ import { Recurso } from './entities/recurso.entity';
 import { Not, Repository } from 'typeorm';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
+import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
 
 @Injectable()
 export class RecursoService {
@@ -23,6 +23,9 @@ export class RecursoService {
 
     @InjectRepository(TipoRecurso)
     private readonly tipoRecursoRepository: Repository<TipoRecurso>,
+
+    @InjectRepository(TipoAcceso)
+    private readonly tipoAccesoRepository: Repository<TipoAcceso>,
 
     @InjectRepository(Proveedor)
     private readonly proveedorRepository: Repository<Proveedor>,
@@ -36,16 +39,23 @@ export class RecursoService {
         cantidad_credenciales,
         link_declaracion,
         tiempo_reserva,
+        capacidad,
         tipo_recurso_id,
         proveedor_id,
+        tipo_acceso_id,
       } = createRecursoDto;
 
-      const [tipoRecursoExists, proveedorExists, nombreExists] =
-        await Promise.all([
-          this.tipoRecursoRepository.existsBy({ id: tipo_recurso_id }),
-          this.proveedorRepository.existsBy({ id: proveedor_id }),
-          this.recursoRepository.existsBy({ nombre }),
-        ]);
+      const [
+        tipoRecursoExists,
+        proveedorExists,
+        tipoAccesoExists,
+        nombreExists,
+      ] = await Promise.all([
+        this.tipoRecursoRepository.existsBy({ id: tipo_recurso_id }),
+        this.proveedorRepository.existsBy({ id: proveedor_id }),
+        this.tipoAccesoRepository.existsBy({ id: tipo_acceso_id }),
+        this.recursoRepository.existsBy({ nombre }),
+      ]);
 
       if (!tipoRecursoExists)
         throw new NotFoundException('No existe un tipoRecurso con ese id');
@@ -53,6 +63,8 @@ export class RecursoService {
         throw new NotFoundException('No existe un proveedor con ese id');
       if (nombreExists)
         throw new ConflictException('Ya existe un recurso con ese nombre');
+      if (!tipoAccesoExists)
+        throw new NotFoundException('No existe un tipoAcceso con ese id');
 
       const recurso = this.recursoRepository.create({
         nombre,
@@ -60,7 +72,9 @@ export class RecursoService {
         cantidad_credenciales,
         link_declaracion,
         tiempo_reserva,
+        capacidad,
         tipoRecurso: { id: tipo_recurso_id },
+        tipoAcceso: { id: tipo_acceso_id },
         proveedor: { id: proveedor_id },
       });
       return await this.recursoRepository.save(recurso);
@@ -81,6 +95,7 @@ export class RecursoService {
       const query = this.recursoRepository
         .createQueryBuilder('recurso')
         .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
+        .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
         .leftJoinAndSelect('recurso.proveedor', 'proveedor')
         .select([
           'recurso.id',
@@ -90,6 +105,8 @@ export class RecursoService {
           'recurso.estado',
           'tipoRecurso.nombre',
           'proveedor.nombre',
+          'tipoAcceso.id',
+          'tipoAcceso.nombre',
         ]);
 
       if (search) {
@@ -123,7 +140,10 @@ export class RecursoService {
       if (!id)
         throw new BadRequestException('El ID del recurso no puede estar vacío');
 
-      const recurso = await this.recursoRepository.findOneBy({ id });
+      const recurso = await this.recursoRepository.findOne({
+        where: { id },
+        relations: ['tipoRecurso', 'proveedor', 'tipoAcceso'],
+      });
       if (!recurso) throw new NotFoundException('Recurso no encontrado');
       return recurso;
     } catch (error) {
@@ -145,8 +165,10 @@ export class RecursoService {
         cantidad_credenciales,
         link_declaracion,
         tiempo_reserva,
+        capacidad,
         tipo_recurso_id,
         proveedor_id,
+        tipo_acceso_id,
       } = updateRecursoDto;
 
       if (!id)
@@ -192,6 +214,17 @@ export class RecursoService {
         updateData.tipoRecurso = { id: tipo_recurso_id };
       }
 
+      if (tipo_acceso_id !== undefined) {
+        const tipoAccesoExists = await this.tipoAccesoRepository.existsBy({
+          id: tipo_acceso_id,
+        });
+
+        if (!tipoAccesoExists) {
+          throw new NotFoundException('No existe un tipoAcceso con ese id');
+        }
+        updateData.tipoAcceso = { id: tipo_acceso_id };
+      }
+
       if (descripcion !== undefined) {
         updateData.descripcion = descripcion;
       }
@@ -203,6 +236,9 @@ export class RecursoService {
       }
       if (tiempo_reserva !== undefined) {
         updateData.tiempo_reserva = tiempo_reserva;
+      }
+      if (capacidad !== undefined) {
+        updateData.capacidad = capacidad;
       }
 
       if (Object.keys(updateData).length === 0) {
