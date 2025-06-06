@@ -1,3 +1,4 @@
+import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
 import {
@@ -23,4 +24,8 @@ export class Rol {
 
   @OneToMany(() => RolUsuario, (rolUsuario) => rolUsuario.rol)
   rol_usuario: RolUsuario[];
+  
+  @OneToMany(() => Credencial, (credencial) => credencial.rol)
+  credencial: Credencial[];
+
 }

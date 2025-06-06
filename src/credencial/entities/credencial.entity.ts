@@ -1,5 +1,6 @@
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
+import { Rol } from 'src/rol/entities/rol.entity';
 import {
   Column,
   CreateDateColumn,
@@ -41,4 +42,10 @@ export class Credencial {
     (detalleReserva) => detalleReserva.credencial,
   )
   detalle_reserva: DetalleReserva[];
+
+  @ManyToOne(() => Rol, (rol) => rol.credencial, {
+    nullable: false,
+  })
+  @JoinColumn({ name: 'rol_id' })
+  rol: Rol;
 }

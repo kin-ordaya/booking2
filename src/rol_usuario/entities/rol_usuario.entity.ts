@@ -1,3 +1,4 @@
+import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
@@ -27,4 +28,5 @@ export class RolUsuario {
 
   @OneToMany(() => Responsable, (responsable) => responsable.rolUsuario)
   responsable: Responsable[];
+
 }
