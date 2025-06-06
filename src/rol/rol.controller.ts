@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { RolService } from './rol.service';
 import { CreateRolDto } from './dto/create-rol.dto';
 import { UpdateRolDto } from './dto/update-rol.dto';
@@ -18,17 +18,17 @@ export class RolController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.rolService.findOne(+id);
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.rolService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRolDto: UpdateRolDto) {
-    return this.rolService.update(+id, updateRolDto);
+  update(@Param('id', new ParseUUIDPipe()) id: string, @Body( ) updateRolDto: UpdateRolDto) {
+    return this.rolService.update(id, updateRolDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.rolService.remove(+id);
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.rolService.remove(id);
   }
 }
