@@ -18,11 +18,11 @@ export class CreateCredencialDto {
   @IsString({ message: 'El campo clave debe ser de tipo string' })
   clave: string;
 
-  @IsNotEmpty()
-  @IsInt({ message: 'El campo capacidad debe ser de tipo int' })
-  @IsPositive({ message: 'El campo capacidad debe ser positivo' })
-  @Type(() => Number)
-  capacidad: number;
+  // @IsNotEmpty()
+  // @IsInt({ message: 'El campo capacidad debe ser de tipo int' })
+  // @IsPositive({ message: 'El campo capacidad debe ser positivo' })
+  // @Type(() => Number)
+  // capacidad: number;
 
   // @IsNotEmpty()
   // @IsString({ message: 'El campo tipo debe ser de tipo string' })
@@ -34,4 +34,8 @@ export class CreateCredencialDto {
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
   recurso_id: string;
+
+  @IsNotEmpty()
+  @IsUUID('4', { message: 'El campo rol_id debe ser de tipo uuid' })
+  rol_id: string;
 }

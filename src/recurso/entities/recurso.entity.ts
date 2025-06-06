@@ -43,7 +43,7 @@ export class Recurso {
   // @Column({ type: 'varchar', length: 50, nullable: true })
   // credencial_tipo?:string
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int' , nullable: true })
   capacidad: number;
 
   @ManyToOne(() => TipoRecurso, (tipoRecurso) => tipoRecurso.recursos, {
@@ -71,7 +71,7 @@ export class Recurso {
   credencial: Credencial[];
 
   @ManyToOne(() => TipoAcceso, (tipoAcceso) => tipoAcceso.recursos, {
-    nullable: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'tipo_acceso_id' })
   tipoAcceso: TipoAcceso;
