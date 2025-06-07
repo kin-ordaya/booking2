@@ -1,3 +1,4 @@
+import { PaginationCredencialDto } from './dto/pagination-credencial.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -84,20 +85,194 @@ export class CredencialService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
-  //TODO: Implementar
-  findAll() {
-    return `This action returns all credencial`;
+
+  async findAll(paginationCredencialDto: PaginationCredencialDto) {
+    try {
+      const { page, limit, search, recurso_id } = paginationCredencialDto;
+      const recursoExists = await this.recursoRepository.existsBy({
+        id: recurso_id,
+      });
+      if (!recursoExists)
+        throw new NotFoundException('No existe un recurso con ese id');
+      const query = this.credencialRepository
+        .createQueryBuilder('credencial')
+        .leftJoinAndSelect('credencial.recurso', 'recurso')
+        .leftJoinAndSelect('credencial.rol', 'rol')
+        .select([
+          'credencial.id',
+          'credencial.usuario',
+          'credencial.clave',
+          'credencial.estado',
+          'recurso.nombre',
+          'rol.nombre',
+        ]);
+
+      if (search) {
+        query.where(
+          'UPPER(credencial.usuario) LIKE UPPER(:search) OR UPPER(credencial.clave) LIKE UPPER(:search)',
+          { search: `%${search}%` },
+        );
+      }
+      const [results, count] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+      return {
+        results,
+        meta: {
+          count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Error inesperado', {
+        cause: error,
+      });
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} credencial`;
+  async findOne(id: string) {
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID de la credencial no puede estar vacío',
+        );
+
+      const credencial = await this.credencialRepository.findOneBy({ id });
+      if (!credencial) throw new NotFoundException('Credencial no encontrada');
+      return credencial;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+  //TODO Testing
+  async update(id: string, updateCredencialDto: UpdateCredencialDto) {
+    try {
+      const { usuario, clave, rol_id } = updateCredencialDto;
+
+      if (!id) {
+        throw new BadRequestException(
+          'El ID de la credencial no puede estar vacío',
+        );
+      }
+
+      // Obtener la credencial con relaciones necesarias
+      const credencial = await this.credencialRepository.findOne({
+        where: { id },
+        relations: ['recurso', 'recurso.tipoAcceso'],
+      });
+
+      if (!credencial) {
+        throw new NotFoundException('Credencial no encontrada');
+      }
+
+      const tipoAcceso = credencial.recurso.tipoAcceso.nombre;
+
+      // Validaciones según tipo de acceso
+      if (tipoAcceso === 'USERPASS') {
+        // Si se envía usuario o clave, ambos deben estar presentes
+        if (
+          (usuario !== undefined || clave !== undefined) &&
+          (!usuario || !clave)
+        ) {
+          throw new BadRequestException(
+            'Para recursos de tipo USERPASS, debe actualizar ambos campos: usuario y clave',
+          );
+        }
+      } else if (tipoAcceso === 'KEY') {
+        // No permitir actualizar usuario para KEY
+        if (usuario !== undefined) {
+          throw new BadRequestException(
+            'Para recursos de tipo KEY, no se puede actualizar el usuario',
+          );
+        }
+        // Clave es obligatoria si se envía
+        if (clave !== undefined && !clave) {
+          throw new BadRequestException(
+            'Para recursos de tipo KEY, la clave no puede estar vacía',
+          );
+        }
+      } else {
+        throw new BadRequestException('Tipo de acceso no válido');
+      }
+
+      // Preparar datos para actualizar
+      const updateData: any = {};
+
+      if (usuario !== undefined && tipoAcceso === 'USERPASS') {
+        updateData.usuario = usuario;
+      }
+
+      if (clave !== undefined) {
+        updateData.clave = clave;
+      }
+
+      if (rol_id !== undefined) {
+        const rolExists = await this.rolRepository.existsBy({
+          id: rol_id,
+        });
+
+        if (!rolExists) {
+          throw new NotFoundException('No existe un rol con ese id');
+        }
+
+        updateData.rol = { id: rol_id };
+      }
+
+      // Si no hay cambios, retornar la credencial actual
+      if (Object.keys(updateData).length === 0) {
+        return credencial;
+      }
+
+      // Aplicar actualización
+      await this.credencialRepository.update(id, updateData);
+      return await this.credencialRepository.findOne({
+        where: { id },
+        relations: ['recurso', 'rol'],
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 
-  update(id: number, updateCredencialDto: UpdateCredencialDto) {
-    return `This action updates a #${id} credencial`;
-  }
+  async remove(id: string) {
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID de la credencial no puede estar vacío',
+        );
 
-  remove(id: number) {
-    return `This action removes a #${id} credencial`;
+      const result = await this.credencialRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
+
+      if (result.affected === 0)
+        throw new NotFoundException('Credencial no encontrada');
+      return this.credencialRepository.findOneBy({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 }
