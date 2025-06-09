@@ -1,6 +1,5 @@
 import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
-import { Rol } from 'src/rol/entities/rol.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
@@ -49,8 +48,8 @@ export class Usuario {
   @Column({ type: 'varchar', length: 50, nullable: true })
   direccion?: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  estado_civil?: string;
+  // @Column({ type: 'varchar', length: 50, nullable: true })
+  // estado_civil?: string;
 
   @ManyToOne(
     () => DocumentoIdentidad,
