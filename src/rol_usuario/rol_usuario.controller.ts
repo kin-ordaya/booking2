@@ -19,16 +19,16 @@ export class RolUsuarioController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.rolUsuarioService.findOne(+id);
+    return this.rolUsuarioService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRolUsuarioDto: UpdateRolUsuarioDto) {
-    return this.rolUsuarioService.update(+id, updateRolUsuarioDto);
+    return this.rolUsuarioService.update(id, updateRolUsuarioDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.rolUsuarioService.remove(+id);
+    return this.rolUsuarioService.remove(id);
   }
 }

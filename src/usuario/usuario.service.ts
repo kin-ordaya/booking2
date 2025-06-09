@@ -8,11 +8,12 @@ import {
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 
 @Injectable()
 export class UsuarioService {
@@ -25,89 +26,102 @@ export class UsuarioService {
 
     @InjectRepository(Rol)
     private readonly rolRepository: Repository<Rol>,
+
+    @InjectRepository(RolUsuario)
+    private readonly rolUsuarioRepository: Repository<RolUsuario>,
+
+    //dataSource
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto) {
-    try {
-      const {
-        numero_documento,
-        correo_institucional,
-        telefono_institucional,
-        documento_identidad_id,
-        rol_id,
-      } = createUsuarioDto;
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const {
+          numero_documento,
+          correo_institucional,
+          telefono_institucional,
+          documento_identidad_id,
+          rol_id,
+        } = createUsuarioDto;
 
-      // Verificar documento_identidad
-      const documento_identidad =
-        await this.documentoIdentidadRepository.findOneBy({
-          id: documento_identidad_id,
-        });
-      if (!documento_identidad)
-        throw new NotFoundException(
-          'No existe un documento identidad con ese id',
+        // 1. Verificar documento_identidad
+        const documento_identidad = await transactionalEntityManager.findOneBy(
+          DocumentoIdentidad,
+          {
+            id: documento_identidad_id,
+          },
+        );
+        if (!documento_identidad) {
+          throw new NotFoundException('Documento de identidad no encontrado');
+        }
+
+        // 2. Verificar duplicados
+        const usuarioExistente = await transactionalEntityManager.findOne(
+          Usuario,
+          {
+            where: [
+              {
+                documento_identidad: { id: documento_identidad_id },
+                numero_documento,
+              },
+              ...(correo_institucional ? [{ correo_institucional }] : []),
+              ...(telefono_institucional ? [{ telefono_institucional }] : []),
+            ],
+          },
         );
 
-      // Verificar duplicados en una sola consulta
-      const usuarioExistente = await this.usuarioRepository.findOne({
-        where: [
+        if (usuarioExistente) {
+          if (usuarioExistente.numero_documento === numero_documento) {
+            throw new ConflictException(
+              'Ya existe un usuario con ese número de documento',
+            );
+          }
+          if (usuarioExistente.correo_institucional === correo_institucional) {
+            throw new ConflictException(
+              'Ya existe un usuario con ese correo institucional',
+            );
+          }
+          if (
+            usuarioExistente.telefono_institucional === telefono_institucional
+          ) {
+            throw new ConflictException(
+              'Ya existe un usuario con ese teléfono institucional',
+            );
+          }
+        }
+
+        // 3. Crear usuario
+        const usuario = transactionalEntityManager.create(Usuario, {
+          ...createUsuarioDto,
+          documento_identidad,
+        });
+        await transactionalEntityManager.save(usuario);
+
+        // 4. Verificar y asignar rol
+        const rolExists = await transactionalEntityManager.existsBy(Rol, {
+          id: rol_id,
+        });
+        if (!rolExists) throw new NotFoundException('Rol no encontrado');
+
+        const rolUsuarioExists = await transactionalEntityManager.existsBy(
+          RolUsuario,
           {
-            documento_identidad: { id: documento_identidad_id },
-            numero_documento,
+            usuario: { id: usuario.id },
+            rol: { id: rol_id },
           },
-          { correo_institucional },
-          { telefono_institucional },
-        ],
-      });
+        );
+        if (rolUsuarioExists)
+          throw new ConflictException('Rol ya asignado a usuario');
 
-      if (usuarioExistente) {
-        if (usuarioExistente.numero_documento === numero_documento) {
-          throw new ConflictException(
-            'Ya existe un usuario con ese número de documento',
-          );
-        }
-        if (usuarioExistente.correo_institucional === correo_institucional) {
-          throw new ConflictException(
-            'Ya existe un usuario con ese correo institucional',
-          );
-        }
-        if (
-          usuarioExistente.telefono_institucional === telefono_institucional
-        ) {
-          throw new ConflictException(
-            'Ya existe un usuario con ese teléfono institucional',
-          );
-        }
-      }
-      
-      
+        await transactionalEntityManager.save(RolUsuario, {
+          usuario: { id: usuario.id },
+          rol: { id: rol_id },
+        });
 
-      // Crear y guardar
-      const usuario = this.usuarioRepository.create({
-        ...createUsuarioDto,
-        documento_identidad,
-      });
-
-      // const rolExists = await this.rolRepository.existsBy({ id: rol_id });
-      // if (!rolExists)
-      //   throw new NotFoundException('No existe un rol con ese id');
-
-      // const rol = await this.rolRepository.create({
-      //   usuario:{ id: usuario.id },
-      //   rol: { id: rol_id },
-      // });
-
-      return await this.usuarioRepository.save(usuario);
-    } catch (error) {
-      if (
-        error instanceof ConflictException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error inesperado al crear el usuario',
-      );
-    }
+        return usuario;
+      },
+    );
   }
   // TODO: Hacer el listar usuario con rol_usuario
   async findAll(paginationDto: PaginationDto) {

@@ -110,6 +110,7 @@ export class CredencialService {
           'credencial.clave',
           'credencial.estado',
           'recurso.nombre',
+          'recurso.capacidad',
           'rol.nombre',
         ])
         .where('credencial.recurso.id = :recurso_id', { recurso_id });
