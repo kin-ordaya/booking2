@@ -93,7 +93,7 @@ export class UsuarioService {
       );
     }
   }
-
+  // TODO: Hacer el listar usuario con rol_usuario
   async findAll(paginationDto: PaginationDto) {
     try {
       const { page, limit, search } = paginationDto;

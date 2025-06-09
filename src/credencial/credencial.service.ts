@@ -41,54 +41,57 @@ export class CredencialService {
 
       if (!recursoExists)
         throw new NotFoundException('No existe un recurso con ese id');
-
       if (!rolExists)
         throw new NotFoundException('No existe un rol con ese id');
 
-      // Validación según tipo de acceso
       const tipoAcceso = recursoExists.tipoAcceso.nombre;
 
+      // Validación según tipo de acceso
       if (tipoAcceso === 'USERPASS') {
-        // Para USERPASS, ambos campos son obligatorios
         if (!usuario || !clave) {
           throw new BadRequestException(
             'Para recursos de tipo USERPASS, debe ingresar usuario y clave',
           );
         }
       } else if (tipoAcceso === 'KEY') {
-        // Para KEY, solo la clave es obligatoria
         if (!clave) {
           throw new BadRequestException(
             'Para recursos de tipo KEY, debe ingresar la clave',
           );
         }
-        // Limpiamos el usuario si fue enviado (opcional)
-        createCredencialDto.usuario = undefined;
       } else {
         throw new BadRequestException('Tipo de acceso no válido');
       }
 
-      const credencial = this.credencialRepository.create({
-        usuario,
+      // Construcción dinámica del objeto
+      const credencialData: any = {
         clave,
         recurso: { id: recurso_id },
         rol: { id: rol_id },
-      });
+      };
 
+      // Solo agregamos 'usuario' si es USERPASS
+      if (tipoAcceso === 'USERPASS') {
+        credencialData.usuario = usuario;
+      }
+
+      const credencial = this.credencialRepository.create(credencialData);
       return await this.credencialRepository.save(credencial);
     } catch (error) {
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
-      )
+      ) {
         throw error;
+      }
       throw new InternalServerErrorException('Error inesperado');
     }
   }
 
   async findAll(paginationCredencialDto: PaginationCredencialDto) {
     try {
-      const { page, limit, search, recurso_id, sort_state, rol_id } = paginationCredencialDto;
+      const { page, limit, search, recurso_id, sort_state, rol_id } =
+        paginationCredencialDto;
       const recursoExists = await this.recursoRepository.existsBy({
         id: recurso_id,
       });
@@ -120,7 +123,7 @@ export class CredencialService {
         query.orderBy('credencial.creacion', 'DESC');
       }
 
-      if(rol_id !== undefined) {
+      if (rol_id !== undefined) {
         query.andWhere('rol.id = :rol_id', {
           rol_id,
         });
