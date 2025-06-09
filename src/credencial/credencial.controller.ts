@@ -13,7 +13,6 @@ import { CredencialService } from './credencial.service';
 import { CreateCredencialDto } from './dto/create-credencial.dto';
 import { UpdateCredencialDto } from './dto/update-credencial.dto';
 import { PaginationCredencialDto } from './dto/pagination-credencial.dto';
-import { plainToClass } from 'class-transformer';
 import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('credencial')

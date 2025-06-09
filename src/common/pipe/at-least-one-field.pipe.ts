@@ -2,7 +2,11 @@ import { ArgumentMetadata, BadRequestException, PipeTransform } from "@nestjs/co
 
 export class AtLeastOneFieldPipe implements PipeTransform {
   transform(value: any, metadata: ArgumentMetadata) {
-    if (Object.keys(value).length === 0) {
+    const hasAtLeastOneDefinedValue = Object.values(value).some(
+      (val) => val !== undefined && val !== null && val !== ''
+    );
+
+    if (!hasAtLeastOneDefinedValue) {
       throw new BadRequestException('Debe proporcionar al menos un campo para actualizar');
     }
     return value;

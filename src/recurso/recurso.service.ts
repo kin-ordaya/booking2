@@ -14,6 +14,7 @@ import { Not, Repository } from 'typeorm';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
+import { PaginationRecursoDto } from './dto/pagination-recurso.dto';
 
 @Injectable()
 export class RecursoService {
@@ -89,9 +90,10 @@ export class RecursoService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationRecursoDto: PaginationRecursoDto) {
     try {
-      const { page, limit, search } = paginationDto;
+      const { sort_name, sort_state, page, limit, search } =
+        paginationRecursoDto;
       const query = this.recursoRepository
         .createQueryBuilder('recurso')
         .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
@@ -108,6 +110,16 @@ export class RecursoService {
           'tipoAcceso.id',
           'tipoAcceso.nombre',
         ]);
+
+      if (sort_name !== undefined) {
+        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+      }
+
+      if (sort_state !== undefined) {
+        query.andWhere('recurso.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
+      }
 
       if (search) {
         query.where(

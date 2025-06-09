@@ -19,16 +19,16 @@ export class DocumentoIdentidadController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.documentoIdentidadService.findOne(+id);
+    return this.documentoIdentidadService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDocumentoIdentidadDto: UpdateDocumentoIdentidadDto) {
-    return this.documentoIdentidadService.update(+id, updateDocumentoIdentidadDto);
+    return this.documentoIdentidadService.update(id, updateDocumentoIdentidadDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.documentoIdentidadService.remove(+id);
+    return this.documentoIdentidadService.remove(id);
   }
 }

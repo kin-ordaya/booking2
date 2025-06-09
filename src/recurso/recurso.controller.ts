@@ -1,4 +1,3 @@
-import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   Controller,
   Get,
@@ -14,6 +13,7 @@ import { RecursoService } from './recurso.service';
 import { CreateRecursoDto } from './dto/create-recurso.dto';
 import { UpdateRecursoDto } from './dto/update-recurso.dto';
 import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
+import { PaginationRecursoDto } from './dto/pagination-recurso.dto';
 
 @Controller('recurso')
 export class RecursoController {
@@ -25,8 +25,8 @@ export class RecursoController {
   }
 
   @Get()
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.recursoService.findAll(paginationDto);
+  findAll(@Query() paginationRecursoDto: PaginationRecursoDto) {
+    return this.recursoService.findAll(paginationRecursoDto);
   }
 
   @Get(':id')

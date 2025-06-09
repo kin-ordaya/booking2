@@ -12,6 +12,7 @@ import { CursoModalidadService } from './curso_modalidad.service';
 import { CreateCursoModalidadDto } from './dto/create-curso_modalidad.dto';
 import { UpdateCursoModalidadDto } from './dto/update-curso_modalidad.dto';
 import { PaginationCursoModalidadDto } from './dto/pagination-curso_modalidad.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('curso-modalidad')
 export class CursoModalidadController {
@@ -35,7 +36,7 @@ export class CursoModalidadController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateCursoModalidadDto: UpdateCursoModalidadDto,
+    @Body(new AtLeastOneFieldPipe()) updateCursoModalidadDto: UpdateCursoModalidadDto,
   ) {
     return this.cursoModalidadService.update(id, updateCursoModalidadDto);
   }
