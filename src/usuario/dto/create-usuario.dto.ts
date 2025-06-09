@@ -1,4 +1,10 @@
+import { Transform } from "class-transformer";
+import { IsNotEmpty, IsString } from "class-validator";
+
 export class CreateUsuarioDto {
+    @IsNotEmpty()
+    @IsString({ message: 'El campo nombres no puede estar vacío' })
+    @Transform(({ value }) => value?.toUpperCase().trim())
     nombres: string;
     apellidos: string;
     numero_documento: string;

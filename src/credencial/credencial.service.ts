@@ -88,7 +88,7 @@ export class CredencialService {
 
   async findAll(paginationCredencialDto: PaginationCredencialDto) {
     try {
-      const { page, limit, search, recurso_id } = paginationCredencialDto;
+      const { page, limit, search, recurso_id, sort_state, rol_id } = paginationCredencialDto;
       const recursoExists = await this.recursoRepository.existsBy({
         id: recurso_id,
       });
@@ -101,11 +101,30 @@ export class CredencialService {
         .select([
           'credencial.id',
           'credencial.usuario',
+          'credencial.creacion',
           'credencial.clave',
           'credencial.estado',
           'recurso.nombre',
           'rol.nombre',
         ]);
+
+      let orderApplied = false;
+      if (sort_state !== undefined) {
+        query.andWhere('credencial.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
+        orderApplied = true;
+      }
+
+      if (!orderApplied) {
+        query.orderBy('credencial.creacion', 'DESC');
+      }
+
+      if(rol_id !== undefined) {
+        query.andWhere('rol.id = :rol_id', {
+          rol_id,
+        });
+      }
 
       if (search) {
         query.where(
@@ -113,6 +132,7 @@ export class CredencialService {
           { search: `%${search}%` },
         );
       }
+
       const [results, count] = await query
         .skip((page - 1) * limit)
         .take(limit)

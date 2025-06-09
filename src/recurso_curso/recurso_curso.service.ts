@@ -82,15 +82,23 @@ export class RecursoCursoService {
         'recursoCurso.id',
         'recurso.id',
         'recurso.nombre',
+        'recurso.creacion',
         'recurso.cantidad_credenciales',
         'proveedor.nombre',
         'curso.id as curso_id',
         'curso.nombre as curso_nombre',
       ]);
 
+    let orderApplied = false;
+
     if (sort_name) {
       query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+      orderApplied = true;
     }
+    
+    if (!orderApplied) {
+        query.orderBy('recurso.creacion', 'DESC');
+      }
 
     if (sort_state) {
       query.andWhere('recursoCurso.estado = :estado', {

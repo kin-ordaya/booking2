@@ -71,20 +71,21 @@ export class CursoService {
         .select([
           'curso.id',
           'curso.nombre',
+          'curso.creacion',
           'curso.codigo',
           'curso.estado',
           'plan.nombre', 
         ]);
+      
+      let orderApplied = false;
 
       if (sort_name) {
-        switch (sort_name.toString()) {
-          case '1':
-            query.orderBy('curso.nombre', 'ASC');
-            break;
-          case '2':
-            query.orderBy('curso.nombre', 'DESC');
-            break;
-        }
+        query.orderBy('curso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+        orderApplied = true;
+      }
+
+      if (!orderApplied) {
+        query.orderBy('curso.creacion', 'DESC');
       }
 
       if (sort_state) {

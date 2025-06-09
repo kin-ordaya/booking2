@@ -104,6 +104,7 @@ export class RecursoService {
           'recurso.nombre',
           'recurso.cantidad_credenciales',
           'recurso.link_declaracion',
+          'recurso.creacion',
           'recurso.estado',
           'tipoRecurso.nombre',
           'proveedor.nombre',
@@ -111,8 +112,15 @@ export class RecursoService {
           'tipoAcceso.nombre',
         ]);
 
+      let orderApplied = false;
+
       if (sort_name !== undefined) {
         query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+        orderApplied = true;
+      }
+
+      if (!orderApplied) {
+        query.orderBy('recurso.creacion', 'DESC');
       }
 
       if (sort_state !== undefined) {

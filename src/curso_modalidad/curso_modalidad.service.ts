@@ -84,14 +84,22 @@ export class CursoModalidadService {
           'curso.id',
           'curso.codigo',
           'curso.nombre',
+          'curso.creacion',
           'plan.id',
           'plan.nombre',
           'modalidad.id',
           'modalidad.nombre',
         ]);
+      
+      let orderApplied = false;
 
       if (sort_name) {
         query.orderBy('curso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+        orderApplied = true;
+      }
+
+      if (!orderApplied) {
+        query.orderBy('curso.creacion', 'DESC');
       }
 
       if (sort_state) {
