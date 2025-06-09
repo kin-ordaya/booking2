@@ -92,11 +92,13 @@ export class CredencialService {
     try {
       const { page, limit, search, recurso_id, sort_state, rol_id } =
         paginationCredencialDto;
+
       const recursoExists = await this.recursoRepository.existsBy({
         id: recurso_id,
       });
       if (!recursoExists)
         throw new NotFoundException('No existe un recurso con ese id');
+
       const query = this.credencialRepository
         .createQueryBuilder('credencial')
         .leftJoinAndSelect('credencial.recurso', 'recurso')
@@ -109,7 +111,8 @@ export class CredencialService {
           'credencial.estado',
           'recurso.nombre',
           'rol.nombre',
-        ]);
+        ])
+        .where('credencial.recurso.id = :recurso_id', { recurso_id });
 
       let orderApplied = false;
       if (sort_state !== undefined) {

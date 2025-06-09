@@ -12,6 +12,7 @@ import { Not, Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
+import { Rol } from 'src/rol/entities/rol.entity';
 
 @Injectable()
 export class UsuarioService {
@@ -21,6 +22,9 @@ export class UsuarioService {
 
     @InjectRepository(DocumentoIdentidad)
     private readonly documentoIdentidadRepository: Repository<DocumentoIdentidad>,
+
+    @InjectRepository(Rol)
+    private readonly rolRepository: Repository<Rol>,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto) {
@@ -30,6 +34,7 @@ export class UsuarioService {
         correo_institucional,
         telefono_institucional,
         documento_identidad_id,
+        rol_id,
       } = createUsuarioDto;
 
       // Verificar documento_identidad
@@ -73,12 +78,23 @@ export class UsuarioService {
           );
         }
       }
+      
+      
 
       // Crear y guardar
       const usuario = this.usuarioRepository.create({
         ...createUsuarioDto,
         documento_identidad,
       });
+
+      // const rolExists = await this.rolRepository.existsBy({ id: rol_id });
+      // if (!rolExists)
+      //   throw new NotFoundException('No existe un rol con ese id');
+
+      // const rol = await this.rolRepository.create({
+      //   usuario:{ id: usuario.id },
+      //   rol: { id: rol_id },
+      // });
 
       return await this.usuarioRepository.save(usuario);
     } catch (error) {
