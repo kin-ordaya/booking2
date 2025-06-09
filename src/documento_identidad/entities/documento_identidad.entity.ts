@@ -15,6 +15,9 @@ export class DocumentoIdentidad {
   @CreateDateColumn()
   creacion: Date;
 
+  @Column({ type: 'int', default: 1 })
+  estado: number;
+
   @Column({ type: 'varchar', length: 100 })
   nombre: string;
 

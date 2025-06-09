@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { DocumentoIdentidadService } from './documento_identidad.service';
 import { CreateDocumentoIdentidadDto } from './dto/create-documento_identidad.dto';
 import { UpdateDocumentoIdentidadDto } from './dto/update-documento_identidad.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('documento-identidad')
 export class DocumentoIdentidadController {
@@ -18,17 +19,17 @@ export class DocumentoIdentidadController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.documentoIdentidadService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDocumentoIdentidadDto: UpdateDocumentoIdentidadDto) {
+  update(@Param('id', new ParseUUIDPipe()) id: string, @Body(new AtLeastOneFieldPipe()) updateDocumentoIdentidadDto: UpdateDocumentoIdentidadDto) {
     return this.documentoIdentidadService.update(id, updateDocumentoIdentidadDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.documentoIdentidadService.remove(id);
   }
 }
