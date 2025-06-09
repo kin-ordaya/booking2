@@ -1,18 +1,15 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateCredencialDto } from './create-credencial.dto';
-import { Exclude } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateCredencialDto {
   @IsOptional()
   @IsString({ message: 'El campo usuario debe ser de tipo string' })
   usuario?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString({ message: 'El campo clave debe ser de tipo string' })
-  clave: string;
+  clave?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsUUID('4', { message: 'El campo rol_id debe ser de tipo uuid' })
-  rol_id: string;
+  rol_id?: string;
 }

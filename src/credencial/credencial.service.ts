@@ -153,7 +153,7 @@ export class CredencialService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
-  //TODO Testing
+
   async update(id: string, updateCredencialDto: UpdateCredencialDto) {
     try {
       const { usuario, clave, rol_id } = updateCredencialDto;
@@ -176,32 +176,10 @@ export class CredencialService {
 
       const tipoAcceso = credencial.recurso.tipoAcceso.nombre;
 
-      // Validaciones según tipo de acceso
-      if (tipoAcceso === 'USERPASS') {
-        // Si se envía usuario o clave, ambos deben estar presentes
-        if (
-          (usuario !== undefined || clave !== undefined) &&
-          (!usuario || !clave)
-        ) {
-          throw new BadRequestException(
-            'Para recursos de tipo USERPASS, debe actualizar ambos campos: usuario y clave',
-          );
-        }
-      } else if (tipoAcceso === 'KEY') {
-        // No permitir actualizar usuario para KEY
+      if (tipoAcceso === 'KEY') {
         if (usuario !== undefined) {
-          throw new BadRequestException(
-            'Para recursos de tipo KEY, no se puede actualizar el usuario',
-          );
+          delete updateCredencialDto.usuario;
         }
-        // Clave es obligatoria si se envía
-        if (clave !== undefined && !clave) {
-          throw new BadRequestException(
-            'Para recursos de tipo KEY, la clave no puede estar vacía',
-          );
-        }
-      } else {
-        throw new BadRequestException('Tipo de acceso no válido');
       }
 
       // Preparar datos para actualizar

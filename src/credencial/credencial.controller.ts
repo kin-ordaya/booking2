@@ -7,12 +7,14 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CredencialService } from './credencial.service';
 import { CreateCredencialDto } from './dto/create-credencial.dto';
 import { UpdateCredencialDto } from './dto/update-credencial.dto';
 import { PaginationCredencialDto } from './dto/pagination-credencial.dto';
 import { plainToClass } from 'class-transformer';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('credencial')
 export class CredencialController {
@@ -29,23 +31,20 @@ export class CredencialController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credencialService.findOne(id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
-    @Body() updateCredencialDto: UpdateCredencialDto,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe()) updateCredencialDto: UpdateCredencialDto,
   ) {
-    const updateDto = plainToClass(UpdateCredencialDto, updateCredencialDto, {
-      excludeExtraneousValues: true,
-    });
-    return this.credencialService.update(id, updateDto);
+    return this.credencialService.update(id, updateCredencialDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credencialService.remove(id);
   }
 }
