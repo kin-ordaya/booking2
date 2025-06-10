@@ -123,7 +123,7 @@ export class UsuarioService {
       },
     );
   }
-  // TODO: Hacer el listar usuario con rol_usuario
+
   async findAll(paginationDto: PaginationDto) {
     try {
       const { page, limit, search } = paginationDto;
@@ -153,24 +153,9 @@ export class UsuarioService {
         .take(limit)
         .getManyAndCount();
 
-      // Paso 2: Obtener roles para los usuarios encontrados
-      const usuariosConRoles = await Promise.all(
-        usuarios.map(async (usuario) => {
-          const rolesUsuario = await this.rolUsuarioRepository.find({
-            where: { usuario: { id: usuario.id } },
-            relations: ['rol'],
-            select: ['rol'],
-          });
-
-          return {
-            ...usuario,
-            roles: rolesUsuario.map((ru) => ru.rol),
-          };
-        }),
-      );
 
       return {
-        results: usuariosConRoles,
+        results: usuarios,
         meta: {
           count,
           page,
@@ -191,18 +176,7 @@ export class UsuarioService {
         throw new BadRequestException('El ID del usuario no puede estar vacío');
       const usuario = await this.usuarioRepository.findOneBy({ id });
       if (!usuario) throw new NotFoundException('Usuario no encontrado');
-
-      const roles = await this.rolUsuarioRepository.find({
-        where: { usuario: { id: usuario.id } },
-        relations: ['rol'],
-        select: ['rol'],
-      });
-
-      return {
-        ...usuario,
-        roles: roles.map((ru) => ru.rol),
-      };
-      
+      return usuario;
     } catch (error) {
       if (
         error instanceof NotFoundException ||

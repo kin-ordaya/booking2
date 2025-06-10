@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
-import { PaginationUsuarioDto } from './dto/pagitacion-usuario.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -14,8 +14,8 @@ export class UsuarioController {
   }
 
   @Get()
-  findAll(@Query() paginationUsuarioDto: PaginationUsuarioDto) {
-    return this.usuarioService.findAll(paginationUsuarioDto);
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.usuarioService.findAll(paginationDto);
   }
 
   @Get(':id')
