@@ -35,93 +35,100 @@ export class UsuarioService {
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto) {
-    return await this.dataSource.transaction(
-      async (transactionalEntityManager) => {
-        const {
-          numero_documento,
-          correo_institucional,
-          telefono_institucional,
-          documento_identidad_id,
-          rol_id,
-        } = createUsuarioDto;
+    try {
+      return await this.dataSource.transaction(
+        async (transactionalEntityManager) => {
+          const {
+            numero_documento,
+            correo_institucional,
+            telefono_institucional,
+            documento_identidad_id,
+            rol_id,
+          } = createUsuarioDto;
 
-        // 1. Verificar documento_identidad
-        const documento_identidad = await transactionalEntityManager.findOneBy(
-          DocumentoIdentidad,
-          {
-            id: documento_identidad_id,
-          },
-        );
-        if (!documento_identidad) {
-          throw new NotFoundException('Documento de identidad no encontrado');
-        }
-
-        // 2. Verificar duplicados
-        const usuarioExistente = await transactionalEntityManager.findOne(
-          Usuario,
-          {
-            where: [
-              {
-                documento_identidad: { id: documento_identidad_id },
-                numero_documento,
-              },
-              ...(correo_institucional ? [{ correo_institucional }] : []),
-              ...(telefono_institucional ? [{ telefono_institucional }] : []),
-            ],
-          },
-        );
-
-        if (usuarioExistente) {
-          if (usuarioExistente.numero_documento === numero_documento) {
-            throw new ConflictException(
-              'Ya existe un usuario con ese número de documento',
-            );
+          // 1. Verificar documento_identidad
+          const documento_identidad =
+            await transactionalEntityManager.findOneBy(DocumentoIdentidad, {
+              id: documento_identidad_id,
+            });
+          if (!documento_identidad) {
+            throw new NotFoundException('Documento de identidad no encontrado');
           }
-          if (usuarioExistente.correo_institucional === correo_institucional) {
-            throw new ConflictException(
-              'Ya existe un usuario con ese correo institucional',
-            );
+
+          // 2. Verificar duplicados
+          const usuarioExistente = await transactionalEntityManager.findOne(
+            Usuario,
+            {
+              where: [
+                {
+                  documento_identidad: { id: documento_identidad_id },
+                  numero_documento,
+                },
+                ...(correo_institucional ? [{ correo_institucional }] : []),
+                ...(telefono_institucional ? [{ telefono_institucional }] : []),
+              ],
+            },
+          );
+
+          if (usuarioExistente) {
+            if (usuarioExistente.numero_documento === numero_documento) {
+              throw new ConflictException(
+                'Ya existe un usuario con ese número de documento',
+              );
+            }
+            if (
+              usuarioExistente.correo_institucional === correo_institucional
+            ) {
+              throw new ConflictException(
+                'Ya existe un usuario con ese correo institucional',
+              );
+            }
+            if (
+              usuarioExistente.telefono_institucional === telefono_institucional
+            ) {
+              throw new ConflictException(
+                'Ya existe un usuario con ese teléfono institucional',
+              );
+            }
           }
-          if (
-            usuarioExistente.telefono_institucional === telefono_institucional
-          ) {
-            throw new ConflictException(
-              'Ya existe un usuario con ese teléfono institucional',
-            );
-          }
-        }
 
-        // 3. Crear usuario
-        const usuario = transactionalEntityManager.create(Usuario, {
-          ...createUsuarioDto,
-          documento_identidad,
-        });
-        await transactionalEntityManager.save(usuario);
+          // 3. Crear usuario
+          const usuario = transactionalEntityManager.create(Usuario, {
+            ...createUsuarioDto,
+            documento_identidad,
+          });
+          await transactionalEntityManager.save(usuario);
 
-        // 4. Verificar y asignar rol
-        const rolExists = await transactionalEntityManager.existsBy(Rol, {
-          id: rol_id,
-        });
-        if (!rolExists) throw new NotFoundException('Rol no encontrado');
+          // 4. Verificar y asignar rol
+          const rolExists = await transactionalEntityManager.existsBy(Rol, {
+            id: rol_id,
+          });
+          if (!rolExists) throw new NotFoundException('Rol no encontrado');
 
-        const rolUsuarioExists = await transactionalEntityManager.existsBy(
-          RolUsuario,
-          {
+          const rolUsuarioExists = await transactionalEntityManager.existsBy(
+            RolUsuario,
+            {
+              usuario: { id: usuario.id },
+              rol: { id: rol_id },
+            },
+          );
+          if (rolUsuarioExists)
+            throw new ConflictException('Rol ya asignado a usuario');
+
+          await transactionalEntityManager.save(RolUsuario, {
             usuario: { id: usuario.id },
             rol: { id: rol_id },
-          },
-        );
-        if (rolUsuarioExists)
-          throw new ConflictException('Rol ya asignado a usuario');
+          });
 
-        await transactionalEntityManager.save(RolUsuario, {
-          usuario: { id: usuario.id },
-          rol: { id: rol_id },
-        });
-
-        return usuario;
-      },
-    );
+          return usuario;
+        },
+      );
+    } catch (error) {
+      if (error instanceof ConflictException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -152,7 +159,6 @@ export class UsuarioService {
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
-
 
       return {
         results: usuarios,

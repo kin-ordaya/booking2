@@ -1,4 +1,7 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateRolUsuarioDto } from './create-rol_usuario.dto';
+import { IsNotEmpty, IsOptional, IsUUID } from "class-validator";
 
-export class UpdateRolUsuarioDto extends PartialType(CreateRolUsuarioDto) {}
+export class UpdateRolUsuarioDto {
+    @IsNotEmpty()
+    @IsUUID('4', { message: 'El campo usuario_id debe ser de tipo uuid' })
+    rol_id: string;
+}
