@@ -127,6 +127,8 @@ export class UsuarioService {
   async findAll(paginationDto: PaginationDto) {
     try {
       const { page, limit, search } = paginationDto;
+
+      // Paso 1: Obtener usuarios paginados
       const query = this.usuarioRepository
         .createQueryBuilder('usuario')
         .leftJoinAndSelect('usuario.documento_identidad', 'documento_identidad')
@@ -136,11 +138,6 @@ export class UsuarioService {
           'usuario.apellidos',
           'usuario.numero_documento',
           'usuario.correo_institucional',
-          'usuario.correo_personal',
-          'usuario.telefono_institucional',
-          'usuario.telefono_personal',
-          'usuario.sexo',
-          'usuario.direccion',
           'documento_identidad.nombre',
         ]);
 
@@ -151,13 +148,29 @@ export class UsuarioService {
         );
       }
 
-      const [results, count] = await query
+      const [usuarios, count] = await query
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
 
+      // Paso 2: Obtener roles para los usuarios encontrados
+      const usuariosConRoles = await Promise.all(
+        usuarios.map(async (usuario) => {
+          const rolesUsuario = await this.rolUsuarioRepository.find({
+            where: { usuario: { id: usuario.id } },
+            relations: ['rol'],
+            select: ['rol'],
+          });
+
+          return {
+            ...usuario,
+            roles: rolesUsuario.map((ru) => ru.rol),
+          };
+        }),
+      );
+
       return {
-        results,
+        results: usuariosConRoles,
         meta: {
           count,
           page,
@@ -166,9 +179,6 @@ export class UsuarioService {
         },
       };
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       throw new InternalServerErrorException('Error inesperado', {
         cause: error,
       });
@@ -181,7 +191,18 @@ export class UsuarioService {
         throw new BadRequestException('El ID del usuario no puede estar vacío');
       const usuario = await this.usuarioRepository.findOneBy({ id });
       if (!usuario) throw new NotFoundException('Usuario no encontrado');
-      return usuario;
+
+      const roles = await this.rolUsuarioRepository.find({
+        where: { usuario: { id: usuario.id } },
+        relations: ['rol'],
+        select: ['rol'],
+      });
+
+      return {
+        ...usuario,
+        roles: roles.map((ru) => ru.rol),
+      };
+      
     } catch (error) {
       if (
         error instanceof NotFoundException ||
