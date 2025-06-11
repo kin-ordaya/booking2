@@ -19,16 +19,16 @@ export class ResponsableController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.responsableService.findOne(+id);
+    return this.responsableService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateResponsableDto: UpdateResponsableDto) {
-    return this.responsableService.update(+id, updateResponsableDto);
+    return this.responsableService.update(id, updateResponsableDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.responsableService.remove(+id);
+    return this.responsableService.remove(id);
   }
 }

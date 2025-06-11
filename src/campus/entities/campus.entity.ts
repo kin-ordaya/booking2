@@ -1,4 +1,5 @@
 import { Aula } from 'src/aula/entities/aula.entity';
+import { Responsable } from 'src/responsable/entities/responsable.entity';
 import {
   Column,
   CreateDateColumn,
@@ -26,4 +27,7 @@ export class Campus {
 
   @OneToMany(() => Aula, (aula) => aula.campus)
   aula: Aula[];
+
+  @OneToMany(()=> Responsable, (responsable) => responsable.campus)
+  responsable: Responsable[];
 }

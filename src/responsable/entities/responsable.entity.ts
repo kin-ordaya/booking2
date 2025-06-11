@@ -1,3 +1,4 @@
+import { Campus } from 'src/campus/entities/campus.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
@@ -37,6 +38,10 @@ export class Responsable {
   @ManyToOne(() => Clase, (clase) => clase.responsable, { nullable: true })
   @JoinColumn({ name: 'clase_id' })
   clase?: Clase;
+
+  @ManyToOne(()=> Campus, (campus) => campus.responsable, { nullable: true })
+  @JoinColumn({ name: 'campus_id' })
+  campus?: Campus;
 
   @ManyToOne(
     () => CursoModalidad,
