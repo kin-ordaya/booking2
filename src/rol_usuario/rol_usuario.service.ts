@@ -81,6 +81,7 @@ export class RolUsuarioService {
         .select([
           'rolUsuario.id',
           'rolUsuario.asignacion',
+          'rolUsuario.estado',
           'usuario.id',
           'usuario.nombres',
           'usuario.apellidos',
