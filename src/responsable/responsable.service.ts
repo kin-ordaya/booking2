@@ -36,21 +36,53 @@ export class ResponsableService {
     @InjectRepository(Campus)
     private readonly campusRepository: Repository<Campus>,
   ) {}
+
   //TODO: Analizar la asignacion
   async create(createResponsableDto: CreateResponsableDto) {
     try {
-      const { rol_usuario_id, recurso_id, clase_id, curso_modalidad_id } =
-        createResponsableDto;
+      const {
+        rol_usuario_id,
+        recurso_id,
+        clase_id,
+        curso_modalidad_id,
+        campus_id,
+      } = createResponsableDto;
 
       // 1. Validar que solo se envíe un campo opcional
-      const optionalFields = [recurso_id, clase_id, curso_modalidad_id].filter(
-        Boolean,
-      );
+      const optionalFields = [
+        recurso_id,
+        clase_id,
+        curso_modalidad_id,
+        campus_id,
+      ].filter(Boolean);
       if (optionalFields.length !== 1) {
         throw new BadRequestException(
-          'Debe proporcionarse exactamente uno de los siguientes campos: recurso_id, clase_id o curso_modalidad_id',
+          'Debe proporcionarse exactamente uno de los siguientes campos: recurso_id, clase_id, curso_modalidad_id o campus_id',
         );
       }
+
+      const rolUsuario = await this.rolUsuarioRepository.findOne({
+        where: { id: rol_usuario_id },
+        relations: ['rol']
+      });
+
+      if (!rolUsuario) {
+        throw new NotFoundException('No existe un rolUsuario con ese id');
+      }
+
+      const rolID = rolUsuario.rol.id;
+
+      // Definir qué roles pueden asignar cada recurso
+      const permisosPorRol = {
+        //ADMIN
+        'cd206eee-6ee5-47f0-868f-5dac3e774a99': ['recurso'],
+        //DOCENTE
+        '17f5c3db-62eb-49d4-ab62-181a45bb6ab6': ['clase', 'cursoModalidad'],
+        //ESTUDIANTE
+        '25e91d33-bbdd-4995-a81c-53397423708f': ['campus'],
+        // GENERAL
+        '555c3522-50ba-424d-bbde-5b7e29b872b7':['recurso', 'clase', 'cursoModalidad', 'campus']
+      };
 
       // 2. Definir tipo e ID del recurso opcional
       let resourceType: string;
@@ -71,6 +103,10 @@ export class ResponsableService {
         );
         resourceType = 'cursoModalidad';
         resourceId = curso_modalidad_id;
+      } else if (campus_id) {
+        checks.push(this.campusRepository.existsBy({ id: campus_id }));
+        resourceType = 'campus';
+        resourceId = campus_id;
       } else {
         // Esto nunca debería ocurrir gracias a la validación anterior
         throw new BadRequestException(
@@ -102,6 +138,7 @@ export class ResponsableService {
         ...(curso_modalidad_id && {
           cursoModalidad: { id: curso_modalidad_id },
         }),
+        ...(campus_id && { campus: { id: campus_id } }),
       });
 
       return await this.responsableRepository.save(responsable);

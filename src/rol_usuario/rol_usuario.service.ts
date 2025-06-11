@@ -80,6 +80,7 @@ export class RolUsuarioService {
         .leftJoinAndSelect('rolUsuario.rol', 'rol')
         .select([
           'rolUsuario.id',
+          'rolUsuario.asignacion',
           'usuario.id',
           'usuario.nombres',
           'usuario.apellidos',

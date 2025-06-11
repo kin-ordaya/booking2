@@ -1,6 +1,5 @@
 import { IsNotEmpty, IsOptional, IsUUID, ValidateIf } from 'class-validator';
 
-
 export class CreateResponsableDto {
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo rol_usuario_id debe ser de tipo uuid' })
@@ -12,11 +11,16 @@ export class CreateResponsableDto {
 
   @IsOptional()
   @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
-  @ValidateIf((o) => !o.recurso_id && !o.curso_modalidad_id)
+  @ValidateIf((o) => !o.recurso_id && !o.curso_modalidad_id && !o.campus_id)
   clase_id?: string;
 
   @IsOptional()
   @IsUUID('4', { message: 'El campo curso_modalidad_id debe ser de tipo uuid' })
-  @ValidateIf((o) => !o.recurso_id && !o.clase_id)
+  @ValidateIf((o) => !o.recurso_id && !o.clase_id && !o.campus_id)
   curso_modalidad_id?: string;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'El campo campus_id debe ser de tipo uuid' })
+  @ValidateIf((o) => !o.recurso_id && !o.clase_id && !o.curso_modalidad_id)
+  campus_id?: string;
 }
