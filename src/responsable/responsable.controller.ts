@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ResponsableService } from './responsable.service';
 import { CreateResponsableDto } from './dto/create-responsable.dto';
 import { UpdateResponsableDto } from './dto/update-responsable.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('responsable')
 export class ResponsableController {
@@ -13,8 +23,8 @@ export class ResponsableController {
   }
 
   @Get()
-  findAll() {
-    return this.responsableService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.responsableService.findAll(paginationDto);
   }
 
   @Get(':id')
@@ -23,7 +33,10 @@ export class ResponsableController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateResponsableDto: UpdateResponsableDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateResponsableDto: UpdateResponsableDto,
+  ) {
     return this.responsableService.update(id, updateResponsableDto);
   }
 

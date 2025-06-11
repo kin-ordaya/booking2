@@ -67,8 +67,9 @@ export class RolUsuarioService {
   async findAll(paginationRolUsuarioDto: PaginationRolUsuarioDto) {
     try {
       const {
-        page = 1,
-        limit = 10,
+        page,
+        limit,
+        search,
         sort_name,
         sort_state,
         rol_id,
@@ -112,6 +113,13 @@ export class RolUsuarioService {
           throw new NotFoundException('No existe un rol con ese id');
         }
         query.andWhere('rol.id = :rol_id', { rol_id });
+      }
+
+      if (search) {
+        query.where(
+          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR UPPER(usuario.numero_documento) LIKE UPPER(:search)',
+          { search: `%${search}%` },
+        );
       }
 
       const [results, count] = await query

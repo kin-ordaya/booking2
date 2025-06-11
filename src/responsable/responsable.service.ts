@@ -1,5 +1,7 @@
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -55,6 +57,7 @@ export class ResponsableService {
         curso_modalidad_id,
         campus_id,
       ].filter(Boolean);
+
       if (optionalFields.length !== 1) {
         throw new BadRequestException(
           'Debe proporcionarse exactamente uno de los siguientes campos: recurso_id, clase_id, curso_modalidad_id o campus_id',
@@ -63,7 +66,7 @@ export class ResponsableService {
 
       const rolUsuario = await this.rolUsuarioRepository.findOne({
         where: { id: rol_usuario_id },
-        relations: ['rol']
+        relations: ['rol'],
       });
 
       if (!rolUsuario) {
@@ -71,17 +74,23 @@ export class ResponsableService {
       }
 
       const rolID = rolUsuario.rol.id;
+      const rolNombre = rolUsuario.rol.nombre;
 
       // Definir qué roles pueden asignar cada recurso
       const permisosPorRol = {
         //ADMIN
         'cd206eee-6ee5-47f0-868f-5dac3e774a99': ['recurso'],
         //DOCENTE
-        '17f5c3db-62eb-49d4-ab62-181a45bb6ab6': ['clase', 'cursoModalidad'],
+        '17f5c3db-62eb-49d4-ab62-181a45bb6ab6': [
+          'clase',
+          'cursoModalidad',
+          'campus',
+          'recurso',
+        ],
         //ESTUDIANTE
-        '25e91d33-bbdd-4995-a81c-53397423708f': ['campus'],
+        '25e91d33-bbdd-4995-a81c-53397423708f': [],
         // GENERAL
-        '555c3522-50ba-424d-bbde-5b7e29b872b7':['recurso', 'clase', 'cursoModalidad', 'campus']
+        '555c3522-50ba-424d-bbde-5b7e29b872b7': ['recurso', 'campus'],
       };
 
       // 2. Definir tipo e ID del recurso opcional
@@ -91,20 +100,32 @@ export class ResponsableService {
 
       if (recurso_id) {
         checks.push(this.recursoRepository.existsBy({ id: recurso_id }));
+        if(!permisosPorRol[rolID]?.includes('recurso')){
+          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para recurso`);
+        }
         resourceType = 'recurso';
         resourceId = recurso_id;
       } else if (clase_id) {
         checks.push(this.claseRepository.existsBy({ id: clase_id }));
+        if(!permisosPorRol[rolID]?.includes('clase')){
+          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para clase`);
+        }
         resourceType = 'clase';
         resourceId = clase_id;
       } else if (curso_modalidad_id) {
         checks.push(
           this.cursoModalidadRepository.existsBy({ id: curso_modalidad_id }),
         );
+        if(!permisosPorRol[rolID]?.includes('cursoModalidad')){
+          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para cursoModalidad`);
+        }
         resourceType = 'cursoModalidad';
         resourceId = curso_modalidad_id;
       } else if (campus_id) {
         checks.push(this.campusRepository.existsBy({ id: campus_id }));
+          if(!permisosPorRol[rolID]?.includes('campus')){
+          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para campus`);
+        }
         resourceType = 'campus';
         resourceId = campus_id;
       } else {
@@ -155,8 +176,34 @@ export class ResponsableService {
     }
   }
 
-  async findAll() {
-    return `This action returns all responsable`;
+  async findAll(paginationDto: PaginationDto) {
+    try {
+      const { page, limit, search } = paginationDto;
+      
+      // Paso 1: Obtener usuarios paginados
+      const query = this.responsableRepository
+        .createQueryBuilder('responsable')
+        .leftJoinAndSelect('responsable.rolUsuario', 'rolUsuario')
+        .leftJoinAndSelect('rolUsuario.usuario', 'usuario')
+        .select([
+          'responsable.id',
+          'responsable.estado',
+          'usuario.id',
+          'usuario.estado',
+          'usuario.nombres',
+          'usuario.apellidos',
+          'usuario.numero_documento',
+          'usuario.correo_institucional',
+          'rolUsuario.id',
+          'rolUsuario.asignacion',
+          'rolUsuario.estado',
+          'rol.id',
+          'rol.nombre',
+        ]);
+      
+    } catch (error) {
+      
+    }
   }
 
   async findOne(id: string) {
