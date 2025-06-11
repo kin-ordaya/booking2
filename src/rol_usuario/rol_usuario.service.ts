@@ -83,9 +83,11 @@ export class RolUsuarioService {
           'rolUsuario.asignacion',
           'rolUsuario.estado',
           'usuario.id',
+          'usuario.estado',
           'usuario.nombres',
           'usuario.apellidos',
           'usuario.numero_documento',
+          'usuario.correo_institucional',
           'rol.id',
           'rol.nombre',
         ]);
