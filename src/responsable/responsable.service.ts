@@ -100,15 +100,19 @@ export class ResponsableService {
 
       if (recurso_id) {
         checks.push(this.recursoRepository.existsBy({ id: recurso_id }));
-        if(!permisosPorRol[rolID]?.includes('recurso')){
-          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para recurso`);
+        if (!permisosPorRol[rolID]?.includes('recurso')) {
+          throw new ForbiddenException(
+            `El rol ${rolNombre} no tiene permiso para recurso`,
+          );
         }
         resourceType = 'recurso';
         resourceId = recurso_id;
       } else if (clase_id) {
         checks.push(this.claseRepository.existsBy({ id: clase_id }));
-        if(!permisosPorRol[rolID]?.includes('clase')){
-          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para clase`);
+        if (!permisosPorRol[rolID]?.includes('clase')) {
+          throw new ForbiddenException(
+            `El rol ${rolNombre} no tiene permiso para clase`,
+          );
         }
         resourceType = 'clase';
         resourceId = clase_id;
@@ -116,15 +120,19 @@ export class ResponsableService {
         checks.push(
           this.cursoModalidadRepository.existsBy({ id: curso_modalidad_id }),
         );
-        if(!permisosPorRol[rolID]?.includes('cursoModalidad')){
-          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para cursoModalidad`);
+        if (!permisosPorRol[rolID]?.includes('cursoModalidad')) {
+          throw new ForbiddenException(
+            `El rol ${rolNombre} no tiene permiso para cursoModalidad`,
+          );
         }
         resourceType = 'cursoModalidad';
         resourceId = curso_modalidad_id;
       } else if (campus_id) {
         checks.push(this.campusRepository.existsBy({ id: campus_id }));
-          if(!permisosPorRol[rolID]?.includes('campus')){
-          throw new ForbiddenException(`El rol ${rolNombre} no tiene permiso para campus`);
+        if (!permisosPorRol[rolID]?.includes('campus')) {
+          throw new ForbiddenException(
+            `El rol ${rolNombre} no tiene permiso para campus`,
+          );
         }
         resourceType = 'campus';
         resourceId = campus_id;
@@ -151,7 +159,33 @@ export class ResponsableService {
         );
       }
 
-      // 5. Crear y guardar
+      // 5. Verificar si ya existe una relación similar
+      const whereClause = {
+        rolUsuario: { id: rol_usuario_id },
+      };
+
+      // Agregar el recurso específico al whereClause
+      if (recurso_id) {
+        whereClause['recurso'] = { id: recurso_id };
+      } else if (clase_id) {
+        whereClause['clase'] = { id: clase_id };
+      } else if (curso_modalidad_id) {
+        whereClause['cursoModalidad'] = { id: curso_modalidad_id };
+      } else if (campus_id) {
+        whereClause['campus'] = { id: campus_id };
+      }
+
+      const existingResponsable = await this.responsableRepository.findOne({
+        where: whereClause,
+      });
+
+      if (existingResponsable) {
+        throw new BadRequestException(
+          'Ya existe un responsable con esta combinación de rol y recurso',
+        );
+      }
+
+      // 6. Crear y guardar
       const responsable = this.responsableRepository.create({
         rolUsuario: { id: rol_usuario_id },
         ...(recurso_id && { recurso: { id: recurso_id } }),
@@ -166,7 +200,8 @@ export class ResponsableService {
     } catch (error) {
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
       ) {
         throw error;
       }
@@ -179,12 +214,13 @@ export class ResponsableService {
   async findAll(paginationDto: PaginationDto) {
     try {
       const { page, limit, search } = paginationDto;
-      
+
       // Paso 1: Obtener usuarios paginados
       const query = this.responsableRepository
         .createQueryBuilder('responsable')
         .leftJoinAndSelect('responsable.rolUsuario', 'rolUsuario')
         .leftJoinAndSelect('rolUsuario.usuario', 'usuario')
+        .leftJoinAndSelect('rolUsuario.rol', 'rol')
         .select([
           'responsable.id',
           'responsable.estado',
@@ -200,21 +236,111 @@ export class ResponsableService {
           'rol.id',
           'rol.nombre',
         ]);
-      
+
+      if (search) {
+        query.where(
+          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR UPPER(usuario.numero_documento) LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      const [results, count] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return {
+        results,
+        meta: {
+          count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
     } catch (error) {
-      
+      throw new InternalServerErrorException('Error inesperado', {
+        cause: error,
+      });
     }
   }
 
   async findOne(id: string) {
-    return `This action returns a #${id} responsable`;
+    try {
+      if (!id) {
+        throw new BadRequestException('Id invalido');
+      }
+      const responsable = await this.responsableRepository.findOne({
+        where: { id },
+        relations: ['rolUsuario', 'recurso', 'clase', 'cursoModalidad', 'campus'],
+      });
+      if (!responsable) {
+        throw new NotFoundException('Responsable not found');
+      }
+      return responsable;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+    }
   }
 
-  async update(id: string, updateResponsableDto: UpdateResponsableDto) {
-    return `This action updates a #${id} responsable`;
-  }
+  // async update(id: string, updateResponsableDto: UpdateResponsableDto) {
+  //   try {
+  //     const {
+  //       rol_usuario_id,
+  //       recurso_id,
+  //       clase_id,
+  //       curso_modalidad_id,
+  //       campus_id,
+  //     } = updateResponsableDto;
+
+  //     if (!id) {
+  //       throw new BadRequestException('Id invalido');
+  //     }
+  //     const responsable = await this.responsableRepository.findOne({
+  //       where: { id },
+  //     });
+  //     if (!responsable) {
+  //       throw new NotFoundException('Responsable not found');
+  //     }
+      
+
+  //   } catch (error) {
+  //     if (
+  //       error instanceof BadRequestException ||
+  //       error instanceof NotFoundException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException(
+  //       error.message || 'Error inesperado',
+  //     );
+  //   }
+  // }
 
   async remove(id: string) {
-    return `This action removes a #${id} responsable`;
+    try {
+      if(!id){
+        throw new BadRequestException('Id invalido');
+      }
+      const result = await this.responsableRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where('id = :id', { id })
+        .execute();
+      if (result.affected === 0)
+        throw new NotFoundException('Responsable no encontrado');
+      return this.responsableRepository.findOneBy({ id });
+    } catch (error) {
+      if( error instanceof NotFoundException){
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 }

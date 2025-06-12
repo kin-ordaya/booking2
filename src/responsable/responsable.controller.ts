@@ -32,13 +32,13 @@ export class ResponsableController {
     return this.responsableService.findOne(id);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateResponsableDto: UpdateResponsableDto,
-  ) {
-    return this.responsableService.update(id, updateResponsableDto);
-  }
+  // @Patch(':id')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateResponsableDto: UpdateResponsableDto,
+  // ) {
+  //   return this.responsableService.update(id, updateResponsableDto);
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
