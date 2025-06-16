@@ -1,15 +1,12 @@
 import { Type } from 'class-transformer';
 import {
-  IsIn,
   IsInt,
-  IsNumber,
-  IsOptional,
-  IsString,
   Max,
   Min,
 } from 'class-validator';
+import { SearchDto } from './search.dto';
 
-export class PaginationDto {
+export class PaginationDto extends SearchDto {
   @IsInt({ message: 'El campo page debe ser de tipo number' })
   @Min(1, { message: 'El campo page debe ser mayor a 1' })
   @Type(() => Number)
@@ -29,7 +26,5 @@ export class PaginationDto {
   // @Type(() => Number)
   // sort?: number;
 
-  @IsOptional()
-  @IsString({ message: 'El campo search debe ser de tipo string' })
-  search?: string;
+  
 }

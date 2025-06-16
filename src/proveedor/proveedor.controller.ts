@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { ProveedorService } from './proveedor.service';
 import { CreateProveedorDto } from './dto/create-proveedor.dto';
 import { UpdateProveedorDto } from './dto/update-proveedor.dto';
 import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
+import { SearchDto } from 'src/common/dtos/search.dto';
 
 @Controller('proveedor')
 export class ProveedorController {
@@ -23,8 +25,8 @@ export class ProveedorController {
   }
 
   @Get()
-  findAll() {
-    return this.proveedorService.findAll();
+  findAll(@Query() searchDto: SearchDto) {
+    return this.proveedorService.findAll(searchDto);
   }
 
   @Get(':id')

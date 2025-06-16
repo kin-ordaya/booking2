@@ -5,7 +5,7 @@ export class CreateModalidadDto {
     @IsNotEmpty()
     @IsString({ message: 'El campo nombre debe ser de tipo string' })
     @MaxLength(50, {
-        message: 'El campo nombre no puede tener mas de 50 caracteres',
+        message: 'El campo nombrae no puede tener mas de 50 caracteres',
     })
     @Transform(({ value }) => value?.toUpperCase().trim())
     nombre: string;

@@ -1,3 +1,5 @@
+import { SearchDto } from './../common/dtos/search.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -41,17 +43,22 @@ export class ProveedorService {
     }
   }
 
-  async findAll() {
-    try {
-      return await this.proveedorRepository.find({
-        order: { nombre: 'ASC' },
-      });
-    } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
-    }
+  async findAll(searchDto: SearchDto) {
+  const { search } = searchDto;
+  
+  const query = this.proveedorRepository
+    .createQueryBuilder('proveedor')
+    .select(['proveedor.id', 'proveedor.nombre']);
+
+  if (search) {
+    query.where(
+      'UPPER(proveedor.nombre) LIKE UPPER(:search) OR UPPER(proveedor.ruc) LIKE UPPER(:search)',
+      { search: `%${search}%` }
+    );
   }
+
+  return query.getMany();
+}
 
   async findOne(id: string) {
     try {
