@@ -42,7 +42,7 @@ export class CampusService {
 
   async findAll() {
     try {
-      return await this.campusRepository.find();
+      return await this.campusRepository.find({ order: { nombre: 'ASC' } });
     } catch (error) {
       throw new InternalServerErrorException('Error inesperado', {
         cause: error,
