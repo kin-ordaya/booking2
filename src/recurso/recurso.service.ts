@@ -92,16 +92,37 @@ export class RecursoService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
+  
 
   async findAll(paginationRecursoDto: PaginationRecursoDto) {
     try {
-      const { sort_name, sort_state, page, limit, search } =
-        paginationRecursoDto;
+      const { sort_name, sort_state, page, limit, search } = paginationRecursoDto;
+      
+      // Query para contar el total de recursos (sin paginación)
+      const countQuery = this.recursoRepository.createQueryBuilder('recurso');
+
+      if (sort_state !== undefined) {
+        countQuery.andWhere('recurso.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
+      }
+
+      if (search) {
+        countQuery.where(
+          'UPPER(recurso.nombre) LIKE UPPER(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      const totalCount = await countQuery.getCount();
+
+      // Query principal con los datos y relaciones
       const query = this.recursoRepository
         .createQueryBuilder('recurso')
         .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
         .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
         .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+        .loadRelationCountAndMap('recurso.cantidad_credenciales', 'recurso.credencial')
         .select([
           'recurso.id',
           'recurso.nombre',
@@ -113,6 +134,33 @@ export class RecursoService {
           'tipoAcceso.id',
           'tipoAcceso.nombre',
         ]);
+
+      const rawResults = await query
+        .addSelect('COUNT(credencial.id)', 'cantidad_credenciales')
+        .leftJoin('recurso.credencial', 'credencial')
+        .groupBy('recurso.id')
+        .addGroupBy('tipoRecurso.nombre')
+        .addGroupBy('proveedor.nombre')
+        .addGroupBy('tipoAcceso.id')
+        .addGroupBy('tipoAcceso.nombre')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getRawMany();
+      
+      const results = rawResults.map(raw => ({
+        id: raw.recurso_id,
+        nombre: raw.recurso_nombre,
+        link_declaracion: raw.recurso_link_declaracion,
+        creacion: raw.recurso_creacion,
+        estado: raw.recurso_estado,
+        cantidad_credenciales: parseInt(raw.cantidad_credenciales, 10) || 0,
+        tipoRecurso: { nombre: raw.tipoRecurso_nombre },
+        proveedor: { nombre: raw.proveedor_nombre },
+        tipoAcceso: { 
+          id: raw.tipoAcceso_id,
+          nombre: raw.tipoAcceso_nombre
+        }
+      }));
 
       let orderApplied = false;
 
@@ -133,21 +181,23 @@ export class RecursoService {
 
       if (search) {
         query.where(
-          'UPPER(recurso.nombre) LIKE UPPEr(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search)',
+          'UPPER(recurso.nombre) LIKE UPPER(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+
+      // const results = await query
+      //   .skip((page - 1) * limit)
+      //   .take(limit)
+      //   .getMany();
+
       return {
         results,
         meta: {
-          count,
+          count: totalCount,
           page,
           limit,
-          totalPages: Math.ceil(count / limit),
+          totalPages: Math.ceil(totalCount / limit),
         },
       };
     } catch (error) {
