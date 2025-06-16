@@ -20,11 +20,11 @@ export class CreateRecursoDto {
   @IsString({ message: 'El campo descripcion debe ser de tipo string' })
   descripcion?: string;
 
-  @IsNotEmpty()
-  @IsInt({ message: 'El campo cantidad_credenciales debe ser de tipo int' })
-  @IsPositive({ message: 'El campo cantidad_credenciales debe ser positivo' })
-  @Type(() => Number)
-  cantidad_credenciales: number;
+  // @IsNotEmpty()
+  // @IsInt({ message: 'El campo cantidad_credenciales debe ser de tipo int' })
+  // @IsPositive({ message: 'El campo cantidad_credenciales debe ser positivo' })
+  // @Type(() => Number)
+  // cantidad_credenciales: number;
 
   @IsNotEmpty()
   @IsUrl({}, { message: 'El campo link_declaracion debe ser de tipo url' })

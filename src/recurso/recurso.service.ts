@@ -15,6 +15,8 @@ import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
 import { PaginationRecursoDto } from './dto/pagination-recurso.dto';
+import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
+import { Credencial } from 'src/credencial/entities/credencial.entity';
 
 @Injectable()
 export class RecursoService {
@@ -30,6 +32,9 @@ export class RecursoService {
 
     @InjectRepository(Proveedor)
     private readonly proveedorRepository: Repository<Proveedor>,
+
+    @InjectRepository(Credencial)
+    private readonly credencialRepository: Repository<Credencial>,
   ) {}
 
   async create(createRecursoDto: CreateRecursoDto) {
@@ -37,7 +42,6 @@ export class RecursoService {
       const {
         nombre,
         descripcion,
-        cantidad_credenciales,
         link_declaracion,
         tiempo_reserva,
         capacidad,
@@ -70,7 +74,6 @@ export class RecursoService {
       const recurso = this.recursoRepository.create({
         nombre,
         descripcion,
-        cantidad_credenciales,
         link_declaracion,
         tiempo_reserva,
         capacidad,
@@ -182,7 +185,6 @@ export class RecursoService {
       const {
         nombre,
         descripcion,
-        cantidad_credenciales,
         link_declaracion,
         tiempo_reserva,
         capacidad,
@@ -248,9 +250,9 @@ export class RecursoService {
       if (descripcion !== undefined) {
         updateData.descripcion = descripcion;
       }
-      if (cantidad_credenciales !== undefined) {
-        updateData.cantidad_credenciales = cantidad_credenciales;
-      }
+      // if (cantidad_credenciales !== undefined) {
+      //   updateData.cantidad_credenciales = cantidad_credenciales;
+      // }
       if (link_declaracion !== undefined) {
         updateData.link_declaracion = link_declaracion;
       }

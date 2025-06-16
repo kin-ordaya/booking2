@@ -10,7 +10,6 @@ import { UpdateCampusDto } from './dto/update-campus.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Campus } from './entities/campus.entity';
 import { Not, Repository } from 'typeorm';
-import e from 'express';
 
 @Injectable()
 export class CampusService {

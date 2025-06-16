@@ -31,8 +31,8 @@ export class Recurso {
   @Column({ type: 'varchar', length: 150, nullable: true })
   descripcion?: string;
 
-  @Column({ type: 'int', nullable: true })
-  cantidad_credenciales?: number;
+  // @Column({ type: 'int', nullable: true })
+  // cantidad_credenciales?: number;
 
   @Column({ type: 'varchar', length: 255 })
   link_declaracion: string;

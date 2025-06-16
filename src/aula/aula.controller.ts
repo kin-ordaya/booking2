@@ -19,16 +19,16 @@ export class AulaController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.aulaService.findOne(+id);
+    return this.aulaService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAulaDto: UpdateAulaDto) {
-    return this.aulaService.update(+id, updateAulaDto);
+    return this.aulaService.update(id, updateAulaDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.aulaService.remove(+id);
+    return this.aulaService.remove(id);
   }
 }

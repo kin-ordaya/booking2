@@ -6,9 +6,10 @@ import { Recurso } from './entities/recurso.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
+import { Credencial } from 'src/credencial/entities/credencial.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Recurso, TipoRecurso, TipoAcceso,Proveedor])],
+  imports: [TypeOrmModule.forFeature([Recurso, TipoRecurso, TipoAcceso,Proveedor, Credencial])],
   controllers: [RecursoController],
   providers: [RecursoService],
 })
