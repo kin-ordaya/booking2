@@ -105,7 +105,6 @@ export class RecursoService {
         .select([
           'recurso.id',
           'recurso.nombre',
-          'recurso.cantidad_credenciales',
           'recurso.link_declaracion',
           'recurso.creacion',
           'recurso.estado',
