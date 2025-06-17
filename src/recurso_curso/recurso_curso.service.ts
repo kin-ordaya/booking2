@@ -83,7 +83,6 @@ export class RecursoCursoService {
         'recurso.id',
         'recurso.nombre',
         'recurso.creacion',
-        'recurso.cantidad_credenciales',
         'proveedor.nombre',
         'curso.id as curso_id',
         'curso.nombre as curso_nombre',
