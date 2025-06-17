@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateAulaDto } from './dto/create-aula.dto';
 import { UpdateAulaDto } from './dto/update-aula.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,9 +22,13 @@ export class AulaService {
   async create(createAulaDto: CreateAulaDto) {
     try {
       const { nombre, codigo, piso, pabellon, campus_id } = createAulaDto;
-      const aulaExists = await this.aulaRepository.findOne({ where: { codigo, campus: { id: campus_id} }, relations: ['campus'] });
-       ;
-      const campusExists = await this.campusRepository.existsBy({ id: campus_id });
+      const aulaExists = await this.aulaRepository.findOne({
+        where: { codigo, campus: { id: campus_id } },
+        relations: ['campus'],
+      });
+      const campusExists = await this.campusRepository.existsBy({
+        id: campus_id,
+      });
 
       if (!campusExists) {
         throw new ConflictException('Ya existe un campus con ese codigo');
@@ -29,8 +37,16 @@ export class AulaService {
         throw new ConflictException('Ya existe un aula con ese codigo');
       }
 
+      const aula = this.aulaRepository.create({
+        codigo,
+        nombre,
+        piso,
+        pabellon,
+        campus: { id: campus_id },
+      });
+      return await this.aulaRepository.save(aula);
     } catch (error) {
-      if(error instanceof ConflictException) {
+      if (error instanceof ConflictException) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
