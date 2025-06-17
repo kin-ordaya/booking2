@@ -98,31 +98,16 @@ export class RecursoService {
     try {
       const { sort_name, sort_state, page, limit, search } = paginationRecursoDto;
       
-      // Query para contar el total de recursos (sin paginación)
+      // Query para contar el total (sin paginación ni GROUP BY)
       const countQuery = this.recursoRepository.createQueryBuilder('recurso');
 
-      if (sort_state !== undefined) {
-        countQuery.andWhere('recurso.estado = :estado', {
-          estado: sort_state === 1 ? 1 : 0,
-        });
-      }
-
-      if (search) {
-        countQuery.where(
-          'UPPER(recurso.nombre) LIKE UPPER(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search)',
-          { search: `%${search}%` },
-        );
-      }
-
-      const totalCount = await countQuery.getCount();
-
-      // Query principal con los datos y relaciones
+      // Query principal con datos, relaciones y COUNT
       const query = this.recursoRepository
         .createQueryBuilder('recurso')
         .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
         .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
         .leftJoinAndSelect('recurso.proveedor', 'proveedor')
-        .loadRelationCountAndMap('recurso.cantidad_credenciales', 'recurso.credencial')
+        .leftJoin('recurso.credencial', 'credencial')
         .select([
           'recurso.id',
           'recurso.nombre',
@@ -134,64 +119,65 @@ export class RecursoService {
           'proveedor.nombre',
           'tipoAcceso.id',
           'tipoAcceso.nombre',
-        ]);
-
-      const rawResults = await query
+        ])
         .addSelect('COUNT(credencial.id)', 'cantidad_credenciales')
-        .leftJoin('recurso.credencial', 'credencial')
         .groupBy('recurso.id')
         .addGroupBy('tipoRecurso.nombre')
         .addGroupBy('proveedor.nombre')
         .addGroupBy('tipoAcceso.id')
-        .addGroupBy('tipoAcceso.nombre')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getRawMany();
-      
+        .addGroupBy('tipoAcceso.nombre');
+
+      // Aplicar filtros a AMBAS consultas (countQuery y query)
+      if (sort_state !== undefined) {
+        const filter = { estado: sort_state === 1 ? 1 : 0 };
+        query.andWhere('recurso.estado = :estado', filter);
+        countQuery.andWhere('recurso.estado = :estado', filter);
+      }
+
+      if (search) {
+        const searchFilter = { search: `%${search.toUpperCase()}%` };
+        query.andWhere(
+          '(UPPER(recurso.nombre) LIKE UPPER(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search))',
+          searchFilter,
+        );
+        countQuery.andWhere(
+          '(UPPER(recurso.nombre) LIKE UPPER(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search))',
+          searchFilter,
+        );
+      }
+
+      // Ordenamiento (solo en query principal)
+      if (sort_name !== undefined) {
+        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+      } else {
+        query.orderBy('recurso.creacion', 'DESC');
+      }
+
+      // Paginación y ejecución
+      const [rawResults, totalCount] = await Promise.all([
+        query
+          .skip((page - 1) * limit)
+          .take(limit)
+          .getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      // Mapeo de resultados
       const results = rawResults.map(raw => ({
         id: raw.recurso_id,
         nombre: raw.recurso_nombre,
         link_declaracion: raw.recurso_link_declaracion,
         creacion: raw.recurso_creacion,
-        capacidad: raw.recurso_capacidad,
         estado: raw.recurso_estado,
+        capacidad: raw.recurso_capacidad,
         cantidad_credenciales: parseInt(raw.cantidad_credenciales, 10) || 0,
         tipoRecurso: { nombre: raw.tipoRecurso_nombre },
         proveedor: { nombre: raw.proveedor_nombre },
         tipoAcceso: { 
           id: raw.tipoAcceso_id,
-          nombre: raw.tipoAcceso_nombre
-        }
+          nombre: raw.tipoAcceso_nombre,
+        },
       }));
-
-      let orderApplied = false;
-
-      if (sort_name !== undefined) {
-        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
-        orderApplied = true;
-      }
-
-      if (!orderApplied) {
-        query.orderBy('recurso.creacion', 'DESC');
-      }
-
-      if (sort_state !== undefined) {
-        query.andWhere('recurso.estado = :estado', {
-          estado: sort_state === 1 ? 1 : 0,
-        });
-      }
-
-      if (search) {
-        query.where(
-          'UPPER(recurso.nombre) LIKE UPPER(:search) OR UPPER(recurso.descripcion) LIKE UPPER(:search)',
-          { search: `%${search}%` },
-        );
-      }
-
-      // const results = await query
-      //   .skip((page - 1) * limit)
-      //   .take(limit)
-      //   .getMany();
 
       return {
         results,
@@ -203,11 +189,9 @@ export class RecursoService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado', { cause: error });
     }
-  }
+}
 
   async findOne(id: string): Promise<Recurso> {
     try {
