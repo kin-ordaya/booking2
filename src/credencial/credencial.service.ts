@@ -168,7 +168,10 @@ export class CredencialService {
           'El ID de la credencial no puede estar vacío',
         );
 
-      const credencial = await this.credencialRepository.findOneBy({ id });
+      const credencial = await this.credencialRepository.findOne({
+        where: { id },
+        relations: [ 'rol'],
+      });
       if (!credencial) throw new NotFoundException('Credencial no encontrada');
       return credencial;
     } catch (error) {
