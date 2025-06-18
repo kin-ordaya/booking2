@@ -1,4 +1,4 @@
-import { Aula } from 'src/aula/entities/aula.entity';
+import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import {
   Column,
@@ -22,11 +22,11 @@ export class Campus {
   @Column({ type: 'varchar', length: 50 })
   nombre: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 50, unique: true })
   codigo: string;
 
-  @OneToMany(() => Aula, (aula) => aula.campus)
-  aula: Aula[];
+  @OneToMany(() => Pabellon, (pabellon) => pabellon.campus)
+  pabellon: Pabellon[];
 
   @OneToMany(()=> Responsable, (responsable) => responsable.campus)
   responsable: Responsable[];

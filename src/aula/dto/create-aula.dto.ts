@@ -13,17 +13,6 @@ export class CreateAulaDto {
   codigo: string;
 
   @IsNotEmpty()
-  @IsInt({ message: 'El campo piso debe ser de tipo int' })
-  @Type(() => Number)
-  @IsPositive({})
-  piso: number;
-
-  @IsNotEmpty()
-  @IsString({ message: 'El campo pabellon debe ser de tipo int' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
-  pabellon: string;
-
-  @IsNotEmpty()
-  @IsUUID('4', { message: 'El campo campus_id debe ser de tipo uuid' })
-  campus_id: string
+  @IsUUID('4', { message: 'El campo pabellon_id debe ser de tipo uuid' })
+  pabellon_id: string
 }

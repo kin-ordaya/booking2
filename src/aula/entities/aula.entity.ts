@@ -1,5 +1,5 @@
-import { Campus } from 'src/campus/entities/campus.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
+import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import {
   Column,
   CreateDateColumn,
@@ -20,23 +20,15 @@ export class Aula {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @Column({ type: 'varchar', length: 100 })
-  nombre: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  nombre?: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 50, unique: true })
   codigo: string;
 
-  @Column({ type: 'int' })
-  piso: number;
-
-  @Column({ type: 'varchar', length: 10 })
-  pabellon: string;
-
-  @ManyToOne(() => Campus, (campus) => campus.aula, {
-    nullable: false,
-  })
+  @ManyToOne(() => Pabellon, (pabellon) => pabellon.aula, {nullable: false})
   @JoinColumn({ name: 'campus_id' })
-  campus: Campus;
+  pabellon: Pabellon;
 
   @OneToMany(() => Clase, (clase) => clase.aula)
   clase: Clase[];

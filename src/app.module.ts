@@ -26,6 +26,7 @@ import { ReservaModule } from './reserva/reserva.module';
 import { DetalleReservaModule } from './detalle_reserva/detalle_reserva.module';
 import { CredencialModule } from './credencial/credencial.module';
 import { TipoAccesoModule } from './tipo_acceso/tipo_acceso.module';
+import { PabellonModule } from './pabellon/pabellon.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { TipoAccesoModule } from './tipo_acceso/tipo_acceso.module';
     FacultadModule,
     MatriculaClaseModule,
     ModalidadModule,
+    PabellonModule,
     PlanModule,
     ProveedorModule,
     RecursoCursoModule,

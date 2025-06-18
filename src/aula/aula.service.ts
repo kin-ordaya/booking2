@@ -8,29 +8,31 @@ import { UpdateAulaDto } from './dto/update-aula.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Aula } from './entities/aula.entity';
 import { Repository } from 'typeorm';
-import { Campus } from 'src/campus/entities/campus.entity';
+
+import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 
 @Injectable()
 export class AulaService {
   constructor(
     @InjectRepository(Aula)
     private readonly aulaRepository: Repository<Aula>,
-    @InjectRepository(Campus)
-    private readonly campusRepository: Repository<Campus>,
+    @InjectRepository(Pabellon)
+    private readonly pabellonRepository: Repository<Pabellon>,
   ) {}
 
   async create(createAulaDto: CreateAulaDto) {
     try {
-      const { nombre, codigo, piso, pabellon, campus_id } = createAulaDto;
+      const { nombre, codigo, pabellon_id } = createAulaDto;
       const aulaExists = await this.aulaRepository.findOne({
-        where: { codigo, campus: { id: campus_id } },
-        relations: ['campus'],
-      });
-      const campusExists = await this.campusRepository.existsBy({
-        id: campus_id,
+        where: { codigo, pabellon: { id: pabellon_id } },
+        relations: ['pabellon'],
       });
 
-      if (!campusExists) {
+      const pabellonExists = await this.pabellonRepository.existsBy({
+        id: pabellon_id,
+      });
+
+      if (!pabellonExists) {
         throw new ConflictException('Ya existe un campus con ese codigo');
       }
       if (aulaExists) {
@@ -40,9 +42,7 @@ export class AulaService {
       const aula = this.aulaRepository.create({
         codigo,
         nombre,
-        piso,
-        pabellon,
-        campus: { id: campus_id },
+        pabellon: { id: pabellon_id },
       });
       return await this.aulaRepository.save(aula);
     } catch (error) {
