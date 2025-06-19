@@ -1,3 +1,4 @@
+import { Laboratorio } from 'src/laboratorio/entities/laboratorio.entity';
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import {
@@ -30,4 +31,7 @@ export class Campus {
 
   @OneToMany(()=> Responsable, (responsable) => responsable.campus)
   responsable: Responsable[];
+
+  @OneToMany(()=> Laboratorio, (laboratorio) => laboratorio.campus)
+  laboratorio: Laboratorio[];
 }

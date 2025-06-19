@@ -1,4 +1,5 @@
 import { Clase } from 'src/clase/entities/clase.entity';
+import { LaboratorioAula } from 'src/laboratorio_aula/entities/laboratorio_aula.entity';
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import {
   Column,
@@ -32,4 +33,7 @@ export class Aula {
 
   @OneToMany(() => Clase, (clase) => clase.aula)
   clase: Clase[];
+
+  @OneToMany(()=> LaboratorioAula, (laboratorioAula) => laboratorioAula.laboratorio)
+  laboratorioAula: LaboratorioAula[];
 }

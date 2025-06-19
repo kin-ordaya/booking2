@@ -27,6 +27,8 @@ import { DetalleReservaModule } from './detalle_reserva/detalle_reserva.module';
 import { CredencialModule } from './credencial/credencial.module';
 import { TipoAccesoModule } from './tipo_acceso/tipo_acceso.module';
 import { PabellonModule } from './pabellon/pabellon.module';
+import { LaboratorioModule } from './laboratorio/laboratorio.module';
+import { LaboratorioAulaModule } from './laboratorio_aula/laboratorio_aula.module';
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { PabellonModule } from './pabellon/pabellon.module';
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
+    LaboratorioModule,
+    LaboratorioAulaModule,
   ],
 })
 export class AppModule {}

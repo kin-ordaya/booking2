@@ -29,7 +29,7 @@ export class PabellonService {
         id: campus_id,
       });
       if (!campusExists) {
-        throw new ConflictException('No existe un campus con ese id');
+        throw new NotFoundException('No existe un campus con ese id');
       }
 
       const pabellonExists = await this.pabellonRepository.existsBy({
@@ -53,6 +53,7 @@ export class PabellonService {
       ) {
         throw error;
       }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -75,7 +76,10 @@ export class PabellonService {
           'El ID del pabellon no puede estar vacío',
         );
 
-      const pabellon = await this.pabellonRepository.findOneBy({ id });
+      const pabellon = await this.pabellonRepository.findOne({
+        where: { id },
+        relations: ['campus'],
+      });
       if (!pabellon)
         throw new NotFoundException(`Pabellon con id ${id} no encontrado`);
       return pabellon;
@@ -88,7 +92,7 @@ export class PabellonService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
-
+  //TODO: agregar valiaciones de campus_id, nombre si se envia uno o ambos parametros
   async update(id: string, updatePabellonDto: UpdatePabellonDto) {
     try {
       const { nombre, campus_id } = updatePabellonDto;

@@ -1,5 +1,5 @@
-import { Transform, Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsPositive, IsString, IsUUID } from 'class-validator';
+import { Transform} from 'class-transformer';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateAulaDto {
   @IsNotEmpty()
