@@ -54,7 +54,7 @@ export class CursoModalidadService {
       });
       return await this.cursoModalidadRepository.save(cursoModalidad);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof ConflictException) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');

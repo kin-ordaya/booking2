@@ -27,12 +27,12 @@ export class AulaService {
       const { nombre, codigo, pabellon_id } = createAulaDto;
 
       const aulaExists = await this.aulaRepository.findOne({
-        where: { codigo, pabellon: { id: pabellon_id } },
+        where: { nombre, pabellon: { id: pabellon_id } },
         relations: ['pabellon'],
       });
 
       if (aulaExists) {
-        throw new ConflictException('Ya existe un aula con ese codigo');
+        throw new ConflictException('Ya existe un aula con ese nombre y pabellon');
       }
 
       const pabellonExists = await this.pabellonRepository.existsBy({

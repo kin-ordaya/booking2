@@ -21,11 +21,11 @@ export class Aula {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  nombre?: string;
+  @Column({ type: 'varchar', length: 100 })
+  nombre: string;
 
-  @Column({ type: 'varchar', length: 50, unique: true })
-  codigo: string;
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+  codigo?: string;
 
   @ManyToOne(() => Pabellon, (pabellon) => pabellon.aula, {nullable: false})
   @JoinColumn({ name: 'campus_id' })
