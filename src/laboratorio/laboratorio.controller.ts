@@ -19,16 +19,16 @@ export class LaboratorioController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.laboratorioService.findOne(+id);
+    return this.laboratorioService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateLaboratorioDto: UpdateLaboratorioDto) {
-    return this.laboratorioService.update(+id, updateLaboratorioDto);
+    return this.laboratorioService.update(id, updateLaboratorioDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.laboratorioService.remove(+id);
+    return this.laboratorioService.remove(id);
   }
 }

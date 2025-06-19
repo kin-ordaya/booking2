@@ -82,6 +82,7 @@ export class PabellonService {
       });
       if (!pabellon)
         throw new NotFoundException(`Pabellon con id ${id} no encontrado`);
+
       return pabellon;
     } catch (error) {
       if (
@@ -92,7 +93,7 @@ export class PabellonService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
-  //TODO: agregar valiaciones de campus_id, nombre si se envia uno o ambos parametros
+
   async update(id: string, updatePabellonDto: UpdatePabellonDto) {
     try {
       const { nombre, campus_id } = updatePabellonDto;
@@ -106,21 +107,52 @@ export class PabellonService {
       if (!pabellon)
         throw new NotFoundException(`Pabellon con id ${id} no encontrado`);
 
+      if (nombre !== undefined || campus_id !== undefined) {
+        const whereConditions: any[] = [];
+
+        whereConditions.push({ id: Not(id) });
+
+        if (nombre !== undefined) {
+          whereConditions.push({ nombre });
+        }
+
+        if (campus_id !== undefined) {
+          const campusExists = await this.campusRepository.existsBy({
+            id: campus_id,
+          });
+          if (!campusExists) {
+            throw new ConflictException('No existe un campus con ese id');
+          }
+          whereConditions.push({ campus: { id: campus_id } });
+        }
+
+        const existingPabellon = await this.pabellonRepository.findOne({
+          where: whereConditions,
+        });
+
+        if (existingPabellon) {
+          let errorMessage = '';
+          if (nombre !== undefined && campus_id !== undefined) {
+            errorMessage = 'Ya existe un pabellon con el mismo nombre y campus';
+          } else if (nombre !== undefined) {
+            errorMessage = 'Ya existe un pabellon con el mismo nombre';
+          } else if (campus_id !== undefined) {
+            errorMessage =
+              'Ya existe un pabellon en el mismo campus (mismo nombre implícito)';
+          }
+          throw new ConflictException(errorMessage);
+        }
+      }
+
       const updateData: any = {};
       if (nombre !== undefined) {
         updateData.nombre = nombre;
       }
       if (campus_id !== undefined) {
-        const campusExists = await this.campusRepository.existsBy({
-          id: campus_id,
-        });
-        if (!campusExists) {
-          throw new ConflictException('No existe un campus con ese id');
-        }
         updateData.campus = { id: campus_id };
       }
 
-      if (Object.keys(updateData).length === 0) {
+      if (Object.keys(updateData).length === 0 && nombre === undefined) {
         return pabellon;
       }
 

@@ -58,6 +58,8 @@ import { LaboratorioAulaModule } from './laboratorio_aula/laboratorio_aula.modul
     EapModule,
     EstudianteModule,
     FacultadModule,
+    LaboratorioAulaModule,
+    LaboratorioModule,
     MatriculaClaseModule,
     ModalidadModule,
     PabellonModule,
@@ -72,8 +74,6 @@ import { LaboratorioAulaModule } from './laboratorio_aula/laboratorio_aula.modul
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
-    LaboratorioModule,
-    LaboratorioAulaModule,
   ],
 })
 export class AppModule {}
