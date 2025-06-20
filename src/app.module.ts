@@ -29,11 +29,18 @@ import { TipoAccesoModule } from './tipo_acceso/tipo_acceso.module';
 import { PabellonModule } from './pabellon/pabellon.module';
 import { LaboratorioModule } from './laboratorio/laboratorio.module';
 import { LaboratorioAulaModule } from './laboratorio_aula/laboratorio_aula.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET || 'abc123',
+      signOptions: { expiresIn: process.env.JWT_EXPIRATION || '1h' },
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -47,6 +54,7 @@ import { LaboratorioAulaModule } from './laboratorio_aula/laboratorio_aula.modul
       logging: true
     }),
     AulaModule,
+    AuthModule,
     CampusModule,
     ClaseModule,
     ContactoModule,
