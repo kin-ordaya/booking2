@@ -1,1 +1,94 @@
-export class CreateClaseDto {}
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  ValidateNested,
+} from 'class-validator';
+
+class HorarioDiaDto {
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(['L', 'M', 'X', 'J', 'V', 'S', 'D'])
+  dia: string; // L, M, X, J, V, S, D
+
+  @IsNotEmpty()
+  @IsString()
+  @Matches(/^[0-9]{2}:[0-9]{2}$/)
+  inicio: string; // Formato HH:MM
+
+  @IsNotEmpty()
+  @IsString()
+  @Matches(/^[0-9]{2}:[0-9]{2}$/)
+  fin: string; // Formato HH:MM
+}
+
+export class CreateClaseDto {
+  @IsNotEmpty()
+  @IsString()
+  nrc: string;
+
+  @IsOptional()
+  @IsString()
+  nrc_secundario?: string;
+
+  @IsNotEmpty()
+  @IsInt()
+  inscritos: number;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsIn([
+    '2024-0',
+    '2024-1',
+    '2024-2',
+    '2025-0',
+    '2025-1',
+    '2025-2',
+    '2026-0',
+    '2026-1',
+    '2026-2',
+    '2027-0',
+    '2027-1',
+    '2027-2',
+  ])
+  periodo: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioDiaDto)
+  horario: HorarioDiaDto[];
+
+  //   @IsNotEmpty()
+  //   @IsString()
+  //   bloque: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(['ESPECIALIDAD', 'TRANSVERSAL', 'GENERAL', 'CRUZADA'])
+  tipo: string;
+
+  @IsNotEmpty()
+  @IsDateString()
+  inicio: Date;
+
+  @IsNotEmpty()
+  @IsDateString()
+  fin: Date;
+
+  @IsNotEmpty()
+  @IsUUID()
+  cursoModalidad_id: string;
+
+  @IsNotEmpty()
+  @IsUUID()
+  aula_id: string;
+}

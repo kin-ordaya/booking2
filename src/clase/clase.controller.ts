@@ -5,7 +5,8 @@ import { UpdateClaseDto } from './dto/update-clase.dto';
 
 @Controller('clase')
 export class ClaseController {
-  constructor(private readonly claseService: ClaseService) {}
+  constructor(
+    private readonly claseService: ClaseService) {}
 
   @Post()
   create(@Body() createClaseDto: CreateClaseDto) {

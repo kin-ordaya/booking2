@@ -25,7 +25,7 @@ export class Clase {
   @Column({ type: 'int', default: 1 })
   estado: number;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 50, unique: true })
   nrc: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -40,8 +40,8 @@ export class Clase {
   @Column({ type: 'varchar', length: 50 })
   horario: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  bloque: string;
+  // @Column({ type: 'varchar', length: 50 })
+  // bloque: string;
 
   @Column({ type: 'varchar', length: 50 })
   tipo: string;

@@ -5,10 +5,10 @@ export class LoginDto {
   @IsString()
   idToken: string;
 
-  @IsNotEmpty()
-  @IsEmail()
-  @Matches(/^[\w.+-]+@continental\.edu\.pe$/, {
-    message: 'El correo debe pertenecer al dominio @continental.edu.pe',
-  })
-  email: string;
+  // @IsNotEmpty()
+  // @IsEmail()
+  // @Matches(/^[\w.+-]+@continental\.edu\.pe$/, {
+  //   message: 'El correo debe pertenecer al dominio @continental.edu.pe',
+  // })
+  // email: string;
 }

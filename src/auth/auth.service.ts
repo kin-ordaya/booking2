@@ -27,14 +27,14 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     try {
-      const { idToken,email } = loginDto;
+      const { idToken } = loginDto;
       const googleUser = await this.verifyIdToken(idToken);
       if (!googleUser) {
         throw new BadRequestException('Token de Google no válido');
       }
       const emailGoogle = googleUser.email;
       const user = await this.usuarioRepository.findOne({
-        where: { correo_institucional: email },
+        where: { correo_institucional: emailGoogle },
       });
       if (!user) {
         throw new NotFoundException('Usuario no encontrado');
@@ -47,12 +47,14 @@ export class AuthService {
       }
       const jwtPayload = {
         correo_institucional: user.correo_institucional,
+        nombres: user.nombres,
+        apellidos: user.apellidos,
         //usuario_id: user.id,
         rol_usuario_id: rolUsuario.id,
         // rol_id: rolUsuario.rol.id,
       };
       const token = this.jwtService.sign(jwtPayload);
-      return { token };
+      return { token, jwtPayload };
     } catch (error) {
       console.log(error);
       throw error;
