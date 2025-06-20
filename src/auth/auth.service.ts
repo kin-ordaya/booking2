@@ -54,7 +54,7 @@ export class AuthService {
         // rol_id: rolUsuario.rol.id,
       };
       const token = this.jwtService.sign(jwtPayload);
-      return { token, jwtPayload };
+      return { token };
     } catch (error) {
       console.log(error);
       throw error;
