@@ -46,9 +46,9 @@ export class AuthService {
         throw new NotFoundException('Rol usuario no encontrado');
       }
       const jwtPayload = {
-        correo_institucional: user.correo_institucional,
-        nombres: user.nombres,
-        apellidos: user.apellidos,
+        //correo_institucional: user.correo_institucional,
+        //nombres: user.nombres,
+        //apellidos: user.apellidos,
         //usuario_id: user.id,
         rol_usuario_id: rolUsuario.id,
         // rol_id: rolUsuario.rol.id,
