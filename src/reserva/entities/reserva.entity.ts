@@ -30,10 +30,10 @@ export class Reserva {
   cantidad: number;
 
   @ManyToOne(() => Clase, (clase) => clase.reserva, {
-    nullable: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'clase_id' })
-  clase: Clase;
+  clase?: Clase;
 
   @ManyToOne(() => Recurso, (recurso) => recurso.reserva, {
     nullable: false,

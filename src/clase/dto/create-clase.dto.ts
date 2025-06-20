@@ -1,9 +1,11 @@
+import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID
 } from 'class-validator';
@@ -19,23 +21,25 @@ export class CreateClaseDto {
 
   @IsNotEmpty()
   @IsInt()
+  @IsPositive()
+  @Type(() => Number)
   inscritos: number;
 
   @IsNotEmpty()
   @IsString()
   @IsIn([
-    '2024-0',
-    '2024-1',
-    '2024-2',
-    '2025-0',
-    '2025-1',
-    '2025-2',
-    '2026-0',
-    '2026-1',
-    '2026-2',
-    '2027-0',
-    '2027-1',
-    '2027-2',
+    '2024-00',
+    '2024-10',
+    '2024-20',
+    '2025-00',
+    '2025-10',
+    '2025-20',
+    '2026-00',
+    '2026-10',
+    '2026-20',
+    '2027-00',
+    '2027-10',
+    '2027-20',
   ])
   periodo: string;
 

@@ -4,6 +4,7 @@ import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.ent
 import { MatriculaClase } from 'src/matricula_clase/entities/matricula_clase.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
   CreateDateColumn,
@@ -57,6 +58,10 @@ export class Clase {
   })
   @JoinColumn({ name: 'curso_modalidad_id' })
   cursoModalidad: CursoModalidad;
+
+  // @ManyToOne(()=> RolUsuario, (rolUsuario) => rolUsuario.clase, {nullable: false})
+  // @JoinColumn({ name: 'rol_usuario_id' })
+  // rolUsuario: RolUsuario;
 
   // @ManyToOne(() => Aula, (aula) => aula.clase, {
   //   nullable: false,
