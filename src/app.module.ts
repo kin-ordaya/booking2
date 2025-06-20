@@ -31,6 +31,8 @@ import { LaboratorioModule } from './laboratorio/laboratorio.module';
 import { LaboratorioAulaModule } from './laboratorio_aula/laboratorio_aula.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { HorarioModule } from './horario/horario.module';
+import { ClaseAulaModule } from './clase_aula/clase_aula.module';
 
 @Module({
   imports: [
@@ -82,6 +84,8 @@ import { JwtModule } from '@nestjs/jwt';
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
+    HorarioModule,
+    ClaseAulaModule,
   ],
 })
 export class AppModule {}

@@ -1,33 +1,12 @@
-import { Type } from 'class-transformer';
 import {
-  IsArray,
   IsDateString,
   IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
-  Matches,
-  ValidateNested,
+  IsUUID
 } from 'class-validator';
-
-class HorarioDiaDto {
-  @IsNotEmpty()
-  @IsString()
-  @IsIn(['L', 'M', 'X', 'J', 'V', 'S', 'D'])
-  dia: string; // L, M, X, J, V, S, D
-
-  @IsNotEmpty()
-  @IsString()
-  @Matches(/^[0-9]{2}:[0-9]{2}$/)
-  inicio: string; // Formato HH:MM
-
-  @IsNotEmpty()
-  @IsString()
-  @Matches(/^[0-9]{2}:[0-9]{2}$/)
-  fin: string; // Formato HH:MM
-}
 
 export class CreateClaseDto {
   @IsNotEmpty()
@@ -60,12 +39,12 @@ export class CreateClaseDto {
   ])
   periodo: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => HorarioDiaDto)
-  horario: HorarioDiaDto[];
+  // @IsNotEmpty()
+  // @IsString()
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => HorarioDiaDto)
+  // horario: HorarioDiaDto[];
 
   //   @IsNotEmpty()
   //   @IsString()
@@ -86,9 +65,5 @@ export class CreateClaseDto {
 
   @IsNotEmpty()
   @IsUUID()
-  cursoModalidad_id: string;
-
-  @IsNotEmpty()
-  @IsUUID()
-  aula_id: string;
+  curso_modalidad_id: string;
 }

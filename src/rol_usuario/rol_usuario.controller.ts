@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { RolUsuarioService } from './rol_usuario.service';
 import { CreateRolUsuarioDto } from './dto/create-rol_usuario.dto';
 import { UpdateRolUsuarioDto } from './dto/update-rol_usuario.dto';
 import { PaginationRolUsuarioDto } from './dto/rol_usuario-pagination.dto';
+import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
 
 @Controller('rol-usuario')
 export class RolUsuarioController {
@@ -28,20 +30,20 @@ export class RolUsuarioController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.rolUsuarioService.findOne(id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
-    @Body() updateRolUsuarioDto: UpdateRolUsuarioDto,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new AtLeastOneFieldPipe) updateRolUsuarioDto: UpdateRolUsuarioDto,
   ) {
     return this.rolUsuarioService.update(id, updateRolUsuarioDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.rolUsuarioService.remove(id);
   }
 }

@@ -1,4 +1,4 @@
-import { Clase } from 'src/clase/entities/clase.entity';
+import { ClaseAula } from 'src/clase_aula/entities/clase_aula.entity';
 import { LaboratorioAula } from 'src/laboratorio_aula/entities/laboratorio_aula.entity';
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import {
@@ -31,9 +31,12 @@ export class Aula {
   @JoinColumn({ name: 'campus_id' })
   pabellon: Pabellon;
 
-  @OneToMany(() => Clase, (clase) => clase.aula)
-  clase: Clase[];
+  // @OneToMany(() => Clase, (clase) => clase.aula)
+  // clase: Clase[];
 
   @OneToMany(()=> LaboratorioAula, (laboratorioAula) => laboratorioAula.laboratorio)
   laboratorioAula: LaboratorioAula[];
+
+  @OneToMany(()=>ClaseAula, (claseAula) => claseAula.aula)
+  claseAula: ClaseAula[];
 }

@@ -1,9 +1,9 @@
 import { Aula } from 'src/aula/entities/aula.entity';
+import { ClaseAula } from 'src/clase_aula/entities/clase_aula.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { MatriculaClase } from 'src/matricula_clase/entities/matricula_clase.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
-import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
   CreateDateColumn,
@@ -37,8 +37,8 @@ export class Clase {
   @Column({ type: 'varchar', length: 50 })
   periodo: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  horario: string;
+  // @Column({ type: 'varchar', length: 50 })
+  // horario: string;
 
   // @Column({ type: 'varchar', length: 50 })
   // bloque: string;
@@ -58,11 +58,11 @@ export class Clase {
   @JoinColumn({ name: 'curso_modalidad_id' })
   cursoModalidad: CursoModalidad;
 
-  @ManyToOne(() => Aula, (aula) => aula.clase, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'aula_id' })
-  aula: Aula;
+  // @ManyToOne(() => Aula, (aula) => aula.clase, {
+  //   nullable: false,
+  // })
+  // @JoinColumn({ name: 'aula_id' })
+  // aula: Aula;
 
   @OneToMany(() => Responsable, (responsable) => responsable.clase)
   responsable: Responsable[];
@@ -72,4 +72,7 @@ export class Clase {
 
   @OneToMany(() => Reserva, (reserva) => reserva.clase)
   reserva: Reserva[];
+
+  @OneToMany(()=> ClaseAula, (claseAula) => claseAula.clase)
+  claseAula: ClaseAula[];
 }
