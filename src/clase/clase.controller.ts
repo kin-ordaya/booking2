@@ -19,16 +19,16 @@ export class ClaseController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.claseService.findOne(+id);
+    return this.claseService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateClaseDto: UpdateClaseDto) {
-    return this.claseService.update(+id, updateClaseDto);
+    return this.claseService.update(id, updateClaseDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.claseService.remove(+id);
+    return this.claseService.remove(id);
   }
 }
