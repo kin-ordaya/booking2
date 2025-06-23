@@ -64,6 +64,4 @@ export class Usuario {
   @OneToMany(() => RolUsuario, (rolUsuario) => rolUsuario.usuario)
   rol_usuario: RolUsuario[];
 
-  @OneToMany(() => Reserva, (reserva) => reserva.usuario)
-  reserva: Reserva[];
 }

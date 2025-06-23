@@ -19,16 +19,16 @@ export class ReservaController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.reservaService.findOne(+id);
+    return this.reservaService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateReservaDto: UpdateReservaDto) {
-    return this.reservaService.update(+id, updateReservaDto);
+    return this.reservaService.update(id, updateReservaDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.reservaService.remove(+id);
+    return this.reservaService.remove(id);
   }
 }

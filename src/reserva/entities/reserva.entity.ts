@@ -1,7 +1,7 @@
 import { Clase } from "src/clase/entities/clase.entity";
 import { DetalleReserva } from "src/detalle_reserva/entities/detalle_reserva.entity";
 import { Recurso } from "src/recurso/entities/recurso.entity";
-import { Usuario } from "src/usuario/entities/usuario.entity";
+import { RolUsuario } from "src/rol_usuario/entities/rol_usuario.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 @Entity()
 export class Reserva {
@@ -17,14 +17,14 @@ export class Reserva {
   @Column({ type: 'varchar', length: 100 })
   codigo: string;
 
-  @Column({ type: 'int', default: 0 })
-  mantenimiento: string;
+  @Column({ type: 'int', default: 0 , nullable: true})
+  mantenimiento?: number;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   descripcion?: string;
 
-  @Column({ type: 'date'})
-  programacion: string;
+  @Column({ type: 'date' })
+  programacion: Date;
 
   @Column({ type: 'int'})
   cantidad: number;
@@ -41,11 +41,11 @@ export class Reserva {
   @JoinColumn({ name: 'recurso_id' })
   recurso: Recurso;
 
-  @ManyToOne(() => Usuario, (usuario) => usuario.reserva, {
+  @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.reserva, {
     nullable: false,
   })
-  @JoinColumn({ name: 'usuario_id' })
-  usuario: Usuario;
+  @JoinColumn({ name: 'rol_usuario_id' })
+  rolUsuario: RolUsuario;
 
   @OneToMany(() => DetalleReserva, (detalleReserva) => detalleReserva.reserva)
   detalle_reserva: DetalleReserva[];
