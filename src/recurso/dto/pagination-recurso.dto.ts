@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsIn, IsNumber, IsOptional } from "class-validator";
+import { IsIn, IsNumber, IsOptional, IsUUID } from "class-validator";
 import { PaginationDto } from "src/common/dtos/pagination.dto";
 
 export class PaginationRecursoDto extends PaginationDto {
@@ -12,6 +12,11 @@ export class PaginationRecursoDto extends PaginationDto {
   })
   @Type(() => Number)
   sort_name?: number;
+
+  @ApiProperty({ description: 'Filtra por rol_usuario_id' })
+  @IsOptional()
+  @IsUUID()
+  rol_usuario_id?: string;
 
   @ApiProperty({ description: 'Ordena por estado activo=1, inactivo=2' })
   @IsOptional()

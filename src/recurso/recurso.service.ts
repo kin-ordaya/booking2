@@ -15,8 +15,8 @@ import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
 import { PaginationRecursoDto } from './dto/pagination-recurso.dto';
-import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 
 @Injectable()
 export class RecursoService {
@@ -33,8 +33,8 @@ export class RecursoService {
     @InjectRepository(Proveedor)
     private readonly proveedorRepository: Repository<Proveedor>,
 
-    @InjectRepository(Credencial)
-    private readonly credencialRepository: Repository<Credencial>,
+    @InjectRepository(RolUsuario)
+    private readonly rolUsuarioRepository: Repository<RolUsuario>,
   ) {}
 
   async create(createRecursoDto: CreateRecursoDto) {
@@ -92,12 +92,26 @@ export class RecursoService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
-  
 
   async findAll(paginationRecursoDto: PaginationRecursoDto) {
     try {
-      const { sort_name, sort_state, page, limit, search } = paginationRecursoDto;
-      
+      const { rol_usuario_id, sort_name, sort_state, page, limit, search } =
+        paginationRecursoDto;
+
+      // 1. Validar que el rol_usuario_id existe si fue proporcionado
+      if (rol_usuario_id) {
+        const rolUsuario = await this.rolUsuarioRepository.findOne({
+          where: { id: rol_usuario_id },
+          relations: ['usuario', 'rol'],
+        });
+
+        if (!rolUsuario) {
+          throw new BadRequestException(
+            'El rol de usuario proporcionado no existe',
+          );
+        }
+      }
+
       // Query para contar el total (sin paginación ni GROUP BY)
       const countQuery = this.recursoRepository.createQueryBuilder('recurso');
 
@@ -108,6 +122,7 @@ export class RecursoService {
         .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
         .leftJoinAndSelect('recurso.proveedor', 'proveedor')
         .leftJoin('recurso.credencial', 'credencial')
+        .leftJoin('recurso.recurso_curso', 'recursoCurso')
         .select([
           'recurso.id',
           'recurso.nombre',
@@ -127,7 +142,45 @@ export class RecursoService {
         .addGroupBy('tipoAcceso.id')
         .addGroupBy('tipoAcceso.nombre');
 
-      // Aplicar filtros a AMBAS consultas (countQuery y query)
+      // Filtro por rol_usuario_id (si es docente)
+      if (rol_usuario_id) {
+        const rolUsuario = await this.rolUsuarioRepository.findOne({
+          where: { id: rol_usuario_id },
+          relations: ['rol'],
+        });
+
+        if (!rolUsuario) {
+          throw new BadRequestException(
+            'El rol de usuario proporcionado no existe',
+          );
+        }
+
+        if (rolUsuario.rol.nombre === 'DOCENTE') {
+          // Para docentes: filtrar por cursos donde son responsables
+          // La relación correcta es: Recurso → RecursoCurso → Curso → CursoModalidad → Responsable
+          query
+            .leftJoin('recursoCurso.curso', 'curso')
+            .leftJoin('curso.curso_modalidad', 'cursoModalidad')
+            .leftJoin('cursoModalidad.responsable', 'responsable')
+            .leftJoin('responsable.rolUsuario', 'rolUsuarioResponsable')
+            .andWhere('rolUsuarioResponsable.id = :rol_usuario_id', {
+              rol_usuario_id,
+            });
+
+          countQuery
+            .leftJoin('recurso.recurso_curso', 'countRecursoCurso')
+            .leftJoin('countRecursoCurso.curso', 'countCurso')
+            .leftJoin('countCurso.curso_modalidad', 'countCursoModalidad')
+            .leftJoin('countCursoModalidad.responsable', 'countResponsable')
+            .leftJoin('countResponsable.rolUsuario', 'countRolUsuario')
+            .andWhere('countRolUsuario.id = :rol_usuario_id', {
+              rol_usuario_id,
+            });
+        }
+        // Para administradores no aplicamos filtro adicional
+      }
+
+      // Resto de los filtros
       if (sort_state !== undefined) {
         const filter = { estado: sort_state === 1 ? 1 : 0 };
         query.andWhere('recurso.estado = :estado', filter);
@@ -146,7 +199,7 @@ export class RecursoService {
         );
       }
 
-      // Ordenamiento (solo en query principal)
+      // Ordenamiento
       if (sort_name !== undefined) {
         query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
       } else {
@@ -163,7 +216,7 @@ export class RecursoService {
       ]);
 
       // Mapeo de resultados
-      const results = rawResults.map(raw => ({
+      const results = rawResults.map((raw) => ({
         id: raw.recurso_id,
         nombre: raw.recurso_nombre,
         link_declaracion: raw.recurso_link_declaracion,
@@ -173,7 +226,7 @@ export class RecursoService {
         cantidad_credenciales: parseInt(raw.cantidad_credenciales, 10) || 0,
         tipoRecurso: { nombre: raw.tipoRecurso_nombre },
         proveedor: { nombre: raw.proveedor_nombre },
-        tipoAcceso: { 
+        tipoAcceso: {
           id: raw.tipoAcceso_id,
           nombre: raw.tipoAcceso_nombre,
         },
@@ -189,9 +242,9 @@ export class RecursoService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', { cause: error });
+      throw error;
     }
-}
+  }
 
   async findOne(id: string): Promise<Recurso> {
     try {
