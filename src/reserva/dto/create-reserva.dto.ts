@@ -30,9 +30,9 @@ export class CreateReservaDto {
 
     @IsNotEmpty()
     @IsInt()
-    @IsPositive({message: 'El campo cantidad debe ser positivo'})
+    @IsPositive({message: 'El campo cantidad_accesos debe ser positivo'})
     @Type(() => Number)
-    cantidad: number;
+    cantidad_accesos: number;
 
     @IsNotEmpty()
     @IsUUID()

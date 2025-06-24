@@ -9,7 +9,7 @@ import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reserva } from './entities/reserva.entity';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
@@ -36,16 +36,22 @@ export class ReservaService {
 
     @InjectRepository(DetalleReserva)
     private readonly detalleReservaRepository: Repository<DetalleReserva>,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createReservaDto: CreateReservaDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
       const {
         mantenimiento,
         descripcion,
         inicio,
         fin,
-        cantidad,
+        cantidad_accesos,
         recurso_id,
         clase_id,
         rol_usuario_id,
@@ -90,23 +96,28 @@ export class ReservaService {
         recurso_id,
         inicio,
         fin,
-        cantidad,
+        cantidad_accesos,
       );
 
       // 6. Crear reserva
-      const reserva = this.reservaRepository.create({
+      const reserva = queryRunner.manager.create(Reserva, {
         mantenimiento,
         descripcion,
         inicio,
         fin,
-        cantidad,
+        cantidad_accesos,
         recurso: { id: recurso_id },
         clase: { id: clase_id },
         rolUsuario: { id: rol_usuario_id },
       });
 
-      return await this.reservaRepository.save(reserva);
+      //return await this.reservaRepository.save(reserva);
+      const reservaGuardada = await queryRunner.manager.save(reserva);
+
+      await queryRunner.commitTransaction();
+      return reservaGuardada;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       if (
         error instanceof BadRequestException ||
         error instanceof ConflictException ||
@@ -115,6 +126,8 @@ export class ReservaService {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -163,7 +176,7 @@ export class ReservaService {
         )
       ) {
         // Hay solapamiento, sumar las credenciales usadas
-        maxCredencialesUsadas += reserva.cantidad;
+        maxCredencialesUsadas += reserva.cantidad_accesos;
       }
     });
 
@@ -178,7 +191,11 @@ export class ReservaService {
   }
 
   async findAll() {
-
+    try {
+      return await this.reservaRepository.find({order: {creacion: 'DESC'}});
+    } catch (error) {
+      throw new InternalServerErrorException('Error inesperado');
+    }
   }
 
   async findOne(id: string) {

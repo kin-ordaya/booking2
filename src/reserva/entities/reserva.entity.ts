@@ -33,7 +33,7 @@ export class Reserva {
   fin: string
 
   @Column({ type: 'int'})
-  cantidad: number;
+  cantidad_accesos: number;
 
   @ManyToOne(() => Clase, (clase) => clase.reserva, {
     nullable: true,
