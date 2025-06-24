@@ -24,7 +24,13 @@ export class Reserva {
   descripcion?: string;
 
   @Column({ type: 'date' })
-  programacion: Date;
+  fecha: Date;
+
+  @Column({ type: 'varchar', length: 5 })
+  inicio: string
+
+  @Column({ type: 'varchar', length: 5 })
+  fin: string
 
   @Column({ type: 'int'})
   cantidad: number;

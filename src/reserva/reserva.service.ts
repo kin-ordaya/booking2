@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +13,8 @@ import { Repository } from 'typeorm';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
+import { Credencial } from 'src/credencial/entities/credencial.entity';
+import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 
 @Injectable()
 export class ReservaService {
@@ -22,6 +30,12 @@ export class ReservaService {
 
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
+
+    @InjectRepository(Credencial)
+    private readonly credencialRepository: Repository<Credencial>,
+
+    @InjectRepository(DetalleReserva)
+    private readonly detalleReservaRepository: Repository<DetalleReserva>,
   ) {}
 
   async create(createReservaDto: CreateReservaDto) {
@@ -29,34 +43,142 @@ export class ReservaService {
       const {
         mantenimiento,
         descripcion,
-        programacion,
+        inicio,
+        fin,
         cantidad,
         recurso_id,
         clase_id,
         rol_usuario_id,
       } = createReservaDto;
 
-      const reserva = await this.reservaRepository.create({
+      // 1. Convertir a minutos para comparación
+      const [inicioHours, inicioMins] = inicio.split(':').map(Number);
+      const [finHours, finMins] = fin.split(':').map(Number);
+      const inicioTotalMins = inicioHours * 60 + inicioMins;
+      const finTotalMins = finHours * 60 + finMins;
+
+      if (inicioTotalMins >= finTotalMins) {
+        throw new ConflictException(
+          'La hora de fin debe ser posterior a la hora de inicio',
+        );
+      }
+
+      // 3. Validar existencia de entidades relacionadas
+      const [recurso, clase, rolUsuario] = await Promise.all([
+        this.recursoRepository.findOneBy({ id: recurso_id }),
+        this.claseRepository.findOneBy({ id: clase_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: rol_usuario_id },
+          relations: ['usuario', 'rol'],
+        }),
+      ]);
+
+      if (!recurso) throw new NotFoundException('Recurso no encontrado');
+      if (!clase) throw new NotFoundException('Clase no encontrado');
+      if (!rolUsuario) throw new NotFoundException('Rol usuario no encontrado');
+
+      // 4. Validar permisos (solo ADMINISTRADOR o DOCENTE)
+      if (
+        rolUsuario.rol.nombre !== 'ADMINISTRADOR' &&
+        rolUsuario.rol.nombre !== 'DOCENTE'
+      ) {
+        throw new ConflictException('No tiene permisos para crear reserva');
+      }
+
+      // 5. Validar disponibilidad del recurso
+      await this.validarDisponibilidadRecurso(
+        recurso_id,
+        inicio,
+        fin,
+        cantidad,
+      );
+
+      // 6. Crear reserva
+      const reserva = this.reservaRepository.create({
         mantenimiento,
         descripcion,
-        programacion,
+        inicio,
+        fin,
         cantidad,
-        recurso: {id: recurso_id},
-        clase: {id: clase_id},
-        rolUsuario: {id: rol_usuario_id},
-
+        recurso: { id: recurso_id },
+        clase: { id: clase_id },
+        rolUsuario: { id: rol_usuario_id },
       });
+
       return await this.reservaRepository.save(reserva);
     } catch (error) {
-      if (error instanceof ConflictException || error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
     }
   }
 
+  private async validarDisponibilidadRecurso(
+    recursoId: string,
+    inicio: string,
+    fin: string,
+    cantidadRequerida: number,
+  ): Promise<void> {
+    // 1. Obtener todas las reservas existentes para este recurso
+    const reservasExistente = await this.reservaRepository.find({
+      where: { recurso: { id: recursoId } },
+    });
+
+    // 2. Obtener credenciales disponibles del recurso
+    const credenciales = await this.credencialRepository.find({
+      where: { recurso: { id: recursoId } },
+    });
+
+    const totalCredenciales = credenciales.length;
+
+    // 3. Verificar disponibilidad total
+    if (cantidadRequerida > totalCredenciales) {
+      throw new ConflictException(
+        `No hay suficientes credenciales disponibles (${totalCredenciales} disponibles)`,
+      );
+    }
+
+    // 4. Verificar solapamiento de horarios y uso de credenciales
+    const [inicioH, inicioM] = inicio.split(':').map(Number);
+    const [finH, finM] = fin.split(':').map(Number);
+
+    let maxCredencialesUsadas = 0;
+
+    reservasExistente.forEach((reserva) => {
+      const [resInicioH, resInicioM] = reserva.inicio.split(':').map(Number);
+      const [resFinH, resFinM] = reserva.fin.split(':').map(Number);
+
+      // Verificar solapamiento de horarios
+      if (
+        !(
+          finH < resInicioH ||
+          (finH === resInicioH &&
+            finM <= resInicioM &&
+            !(inicioH > resFinH || (inicioH === resFinH && inicioM >= resFinM)))
+        )
+      ) {
+        // Hay solapamiento, sumar las credenciales usadas
+        maxCredencialesUsadas += reserva.cantidad;
+      }
+    });
+
+    // 5. Validar disponibilidad en el horario solicitado
+    if (maxCredencialesUsadas + cantidadRequerida > totalCredenciales) {
+      const disponibles = totalCredenciales - maxCredencialesUsadas;
+      throw new ConflictException(
+        `No hay suficiente disponibilidad en el horario solicitado. ` +
+          `Solo ${disponibles > 0 ? disponibles : 0} credenciales disponibles en este horario`,
+      );
+    }
+  }
+
   async findAll() {
-    return `This action returns all reserva`;
+
   }
 
   async findOne(id: string) {

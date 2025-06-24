@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID, MaxLength } from "class-validator";
+import { IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID, Matches, MaxLength } from "class-validator";
 
 export class CreateReservaDto {
 
@@ -16,7 +16,17 @@ export class CreateReservaDto {
 
     @IsNotEmpty()
     @IsDateString()
-    programacion: string;
+    fecha: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, {message: 'El campo inicio debe tener el formato HH:MM'})
+    inicio: string
+
+    @IsNotEmpty()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
+    fin: string
 
     @IsNotEmpty()
     @IsInt()
