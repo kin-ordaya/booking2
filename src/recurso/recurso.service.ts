@@ -209,8 +209,8 @@ export class RecursoService {
       // Paginación y ejecución
       const [rawResults, totalCount] = await Promise.all([
         query
-          .skip((page - 1) * limit)
-          .take(limit)
+          .offset((page - 1) * limit)
+          .limit(limit)
           .getRawMany(),
         countQuery.getCount(),
       ]);
