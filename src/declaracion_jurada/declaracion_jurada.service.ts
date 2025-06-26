@@ -102,7 +102,7 @@ export class DeclaracionJuradaService {
       ) {
         throw error;
       }
-      throw error;
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -182,7 +182,10 @@ export class DeclaracionJuradaService {
         },
       };
     } catch (error) {
-      throw error;
+      if(error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
