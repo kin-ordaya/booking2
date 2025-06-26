@@ -23,14 +23,14 @@ export class Reserva {
   @Column({ type: 'varchar', length: 100, nullable: true })
   descripcion?: string;
 
-  @Column({ type: 'date' })
-  fecha: Date;
+  // @Column({ type: 'date' })
+  // fecha: Date;
 
   @Column({ type: 'varchar', length: 5 })
-  inicio: string
+  inicio: Date;
 
   @Column({ type: 'varchar', length: 5 })
-  fin: string
+  fin: Date;
 
   @Column({ type: 'int'})
   cantidad_accesos: number;

@@ -127,10 +127,10 @@ export class DeclaracionJuradaService {
     try {
       const { rol_usuario_id, recurso_id } = getDeclaracionJuradaDto;
 
-      const query =
-        this.declaracionJuradaRepository.createQueryBuilder(
-          'declaracionJurada',
-        );
+      const query = this.declaracionJuradaRepository
+        .createQueryBuilder('declaracionJurada')
+        .leftJoin('declaracionJurada.rolUsuario', 'rolUsuario') // Agregar JOIN para rolUsuario
+        .leftJoin('declaracionJurada.recurso', 'recurso'); // Agregar JOIN para recurso
 
       // 1. Validar que el rol_usuario_id existe si fue proporcionado
       if (rol_usuario_id) {
@@ -159,6 +159,7 @@ export class DeclaracionJuradaService {
 
         query.andWhere('recurso.id = :recurso_id', { recurso_id });
       }
+
       return await query.getMany();
     } catch (error) {
       if (
@@ -167,7 +168,7 @@ export class DeclaracionJuradaService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw error
     }
   }
 

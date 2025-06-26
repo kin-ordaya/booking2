@@ -1,3 +1,4 @@
+import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -9,7 +10,7 @@ import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reserva } from './entities/reserva.entity';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Between, FindOptionsWhere } from 'typeorm';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
@@ -57,15 +58,14 @@ export class ReservaService {
         rol_usuario_id,
       } = createReservaDto;
 
-      // 1. Convertir a minutos para comparación
-      const [inicioHours, inicioMins] = inicio.split(':').map(Number);
-      const [finHours, finMins] = fin.split(':').map(Number);
-      const inicioTotalMins = inicioHours * 60 + inicioMins;
-      const finTotalMins = finHours * 60 + finMins;
+      // // 1. Convertir strings ISO a objetos Date
+      // const inicioDate = new Date(inicio);
+      // const finDate = new Date(fin);
 
-      if (inicioTotalMins >= finTotalMins) {
+      // Validar que la fecha de fin sea posterior a la de inicio
+      if (fin <= inicio) {
         throw new ConflictException(
-          'La hora de fin debe ser posterior a la hora de inicio',
+          'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
         );
       }
 
@@ -98,14 +98,16 @@ export class ReservaService {
       });
 
       if (credencialesDisponibles.length === 0) {
-        throw new ConflictException('No hay credenciales disponibles para este recurso');
+        throw new ConflictException(
+          'No hay credenciales disponibles para este recurso',
+        );
       }
 
-      // 5. Calcular la capacidad total del recurso
-      const capacidadTotal = credencialesDisponibles.reduce(
-        (total, credencial) => total + credencial.recurso.capacidad,
-        0
-      );
+      // // 5. Calcular la capacidad total del recurso
+      // const capacidadTotal = credencialesDisponibles.reduce(
+      //   (total, credencial) => total + credencial.recurso.capacidad,
+      //   0,
+      // );
 
       // 6. Validar disponibilidad del recurso
       await this.validarDisponibilidadRecurso(
@@ -117,11 +119,15 @@ export class ReservaService {
       );
 
       // 7. Calcular cantidad de credenciales necesarias
-      const capacidadPorCredencial = credencialesDisponibles[0].recurso.capacidad;
-      const cantidad_credenciales = Math.ceil(cantidad_accesos / capacidadPorCredencial);
+      const capacidadPorCredencial =
+        credencialesDisponibles[0].recurso.capacidad;
+      const cantidad_credenciales = Math.ceil(
+        cantidad_accesos / capacidadPorCredencial,
+      );
 
       // 8. Crear reserva
       const reserva = queryRunner.manager.create(Reserva, {
+        codigo: `RES-${Date.now()}`,
         mantenimiento,
         descripcion,
         inicio,
@@ -136,9 +142,12 @@ export class ReservaService {
       const reservaGuardada = await queryRunner.manager.save(reserva);
 
       // 9. Asignar credenciales a la reserva (DetalleReserva)
-      const credencialesAsignar = credencialesDisponibles.slice(0, cantidad_credenciales);
-      
-      const detallesReserva = credencialesAsignar.map(credencial => {
+      const credencialesAsignar = credencialesDisponibles.slice(
+        0,
+        cantidad_credenciales,
+      );
+
+      const detallesReserva = credencialesAsignar.map((credencial) => {
         return queryRunner.manager.create(DetalleReserva, {
           reserva: { id: reservaGuardada.id },
           credencial: { id: credencial.id },
@@ -166,10 +175,10 @@ export class ReservaService {
 
   private async validarDisponibilidadRecurso(
     recursoId: string,
-    inicio: string,
-    fin: string,
+    inicio: Date,
+    fin: Date,
     cantidadRequerida: number,
-    credencialesDisponibles: Credencial[]
+    credencialesDisponibles: Credencial[],
   ): Promise<void> {
     // 1. Obtener todas las reservas existentes para este recurso en la misma fecha
     const reservasExistente = await this.reservaRepository.find({
@@ -189,37 +198,29 @@ export class ReservaService {
       );
     }
 
-    // 4. Verificar solapamiento de horarios y uso de credenciales
-    const [inicioH, inicioM] = inicio.split(':').map(Number);
-    const [finH, finM] = fin.split(':').map(Number);
-
+    // 4. Verificar solapamiento de horarios
     let credencialesOcupadas = new Set<string>();
 
     reservasExistente.forEach((reserva) => {
-      const [resInicioH, resInicioM] = reserva.inicio.split(':').map(Number);
-      const [resFinH, resFinM] = reserva.fin.split(':').map(Number);
-
-      // Verificar solapamiento de horarios
-      if (
-        !(
-          finH < resInicioH ||
-          (finH === resInicioH && finM <= resInicioM) ||
-          (inicioH > resFinH || (inicioH === resFinH && inicioM >= resFinM))
-        )
-      ) {
-        // Hay solapamiento, agregar las credenciales usadas al conjunto
-        reserva.detalle_reserva.forEach(detalle => {
+      // Verificar solapamiento entre rangos de fechas
+      if (!(fin <= reserva.inicio || inicio >= reserva.fin)) {
+        // Hay solapamiento, agregar credenciales usadas
+        reserva.detalle_reserva.forEach((detalle) => {
           credencialesOcupadas.add(detalle.id);
         });
       }
     });
 
     // 5. Calcular credenciales disponibles
-    const credencialesDisponiblesCount = totalCredenciales - credencialesOcupadas.size;
-    const credencialesNecesarias = Math.ceil(cantidadRequerida / capacidadPorCredencial);
+    const credencialesDisponiblesCount =
+      totalCredenciales - credencialesOcupadas.size;
+    const credencialesNecesarias = Math.ceil(
+      cantidadRequerida / capacidadPorCredencial,
+    );
 
     if (credencialesDisponiblesCount < credencialesNecesarias) {
-      const accesosDisponibles = credencialesDisponiblesCount * capacidadPorCredencial;
+      const accesosDisponibles =
+        credencialesDisponiblesCount * capacidadPorCredencial;
       throw new ConflictException(
         `No hay suficiente disponibilidad en el horario solicitado. ` +
           `Solo ${accesosDisponibles > 0 ? accesosDisponibles : 0} accesos disponibles en este horario`,
@@ -227,11 +228,38 @@ export class ReservaService {
     }
   }
 
-  async findAll() {
+  async findAll(paginationReservaDto: PaginationReservaDto) {
     try {
-      return await this.reservaRepository.find({order: {creacion: 'DESC'}});
+      const { recurso_id, inicio, fin } = paginationReservaDto;
+
+      // Validación de parámetros requeridos
+      if (!recurso_id || !inicio || !fin) {
+        throw new BadRequestException('Se requieren recurso_id, inicio y fin');
+      }
+
+      // Convertir los strings ISO a objetos Date
+      const fechaInicio = new Date(inicio);
+      const fechaFin = new Date(fin);
+
+      // Asegurarnos de incluir todo el día final
+      fechaFin.setHours(23, 59, 59, 999);
+
+      // Consulta para encontrar reservas en el rango de fechas
+      const reservas = await this.reservaRepository.find({
+        where: {
+          recurso: { id: recurso_id },
+          inicio: Between(fechaInicio, fechaFin),
+        },
+        order: { creacion: 'DESC' },
+        relations: ['recurso', 'clase', 'rolUsuario'], // Opcional: incluir relaciones si las necesitas
+      });
+
+      return reservas;
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw error
     }
   }
 

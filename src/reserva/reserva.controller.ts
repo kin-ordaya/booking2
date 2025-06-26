@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ReservaService } from './reserva.service';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 
 @Controller('reserva')
 export class ReservaController {
@@ -13,8 +14,8 @@ export class ReservaController {
   }
 
   @Get()
-  findAll() {
-    return this.reservaService.findAll();
+  findAll(@Query() paginationReservaDto: PaginationReservaDto) {
+    return this.reservaService.findAll(paginationReservaDto);
   }
 
   @Get(':id')

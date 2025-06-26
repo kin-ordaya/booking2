@@ -14,19 +14,19 @@ export class CreateReservaDto {
     @MaxLength(100, {message: 'El campo descripcion debe tener un maximo de 100 caracteres'})
     descripcion?: string;
 
-    @IsNotEmpty()
-    @IsDateString()
-    fecha: string;
+    // @IsNotEmpty()
+    // @IsDateString()
+    // fecha: string;
 
     @IsNotEmpty()
-    @IsString()
-    @Matches(/^\d{2}:\d{2}$/, {message: 'El campo inicio debe tener el formato HH:MM'})
-    inicio: string
+    @IsDateString({}, {message: 'El campo inicio debe tener el formato YYYY-MM-DD'})
+    // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo inicio debe tener el formato HH:MM'})
+    inicio: Date
 
     @IsNotEmpty()
-    @IsString()
-    @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
-    fin: string
+    @IsDateString({}, {message: 'El campo fin debe tener el formato YYYY-MM-DD'})
+    // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
+    fin: Date
 
     @IsNotEmpty()
     @IsInt()
