@@ -1,7 +1,6 @@
-import { IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { IsOptional, IsUUID } from "class-validator";
 
-export class PaginationDeclaracionJuradaDto extends PaginationDto {
+export class PaginationDeclaracionJuradaDto {
   @IsOptional()
   @IsUUID('4', { message: 'El campo rol_usuario_id debe ser de tipo uuid' })
   rol_usuario_id?: string;

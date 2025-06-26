@@ -125,13 +125,12 @@ export class DeclaracionJuradaService {
 
   async findAll(getDeclaracionJuradaDto: PaginationDeclaracionJuradaDto) {
     try {
-      const { rol_usuario_id, recurso_id, page, limit, search } =
-        getDeclaracionJuradaDto;
+      const { rol_usuario_id, recurso_id } = getDeclaracionJuradaDto;
 
-      const query = this.declaracionJuradaRepository
-        .createQueryBuilder('declaracionJurada')
-        .leftJoinAndSelect('declaracionJurada.rolUsuario', 'rolUsuario')
-        .leftJoinAndSelect('declaracionJurada.recurso', 'recurso');
+      const query =
+        this.declaracionJuradaRepository.createQueryBuilder(
+          'declaracionJurada',
+        );
 
       // 1. Validar que el rol_usuario_id existe si fue proporcionado
       if (rol_usuario_id) {
@@ -160,29 +159,12 @@ export class DeclaracionJuradaService {
 
         query.andWhere('recurso.id = :recurso_id', { recurso_id });
       }
-
-      if (search) {
-        query.where('(UPPER("recurso"."nombre") LIKE UPPER(:search))', {
-          search: `%${search.toUpperCase()}%`,
-        });
-      }
-
-      // 4. Paginación y ejecución
-      const [results, count] = await query
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
-      return {
-        results,
-        meta: {
-          count,
-          page,
-          limit,
-          totalPages: Math.ceil(count / limit),
-        },
-      };
+      return await query.getMany();
     } catch (error) {
-      if(error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
