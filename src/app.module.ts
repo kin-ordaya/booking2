@@ -33,6 +33,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { HorarioModule } from './horario/horario.module';
 import { ClaseAulaModule } from './clase_aula/clase_aula.module';
+import { DeclaracionJuradaModule } from './declaracion_jurada/declaracion_jurada.module';
 
 @Module({
   imports: [
@@ -58,16 +59,19 @@ import { ClaseAulaModule } from './clase_aula/clase_aula.module';
     AulaModule,
     AuthModule,
     CampusModule,
+    ClaseAulaModule,
     ClaseModule,
     ContactoModule,
     CredencialModule,
     CursoModalidadModule,
     CursoModule,
+    DeclaracionJuradaModule,
     DetalleReservaModule,
     DocumentoIdentidadModule,
     EapModule,
     EstudianteModule,
     FacultadModule,
+    HorarioModule,
     LaboratorioAulaModule,
     LaboratorioModule,
     MatriculaClaseModule,
@@ -84,8 +88,6 @@ import { ClaseAulaModule } from './clase_aula/clase_aula.module';
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
-    HorarioModule,
-    ClaseAulaModule,
   ],
 })
 export class AppModule {}

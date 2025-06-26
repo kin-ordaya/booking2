@@ -1,3 +1,4 @@
+import { DeclaracionJurada } from 'src/declaracion_jurada/entities/declaracion_jurada.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
@@ -31,6 +32,9 @@ export class RolUsuario {
 
   @OneToMany(()=> Reserva , (reserva) => reserva.rolUsuario)
   reserva: Reserva[];
+
+  @OneToMany(()=> DeclaracionJurada, (declaracionJurada) => declaracionJurada.rolUsuario)
+  declaracionJurada: DeclaracionJurada[];
 
   // @OneToMany(()=> Clase, (clase) => clase.rolUsuario)
   // clase: Clase[];

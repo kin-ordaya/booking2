@@ -35,6 +35,9 @@ export class Reserva {
   @Column({ type: 'int'})
   cantidad_accesos: number;
 
+  @Column({ type: 'int'})
+  cantidad_credenciales: number;
+
   @ManyToOne(() => Clase, (clase) => clase.reserva, {
     nullable: true,
   })

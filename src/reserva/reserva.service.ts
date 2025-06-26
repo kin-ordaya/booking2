@@ -69,7 +69,7 @@ export class ReservaService {
         );
       }
 
-      // 3. Validar existencia de entidades relacionadas
+      // 2. Validar existencia de entidades relacionadas
       const [recurso, clase, rolUsuario] = await Promise.all([
         this.recursoRepository.findOneBy({ id: recurso_id }),
         this.claseRepository.findOneBy({ id: clase_id }),
@@ -83,7 +83,7 @@ export class ReservaService {
       if (!clase) throw new NotFoundException('Clase no encontrado');
       if (!rolUsuario) throw new NotFoundException('Rol usuario no encontrado');
 
-      // 4. Validar permisos (solo ADMINISTRADOR o DOCENTE)
+      // 3. Validar permisos (solo ADMINISTRADOR o DOCENTE)
       if (
         rolUsuario.rol.nombre !== 'ADMINISTRADOR' &&
         rolUsuario.rol.nombre !== 'DOCENTE'
@@ -91,28 +91,61 @@ export class ReservaService {
         throw new ConflictException('No tiene permisos para crear reserva');
       }
 
-      // 5. Validar disponibilidad del recurso
+      // 4. Obtener todas las credenciales disponibles para el recurso
+      const credencialesDisponibles = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso'],
+      });
+
+      if (credencialesDisponibles.length === 0) {
+        throw new ConflictException('No hay credenciales disponibles para este recurso');
+      }
+
+      // 5. Calcular la capacidad total del recurso
+      const capacidadTotal = credencialesDisponibles.reduce(
+        (total, credencial) => total + credencial.recurso.capacidad,
+        0
+      );
+
+      // 6. Validar disponibilidad del recurso
       await this.validarDisponibilidadRecurso(
         recurso_id,
         inicio,
         fin,
         cantidad_accesos,
+        credencialesDisponibles,
       );
 
-      // 6. Crear reserva
+      // 7. Calcular cantidad de credenciales necesarias
+      const capacidadPorCredencial = credencialesDisponibles[0].recurso.capacidad;
+      const cantidad_credenciales = Math.ceil(cantidad_accesos / capacidadPorCredencial);
+
+      // 8. Crear reserva
       const reserva = queryRunner.manager.create(Reserva, {
         mantenimiento,
         descripcion,
         inicio,
         fin,
         cantidad_accesos,
+        cantidad_credenciales,
         recurso: { id: recurso_id },
         clase: { id: clase_id },
         rolUsuario: { id: rol_usuario_id },
       });
 
-      //return await this.reservaRepository.save(reserva);
       const reservaGuardada = await queryRunner.manager.save(reserva);
+
+      // 9. Asignar credenciales a la reserva (DetalleReserva)
+      const credencialesAsignar = credencialesDisponibles.slice(0, cantidad_credenciales);
+      
+      const detallesReserva = credencialesAsignar.map(credencial => {
+        return queryRunner.manager.create(DetalleReserva, {
+          reserva: { id: reservaGuardada.id },
+          credencial: { id: credencial.id },
+        });
+      });
+
+      await queryRunner.manager.save(detallesReserva);
 
       await queryRunner.commitTransaction();
       return reservaGuardada;
@@ -136,23 +169,23 @@ export class ReservaService {
     inicio: string,
     fin: string,
     cantidadRequerida: number,
+    credencialesDisponibles: Credencial[]
   ): Promise<void> {
-    // 1. Obtener todas las reservas existentes para este recurso
+    // 1. Obtener todas las reservas existentes para este recurso en la misma fecha
     const reservasExistente = await this.reservaRepository.find({
       where: { recurso: { id: recursoId } },
+      relations: ['detalle_reserva'],
     });
 
-    // 2. Obtener credenciales disponibles del recurso
-    const credenciales = await this.credencialRepository.find({
-      where: { recurso: { id: recursoId } },
-    });
-
-    const totalCredenciales = credenciales.length;
+    // 2. Calcular capacidad total del recurso
+    const capacidadPorCredencial = credencialesDisponibles[0].recurso.capacidad;
+    const totalCredenciales = credencialesDisponibles.length;
+    const capacidadTotal = totalCredenciales * capacidadPorCredencial;
 
     // 3. Verificar disponibilidad total
-    if (cantidadRequerida > totalCredenciales) {
+    if (cantidadRequerida > capacidadTotal) {
       throw new ConflictException(
-        `No hay suficientes credenciales disponibles (${totalCredenciales} disponibles)`,
+        `No hay suficientes accesos disponibles (${capacidadTotal} disponibles)`,
       );
     }
 
@@ -160,7 +193,7 @@ export class ReservaService {
     const [inicioH, inicioM] = inicio.split(':').map(Number);
     const [finH, finM] = fin.split(':').map(Number);
 
-    let maxCredencialesUsadas = 0;
+    let credencialesOcupadas = new Set<string>();
 
     reservasExistente.forEach((reserva) => {
       const [resInicioH, resInicioM] = reserva.inicio.split(':').map(Number);
@@ -170,22 +203,26 @@ export class ReservaService {
       if (
         !(
           finH < resInicioH ||
-          (finH === resInicioH &&
-            finM <= resInicioM &&
-            !(inicioH > resFinH || (inicioH === resFinH && inicioM >= resFinM)))
+          (finH === resInicioH && finM <= resInicioM) ||
+          (inicioH > resFinH || (inicioH === resFinH && inicioM >= resFinM))
         )
       ) {
-        // Hay solapamiento, sumar las credenciales usadas
-        maxCredencialesUsadas += reserva.cantidad_accesos;
+        // Hay solapamiento, agregar las credenciales usadas al conjunto
+        reserva.detalle_reserva.forEach(detalle => {
+          credencialesOcupadas.add(detalle.id);
+        });
       }
     });
 
-    // 5. Validar disponibilidad en el horario solicitado
-    if (maxCredencialesUsadas + cantidadRequerida > totalCredenciales) {
-      const disponibles = totalCredenciales - maxCredencialesUsadas;
+    // 5. Calcular credenciales disponibles
+    const credencialesDisponiblesCount = totalCredenciales - credencialesOcupadas.size;
+    const credencialesNecesarias = Math.ceil(cantidadRequerida / capacidadPorCredencial);
+
+    if (credencialesDisponiblesCount < credencialesNecesarias) {
+      const accesosDisponibles = credencialesDisponiblesCount * capacidadPorCredencial;
       throw new ConflictException(
         `No hay suficiente disponibilidad en el horario solicitado. ` +
-          `Solo ${disponibles > 0 ? disponibles : 0} credenciales disponibles en este horario`,
+          `Solo ${accesosDisponibles > 0 ? accesosDisponibles : 0} accesos disponibles en este horario`,
       );
     }
   }

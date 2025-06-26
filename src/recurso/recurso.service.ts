@@ -242,7 +242,7 @@ export class RecursoService {
         },
       };
     } catch (error) {
-      throw error;
+      throw new InternalServerErrorException('Error inesperado', error);
     }
   }
 

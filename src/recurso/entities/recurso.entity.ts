@@ -1,4 +1,5 @@
 import { Credencial } from 'src/credencial/entities/credencial.entity';
+import { DeclaracionJurada } from 'src/declaracion_jurada/entities/declaracion_jurada.entity';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
@@ -69,6 +70,9 @@ export class Recurso {
 
   @OneToMany(() => Credencial, (credencial) => credencial.recurso)
   credencial: Credencial[];
+
+  @OneToMany(()=> DeclaracionJurada, (declaracionJurada) => declaracionJurada.recurso)
+  declaracionJurada: DeclaracionJurada[];
 
   @ManyToOne(() => TipoAcceso, (tipoAcceso) => tipoAcceso.recursos, {
     nullable: false,
