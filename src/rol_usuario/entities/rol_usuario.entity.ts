@@ -30,8 +30,11 @@ export class RolUsuario {
   @OneToMany(() => Responsable, (responsable) => responsable.rolUsuario)
   responsable: Responsable[];
 
-  @OneToMany(()=> Reserva , (reserva) => reserva.rolUsuario)
+  @OneToMany(()=> Reserva , (reserva) => reserva.docente)
   reserva: Reserva[];
+
+  @OneToMany(()=> Reserva , (reserva) => reserva.autor)
+  reservaCreada: Reserva[];
 
   @OneToMany(()=> DeclaracionJurada, (declaracionJurada) => declaracionJurada.rolUsuario)
   declaracionJurada: DeclaracionJurada[];

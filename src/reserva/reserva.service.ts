@@ -64,7 +64,8 @@ export class ReservaService {
         cantidad_accesos,
         recurso_id,
         clase_id,
-        rol_usuario_id,
+        docente_id,
+        autor_id
       } = createReservaDto;
 
       // // 1. Convertir strings ISO a objetos Date
@@ -79,22 +80,31 @@ export class ReservaService {
       }
 
       // 2. Validar existencia de entidades relacionadas
-      const [recurso, clase, rolUsuario] = await Promise.all([
+      const [recurso, clase, docente, autor] = await Promise.all([
         this.recursoRepository.findOneBy({ id: recurso_id }),
         this.claseRepository.findOneBy({ id: clase_id }),
         this.rolUsuarioRepository.findOne({
-          where: { id: rol_usuario_id },
+          where: { id: docente_id },
+          relations: ['usuario', 'rol'],
+        }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: autor_id },
           relations: ['usuario', 'rol'],
         }),
       ]);
 
       if (!recurso) throw new NotFoundException('Recurso no encontrado');
       if (!clase) throw new NotFoundException('Clase no encontrado');
-      if (!rolUsuario) throw new NotFoundException('Rol usuario no encontrado');
+      if (!docente) throw new NotFoundException('Rol usuario no encontrado');
+      if (!autor) throw new NotFoundException('Rol usuario no encontrado');
 
       // 3. Validar permisos (DOCENTE)
-      if (rolUsuario.rol.nombre !== 'DOCENTE') {
-        throw new ConflictException('El usuariono es de rol docente');
+      if (docente.rol.nombre !== 'DOCENTE') {
+        throw new ConflictException('El docente_id no es de rol docente');
+      }
+
+      if (autor.rol.nombre !== 'DOCENTE' && autor.rol.nombre !== 'ADMINISTRADOR') {
+        throw new ConflictException('El autor_id no es de rol docente o administrador');
       }
 
       // 4. Obtener todas las credenciales disponibles para el recurso
@@ -125,7 +135,7 @@ export class ReservaService {
       // Verificar si el docente es responsable de esta modalidad de curso
       const esResponsable = await this.responsableRepository.findOne({
         where: {
-          rolUsuario: { id: rol_usuario_id },
+          rolUsuario: { id: docente_id },
           cursoModalidad: { id: claseConModalidad.cursoModalidad.id },
         },
       });
@@ -182,7 +192,8 @@ export class ReservaService {
         cantidad_credenciales,
         recurso: { id: recurso_id },
         clase: { id: clase_id },
-        rolUsuario: { id: rol_usuario_id },
+        docente: { id: docente_id },
+        autor: { id: autor_id },
       });
 
       const reservaGuardada = await queryRunner.manager.save(reserva);

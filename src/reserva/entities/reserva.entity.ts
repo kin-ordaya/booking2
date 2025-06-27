@@ -53,8 +53,14 @@ export class Reserva {
   @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.reserva, {
     nullable: false,
   })
-  @JoinColumn({ name: 'rol_usuario_id' })
-  rolUsuario: RolUsuario;
+  @JoinColumn({ name: 'docente_id' })
+  docente: RolUsuario;
+
+  @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.reservaCreada, {
+    nullable: false,
+  })
+  @JoinColumn({ name: 'autor_id' })
+  autor: RolUsuario;
 
   @OneToMany(() => DetalleReserva, (detalleReserva) => detalleReserva.reserva)
   detalle_reserva: DetalleReserva[];

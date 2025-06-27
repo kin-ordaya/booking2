@@ -44,5 +44,9 @@ export class CreateReservaDto {
 
     @IsNotEmpty()
     @IsUUID()
-    rol_usuario_id: string;
+    docente_id: string;
+
+    @IsNotEmpty()
+    @IsUUID()
+    autor_id: string;
 }
