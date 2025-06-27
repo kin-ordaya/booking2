@@ -16,6 +16,9 @@ import { Clase } from 'src/clase/entities/clase.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
+import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
+import { Responsable } from 'src/responsable/entities/responsable.entity';
+import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 
 @Injectable()
 export class ReservaService {
@@ -26,8 +29,14 @@ export class ReservaService {
     @InjectRepository(Recurso)
     private readonly recursoRepository: Repository<Recurso>,
 
+    @InjectRepository(RecursoCurso)
+    private readonly recursoCursoRepository: Repository<RecursoCurso>,
+
     @InjectRepository(Clase)
     private readonly claseRepository: Repository<Clase>,
+
+    @InjectRepository(CursoModalidad)
+    private readonly cursoModalidadRepository: Repository<CursoModalidad>,
 
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
@@ -35,8 +44,8 @@ export class ReservaService {
     @InjectRepository(Credencial)
     private readonly credencialRepository: Repository<Credencial>,
 
-    @InjectRepository(DetalleReserva)
-    private readonly detalleReservaRepository: Repository<DetalleReserva>,
+    @InjectRepository(Responsable)
+    private readonly responsableRepository: Repository<Responsable>,
 
     private readonly dataSource: DataSource,
   ) {}
@@ -83,12 +92,9 @@ export class ReservaService {
       if (!clase) throw new NotFoundException('Clase no encontrado');
       if (!rolUsuario) throw new NotFoundException('Rol usuario no encontrado');
 
-      // 3. Validar permisos (solo ADMINISTRADOR o DOCENTE)
-      if (
-        rolUsuario.rol.nombre !== 'ADMINISTRADOR' &&
-        rolUsuario.rol.nombre !== 'DOCENTE'
-      ) {
-        throw new ConflictException('No tiene permisos para crear reserva');
+      // 3. Validar permisos (DOCENTE)
+      if (rolUsuario.rol.nombre !== 'DOCENTE') {
+        throw new ConflictException('El usuariono es de rol docente');
       }
 
       // 4. Obtener todas las credenciales disponibles para el recurso
@@ -103,11 +109,51 @@ export class ReservaService {
         );
       }
 
-      // // 5. Calcular la capacidad total del recurso
-      // const capacidadTotal = credencialesDisponibles.reduce(
-      //   (total, credencial) => total + credencial.recurso.capacidad,
-      //   0,
-      // );
+      // 4. Validar que el docente (rol_usuario_id) esté asignado a la clase
+      const claseConModalidad = await this.claseRepository.findOne({
+        where: { id: clase_id },
+        relations: ['cursoModalidad'],
+      });
+
+      if (!claseConModalidad)
+        throw new NotFoundException('Clase no encontrada');
+      if (!claseConModalidad.cursoModalidad)
+        throw new NotFoundException(
+          'Modalidad de curso no encontrada para la clase',
+        );
+
+      // Verificar si el docente es responsable de esta modalidad de curso
+      const esResponsable = await this.responsableRepository.findOne({
+        where: {
+          rolUsuario: { id: rol_usuario_id },
+          cursoModalidad: { id: claseConModalidad.cursoModalidad.id },
+        },
+      });
+
+      if (!esResponsable) {
+        throw new ConflictException('El docente no está asignado a esta clase');
+      }
+
+      // 5. Validar que el recurso esté asignado al curso de la clase
+      const cursoModalidad = await this.cursoModalidadRepository.findOne({
+        where: { id: claseConModalidad.cursoModalidad.id },
+        relations: ['curso'],
+      });
+
+      if (!cursoModalidad || !cursoModalidad.curso) {
+        throw new NotFoundException('Curso no encontrado para la modalidad');
+      }
+
+      const recursoAsignadoAlCurso = await this.recursoCursoRepository.findOne({
+        where: {
+          curso: { id: cursoModalidad.curso.id },
+          recurso: { id: recurso_id },
+        },
+      });
+
+      if (!recursoAsignadoAlCurso) {
+        throw new ConflictException('El recurso no está asignado a este curso');
+      }
 
       // 6. Validar disponibilidad del recurso
       await this.validarDisponibilidadRecurso(
@@ -259,7 +305,7 @@ export class ReservaService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw error
+      throw error;
     }
   }
 
