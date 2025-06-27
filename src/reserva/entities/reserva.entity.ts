@@ -17,11 +17,11 @@ export class Reserva {
   @Column({ type: 'varchar', length: 100 })
   codigo: string;
 
-  @Column({ type: 'int', default: 0 , nullable: true})
-  mantenimiento?: number;
+  @Column({ type: 'int', default: 0 })
+  mantenimiento: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  descripcion?: string;
+  // @Column({ type: 'varchar', length: 100, nullable: true })
+  // descripcion?: string;
 
   // @Column({ type: 'date' })
   // fecha: Date;

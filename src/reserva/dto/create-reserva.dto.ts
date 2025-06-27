@@ -5,7 +5,7 @@ export class CreateReservaDto {
 
     @IsOptional()
     @IsInt()
-    @IsIn([0, 1], {message: 'El campo mantenimiento debe ser 0 o 1'})
+    @IsIn([ 1], {message: 'El campo mantenimiento debe ser 1'})
     @Type(() => Number)
     mantenimiento?: number;
 
