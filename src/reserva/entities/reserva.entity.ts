@@ -26,10 +26,10 @@ export class Reserva {
   // @Column({ type: 'date' })
   // fecha: Date;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp' })
   inicio: Date;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp' })
   fin: Date;
 
   @Column({ type: 'int'})
