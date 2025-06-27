@@ -9,10 +9,10 @@ export class CreateReservaDto {
     @Type(() => Number)
     mantenimiento?: number;
 
-    @IsOptional()
-    @IsString()
-    @MaxLength(100, {message: 'El campo descripcion debe tener un maximo de 100 caracteres'})
-    descripcion?: string;
+    // @IsOptional()
+    // @IsString()
+    // @MaxLength(100, {message: 'El campo descripcion debe tener un maximo de 100 caracteres'})
+    // descripcion?: string;
 
     // @IsNotEmpty()
     // @IsDateString()

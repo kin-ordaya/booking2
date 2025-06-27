@@ -58,7 +58,6 @@ export class ReservaService {
     try {
       const {
         mantenimiento,
-        descripcion,
         inicio,
         fin,
         cantidad_accesos,
@@ -185,7 +184,6 @@ export class ReservaService {
       const reserva = queryRunner.manager.create(Reserva, {
         codigo: `RES-${Date.now()}`,
         mantenimiento,
-        descripcion,
         inicio,
         fin,
         cantidad_accesos,
