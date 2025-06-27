@@ -251,7 +251,7 @@ export class ReservaService {
           inicio: Between(fechaInicio, fechaFin),
         },
         order: { creacion: 'DESC' },
-        relations: ['recurso', 'clase', 'rolUsuario'], // Opcional: incluir relaciones si las necesitas
+        //relations: ['recurso', 'clase', 'rolUsuario'], // Opcional: incluir relaciones si las necesitas
       });
 
       return reservas;

@@ -26,10 +26,10 @@ export class Reserva {
   // @Column({ type: 'date' })
   // fecha: Date;
 
-  @Column({ type: 'varchar', length: 5 })
+  @Column({ type: 'date' })
   inicio: Date;
 
-  @Column({ type: 'varchar', length: 5 })
+  @Column({ type: 'date' })
   fin: Date;
 
   @Column({ type: 'int'})
