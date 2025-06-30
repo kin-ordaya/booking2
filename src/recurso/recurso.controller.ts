@@ -29,6 +29,11 @@ export class RecursoController {
     return this.recursoService.findAll(paginationRecursoDto);
   }
 
+  // @Get('docente/:id')
+  // async getByDocente(@Param('id', new ParseUUIDPipe()) rol_usuario_id: string) {
+  //   return this.recursoService.getRecursosByDocente(rol_usuario_id);
+  // }
+
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.recursoService.findOne(id);

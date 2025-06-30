@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { RolUsuario } from './entities/rol_usuario.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
+import { Recurso } from 'src/recurso/entities/recurso.entity';
 
 @Injectable()
 export class RolUsuarioService {
@@ -25,6 +26,9 @@ export class RolUsuarioService {
 
     @InjectRepository(Rol)
     private readonly rolRepository: Repository<Rol>,
+
+    @InjectRepository(Recurso)
+    private readonly recursoRepository: Repository<Recurso>,
   ) {}
 
   async create(createRolUsuarioDto: CreateRolUsuarioDto) {
@@ -66,14 +70,8 @@ export class RolUsuarioService {
 
   async findAll(paginationRolUsuarioDto: PaginationRolUsuarioDto) {
     try {
-      const {
-        page,
-        limit,
-        search,
-        sort_name,
-        sort_state,
-        rol_id,
-      } = paginationRolUsuarioDto;
+      const { page, limit, search, sort_name, sort_state, rol_id } =
+        paginationRolUsuarioDto;
 
       const query = this.rolUsuarioRepository
         .createQueryBuilder('rolUsuario')
@@ -146,7 +144,74 @@ export class RolUsuarioService {
     }
   }
 
+  async getDocentesByRecurso(recurso_id: string) {
+    try {
+      if (!recurso_id) {
+        throw new BadRequestException('El ID del recurso no puede estar vacío');
+      }
+
+      const recursoExists = await this.recursoRepository.existsBy({
+        id: recurso_id,
+      });
+      if (!recursoExists) {
+        throw new NotFoundException('No existe un recurso con ese id');
+      }
+
+      return await this.rolUsuarioRepository
+        .createQueryBuilder('rolUsuario')
+        .innerJoin('rolUsuario.responsable', 'responsable')
+        .innerJoin('responsable.cursoModalidad', 'cursoModalidad')
+        .innerJoin('cursoModalidad.curso', 'curso')
+        .innerJoin('curso.recurso_curso', 'recursoCurso')
+        .innerJoin('recursoCurso.recurso', 'recurso')
+        .innerJoin('rolUsuario.rol', 'rol')
+        .innerJoin('rolUsuario.usuario', 'usuario') // Agregado para obtener datos del usuario
+        .select([
+          'rolUsuario.id',
+          'rolUsuario.asignacion',
+          'rolUsuario.estado',
+          'rol.nombre', // Nombre del rol
+          'usuario.nombres', // Nombres del usuario
+        ])
+        .where('recurso.id = :recursoId', { recursoId: recurso_id })
+        .andWhere('rol.nombre = :rolNombre', { rolNombre: 'DOCENTE' })
+        .getMany();
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error al obtener los docentes del recurso',
+      );
+    }
+  }
+
   async findOne(id: string) {
+    try {
+      if (!id)
+        throw new BadRequestException(
+          'El ID del rolUsuario no puede estar vacío',
+        );
+      const rolUsuario = await this.rolUsuarioRepository.findOne({
+        where: { id },
+        relations: ['usuario', 'rol'],
+      });
+      if (!rolUsuario) throw new NotFoundException('RolUsuario no encontrado');
+      return rolUsuario;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
+  async findOneByRecurso(id: string) {
     try {
       if (!id)
         throw new BadRequestException(

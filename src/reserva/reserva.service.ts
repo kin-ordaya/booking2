@@ -123,6 +123,8 @@ export class ReservaService {
         where: { id: clase_id },
         relations: ['cursoModalidad'],
       });
+      // console.log('claseConModalidad');
+      // console.log(claseConModalidad);
 
       if (!claseConModalidad)
         throw new NotFoundException('Clase no encontrada');
@@ -135,7 +137,7 @@ export class ReservaService {
       const esResponsable = await this.responsableRepository.findOne({
         where: {
           rolUsuario: { id: docente_id },
-          cursoModalidad: { id: claseConModalidad.cursoModalidad.id },
+          clase: { id: clase_id },
         },
       });
 
@@ -152,7 +154,8 @@ export class ReservaService {
       if (!cursoModalidad || !cursoModalidad.curso) {
         throw new NotFoundException('Curso no encontrado para la modalidad');
       }
-
+      //console.log('curso id');
+      //console.log(cursoModalidad.curso.id);
       const recursoAsignadoAlCurso = await this.recursoCursoRepository.findOne({
         where: {
           curso: { id: cursoModalidad.curso.id },

@@ -56,7 +56,7 @@ export class AuthService {
       const token = this.jwtService.sign(jwtPayload);
       return { token };
     } catch (error) {
-      console.log(error);
+      //console.log(error);
       throw error;
     }
   }
@@ -74,7 +74,7 @@ export class AuthService {
         throw new BadRequestException('Token de Google no válido');
       }
     } catch (error) {
-      console.log(error);
+      //console.log(error);
       throw error;
     }
   }

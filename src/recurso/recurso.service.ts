@@ -268,6 +268,38 @@ export class RecursoService {
     }
   }
 
+//   async getRecursosByDocente(rol_usuario_id: string) {
+//   try {
+//     if (!rol_usuario_id) {
+//       throw new BadRequestException('El ID del rol_usuario no puede estar vacío');
+//     }
+
+//     const rolUsuario = await this.rolUsuarioRepository.existsBy({
+//       id: rol_usuario_id,
+//     });
+//     if (!rolUsuario) {
+//       throw new NotFoundException('No existe un rol_usuario con ese id');
+//     }
+
+//     return await this.recursoRepository
+//       .createQueryBuilder('recurso')
+//       .innerJoin('recurso.recurso_curso', 'recursoCurso')
+//       .innerJoin('recursoCurso.curso', 'curso')
+//       .innerJoin('curso.curso_modalidad', 'cursoModalidad')
+//       .innerJoin('cursoModalidad.responsable', 'responsable')
+//       .innerJoin('responsable.rolUsuario', 'rolUsuario')
+//       .where('rolUsuario.id = :rolUsuarioId', {
+//         rolUsuarioId: rol_usuario_id,
+//       })
+//       .getMany();
+//   } catch (error) {
+//     if (error instanceof NotFoundException || error instanceof BadRequestException) {
+//       throw error;
+//     }
+//     throw new InternalServerErrorException('Error al obtener los recursos del docente');
+//   }
+// }
+
   async update(id: string, updateRecursoDto: UpdateRecursoDto) {
     try {
       const {

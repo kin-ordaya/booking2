@@ -34,6 +34,11 @@ export class RolUsuarioController {
     return this.rolUsuarioService.findOne(id);
   }
 
+  @Get('recurso/:id')
+  async getDocentesByRecurso(@Param('id', new ParseUUIDPipe()) recurso_id: string) {
+    return this.rolUsuarioService.getDocentesByRecurso(recurso_id);
+  }
+
   @Patch(':id')
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
