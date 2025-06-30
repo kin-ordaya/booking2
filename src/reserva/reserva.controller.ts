@@ -1,8 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ReservaService } from './reserva.service';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
+import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 
 @Controller('reserva')
 export class ReservaController {
@@ -11,6 +21,15 @@ export class ReservaController {
   @Post()
   create(@Body() createReservaDto: CreateReservaDto) {
     return this.reservaService.create(createReservaDto);
+  }
+
+  @Get('credenciales-disponibles')
+  async countCredencialesDisponibles(
+    @Query() credencialesDisponiblesDto: CredencialesDisponiblesDto,
+  ) {
+    return this.reservaService.countCredencialesDisponibles(
+      credencialesDisponiblesDto,
+    );
   }
 
   @Get()

@@ -19,6 +19,7 @@ import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.ent
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
+import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 
 @Injectable()
 export class ReservaService {
@@ -64,7 +65,7 @@ export class ReservaService {
         recurso_id,
         clase_id,
         docente_id,
-        autor_id
+        autor_id,
       } = createReservaDto;
 
       // // 1. Convertir strings ISO a objetos Date
@@ -102,8 +103,13 @@ export class ReservaService {
         throw new ConflictException('El docente_id no es de rol docente');
       }
 
-      if (autor.rol.nombre !== 'DOCENTE' && autor.rol.nombre !== 'ADMINISTRADOR') {
-        throw new ConflictException('El autor_id no es de rol docente o administrador');
+      if (
+        autor.rol.nombre !== 'DOCENTE' &&
+        autor.rol.nombre !== 'ADMINISTRADOR'
+      ) {
+        throw new ConflictException(
+          'El autor_id no es de rol docente o administrador',
+        );
       }
 
       // 4. Obtener todas las credenciales disponibles para el recurso
@@ -318,6 +324,93 @@ export class ReservaService {
         throw error;
       }
       throw error;
+    }
+  }
+
+  // En reserva.service.ts
+  async countCredencialesDisponibles(
+    credencialesDisponiblesDto: CredencialesDisponiblesDto,
+  ) {
+    try {
+      const { recurso_id, inicio, fin } = credencialesDisponiblesDto;
+
+      // 1. Validar fechas
+      if (fin <= inicio) {
+        throw new BadRequestException(
+          'La fecha de fin debe ser posterior a la de inicio',
+        );
+      }
+
+      // 2. Obtener todas las credenciales del recurso
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        return {
+          total: 0,
+          general: 0,
+          docente: 0,
+          capacidad_por_credencial: 0,
+          capacidad_total_disponible: 0,
+        };
+      }
+
+      // 3. Obtener reservas que se solapan con el rango exacto
+      const reservasSolapadas = await this.reservaRepository
+        .createQueryBuilder('reserva')
+        .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+        .innerJoinAndSelect('detalle.credencial', 'credencial') // <-- Cambio clave aquí
+        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
+        .andWhere(
+          `(
+          (reserva.inicio BETWEEN :inicio AND :fin) OR
+          (reserva.fin BETWEEN :inicio AND :fin) OR
+          (reserva.inicio <= :inicio AND reserva.fin >= :fin)
+        )`,
+          { inicio, fin },
+        )
+        .getMany();
+
+      // 4. Calcular credenciales ocupadas
+      const credencialesOcupadas = new Set<string>();
+      reservasSolapadas.forEach((reserva) => {
+        reserva.detalle_reserva.forEach((detalle) => {
+          if (detalle.credencial && detalle.credencial.id) {
+            // <-- Validación adicional
+            credencialesOcupadas.add(detalle.credencial.id);
+          }
+        });
+      });
+
+      // 5. Filtrar disponibilidad por tipo
+      const capacidadPorCredencial = credenciales[0].recurso.capacidad;
+      const totalDisponibles = credenciales.filter(
+        (c) => !credencialesOcupadas.has(c.id),
+      );
+
+      const generalDisponibles = totalDisponibles.filter(
+        (c) => c.rol === null || c.rol.nombre !== 'DOCENTE',
+      ).length;
+
+      const docenteDisponibles = totalDisponibles.filter(
+        (c) => c.rol?.nombre === 'DOCENTE',
+      ).length;
+
+      return {
+        total: totalDisponibles.length,
+        general: generalDisponibles,
+        docente: docenteDisponibles,
+        capacidad_por_credencial: capacidadPorCredencial,
+        capacidad_total_disponible:
+          totalDisponibles.length * capacidadPorCredencial,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw error
     }
   }
 
