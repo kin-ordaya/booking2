@@ -168,13 +168,15 @@ export class RolUsuarioService {
         .innerJoin('rolUsuario.usuario', 'usuario') // Agregado para obtener datos del usuario
         .select([
           'rolUsuario.id',
-          'rolUsuario.asignacion',
-          'rolUsuario.estado',
-          'rol.nombre', // Nombre del rol
+          // 'rolUsuario.asignacion',
+          // 'rolUsuario.estado',
+          // 'rol.nombre', // Nombre del rol
           'usuario.nombres', // Nombres del usuario
+          'usuario.apellidos',
         ])
         .where('recurso.id = :recursoId', { recursoId: recurso_id })
         .andWhere('rol.nombre = :rolNombre', { rolNombre: 'DOCENTE' })
+        .andWhere('usuario.estado = :estado', { estado: 1 })
         .getMany();
     } catch (error) {
       if (

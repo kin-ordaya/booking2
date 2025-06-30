@@ -68,6 +68,6 @@ export class CreateClaseDto {
   fin: Date;
 
   @IsNotEmpty()
-  @IsUUID()
+  @IsUUID('4', { message: 'El campo curso_modalidad_id debe ser de tipo uuid' })
   curso_modalidad_id: string;
 }

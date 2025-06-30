@@ -15,7 +15,7 @@ export class PaginationRecursoDto extends PaginationDto {
 
   @ApiProperty({ description: 'Filtra por rol_usuario_id' })
   @IsOptional()
-  @IsUUID()
+  @IsUUID('4', { message: 'El campo rol_usuario_id debe ser de tipo uuid' })
   rol_usuario_id?: string;
 
   @ApiProperty({ description: 'Ordena por estado activo=1, inactivo=2' })

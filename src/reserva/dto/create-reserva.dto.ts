@@ -35,18 +35,18 @@ export class CreateReservaDto {
     cantidad_accesos: number;
 
     @IsNotEmpty()
-    @IsUUID()
+    @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
     recurso_id: string;
 
     @IsOptional()
-    @IsUUID()
+    @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
     clase_id?: string;
 
     @IsNotEmpty()
-    @IsUUID()
+    @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
     docente_id: string;
 
     @IsNotEmpty()
-    @IsUUID()
+    @IsUUID('4', { message: 'El campo alumno_id debe ser de tipo uuid' })
     autor_id: string;
 }
