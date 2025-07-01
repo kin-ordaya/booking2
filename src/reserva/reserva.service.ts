@@ -240,39 +240,54 @@ export class ReservaService {
     }
   }
 
-  private async validarDisponibilidadRecurso(
+ private async validarDisponibilidadRecurso(
     recursoId: string,
     inicio: Date,
     fin: Date,
     cantidadRequerida: number,
     credencialesDisponibles: Credencial[],
   ): Promise<void> {
-    // 1. Obtener todas las reservas existentes para este recurso CON RELACIONES
+    // Obtener reservas existentes con relaciones
     const reservasExistente = await this.reservaRepository.find({
       where: { recurso: { id: recursoId } },
-      relations: ['detalle_reserva', 'detalle_reserva.credencial'], // <- Aquí está el cambio clave
+      relations: ['detalle_reserva', 'detalle_reserva.credencial'],
     });
 
-    // Resto del método permanece igual...
+    // Calcular capacidad
+    const capacidadPorCredencial = credencialesDisponibles[0].recurso.capacidad;
+    const totalCredenciales = credencialesDisponibles.length;
+    const capacidadTotal = totalCredenciales * capacidadPorCredencial;
+
+    if (cantidadRequerida > capacidadTotal) {
+      throw new ConflictException(
+        `No hay suficientes accesos disponibles (${capacidadTotal} disponibles)`,
+      );
+    }
+
+    // Verificar solapamientos
     let credencialesOcupadas = new Set<string>();
 
     reservasExistente.forEach((reserva) => {
-      if (
-        !(
-          new Date(fin) <= new Date(reserva.inicio) ||
-          new Date(inicio) >= new Date(reserva.fin)
-        )
-      ) {
+      if (!(fin <= reserva.inicio || inicio >= reserva.fin)) {
         reserva.detalle_reserva?.forEach((detalle) => {
           if (detalle.credencial?.id) {
-            // <- Verificación segura
             credencialesOcupadas.add(detalle.credencial.id);
           }
         });
       }
     });
 
-    // ... resto del método
+    // Calcular disponibilidad
+    const credencialesDisponiblesCount = totalCredenciales - credencialesOcupadas.size;
+    const credencialesNecesarias = Math.ceil(cantidadRequerida / capacidadPorCredencial);
+
+    if (credencialesDisponiblesCount < credencialesNecesarias) {
+      const accesosDisponibles = credencialesDisponiblesCount * capacidadPorCredencial;
+      throw new ConflictException(
+        `No hay suficiente disponibilidad en el horario solicitado. ` +
+        `Solo ${accesosDisponibles > 0 ? accesosDisponibles : 0} accesos disponibles en este horario`,
+      );
+    }
   }
 
   async findAll(paginationReservaDto: PaginationReservaDto) {

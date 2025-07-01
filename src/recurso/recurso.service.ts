@@ -283,6 +283,7 @@ export class RecursoService {
       return {
         ...recurso,
           general: soloCredencialesGenerales,
+          total_credenciales: credenciales.length,
       };
     } catch (error) {
       if (
