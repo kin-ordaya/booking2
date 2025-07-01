@@ -10,7 +10,16 @@ import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Recurso, TipoRecurso, TipoAcceso,Proveedor, RolUsuario])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Credencial,
+      Recurso,
+      TipoRecurso,
+      TipoAcceso,
+      Proveedor,
+      RolUsuario,
+    ]),
+  ],
   controllers: [RecursoController],
   providers: [RecursoService],
 })

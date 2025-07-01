@@ -1,4 +1,3 @@
-import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -15,12 +14,15 @@ import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
 import { PaginationRecursoDto } from './dto/pagination-recurso.dto';
-import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import { Credencial } from 'src/credencial/entities/credencial.entity';
 
 @Injectable()
 export class RecursoService {
   constructor(
+    @InjectRepository(Credencial)
+    private readonly credencialRepository: Repository<Credencial>,
+
     @InjectRepository(Recurso)
     private readonly recursoRepository: Repository<Recurso>,
 
@@ -246,7 +248,9 @@ export class RecursoService {
     }
   }
 
-  async findOne(id: string): Promise<Recurso> {
+  async findOne(
+    id: string,
+  ){
     try {
       if (!id)
         throw new BadRequestException('El ID del recurso no puede estar vacío');
@@ -256,7 +260,30 @@ export class RecursoService {
         relations: ['tipoRecurso', 'proveedor', 'tipoAcceso'],
       });
       if (!recurso) throw new NotFoundException('Recurso no encontrado');
-      return recurso;
+
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id } },
+        relations: ['rol'],
+      });
+
+      const credencialesPorRol = credenciales.reduce((acc, credencial) => {
+        const rolNombre = credencial.rol.nombre || 'NO IDENTIFICADO';
+        if (!acc[rolNombre]) {
+          acc[rolNombre] = 0;
+        }
+        acc[rolNombre]++;
+        return acc;
+      }, {});
+
+      const soloCredencialesGenerales =
+        Object.keys(credencialesPorRol).length === 1 &&
+        ('GENERAL' in credencialesPorRol ||
+          Object.keys(credencialesPorRol)[0] === 'GENERAL');
+
+      return {
+        ...recurso,
+          general: soloCredencialesGenerales,
+      };
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -268,37 +295,37 @@ export class RecursoService {
     }
   }
 
-//   async getRecursosByDocente(rol_usuario_id: string) {
-//   try {
-//     if (!rol_usuario_id) {
-//       throw new BadRequestException('El ID del rol_usuario no puede estar vacío');
-//     }
+  //   async getRecursosByDocente(rol_usuario_id: string) {
+  //   try {
+  //     if (!rol_usuario_id) {
+  //       throw new BadRequestException('El ID del rol_usuario no puede estar vacío');
+  //     }
 
-//     const rolUsuario = await this.rolUsuarioRepository.existsBy({
-//       id: rol_usuario_id,
-//     });
-//     if (!rolUsuario) {
-//       throw new NotFoundException('No existe un rol_usuario con ese id');
-//     }
+  //     const rolUsuario = await this.rolUsuarioRepository.existsBy({
+  //       id: rol_usuario_id,
+  //     });
+  //     if (!rolUsuario) {
+  //       throw new NotFoundException('No existe un rol_usuario con ese id');
+  //     }
 
-//     return await this.recursoRepository
-//       .createQueryBuilder('recurso')
-//       .innerJoin('recurso.recurso_curso', 'recursoCurso')
-//       .innerJoin('recursoCurso.curso', 'curso')
-//       .innerJoin('curso.curso_modalidad', 'cursoModalidad')
-//       .innerJoin('cursoModalidad.responsable', 'responsable')
-//       .innerJoin('responsable.rolUsuario', 'rolUsuario')
-//       .where('rolUsuario.id = :rolUsuarioId', {
-//         rolUsuarioId: rol_usuario_id,
-//       })
-//       .getMany();
-//   } catch (error) {
-//     if (error instanceof NotFoundException || error instanceof BadRequestException) {
-//       throw error;
-//     }
-//     throw new InternalServerErrorException('Error al obtener los recursos del docente');
-//   }
-// }
+  //     return await this.recursoRepository
+  //       .createQueryBuilder('recurso')
+  //       .innerJoin('recurso.recurso_curso', 'recursoCurso')
+  //       .innerJoin('recursoCurso.curso', 'curso')
+  //       .innerJoin('curso.curso_modalidad', 'cursoModalidad')
+  //       .innerJoin('cursoModalidad.responsable', 'responsable')
+  //       .innerJoin('responsable.rolUsuario', 'rolUsuario')
+  //       .where('rolUsuario.id = :rolUsuarioId', {
+  //         rolUsuarioId: rol_usuario_id,
+  //       })
+  //       .getMany();
+  //   } catch (error) {
+  //     if (error instanceof NotFoundException || error instanceof BadRequestException) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException('Error al obtener los recursos del docente');
+  //   }
+  // }
 
   async update(id: string, updateRecursoDto: UpdateRecursoDto) {
     try {
