@@ -240,7 +240,7 @@ export class ReservaService {
     }
   }
 
- private async validarDisponibilidadRecurso(
+  private async validarDisponibilidadRecurso(
     recursoId: string,
     inicio: Date,
     fin: Date,
@@ -278,14 +278,18 @@ export class ReservaService {
     });
 
     // Calcular disponibilidad
-    const credencialesDisponiblesCount = totalCredenciales - credencialesOcupadas.size;
-    const credencialesNecesarias = Math.ceil(cantidadRequerida / capacidadPorCredencial);
+    const credencialesDisponiblesCount =
+      totalCredenciales - credencialesOcupadas.size;
+    const credencialesNecesarias = Math.ceil(
+      cantidadRequerida / capacidadPorCredencial,
+    );
 
     if (credencialesDisponiblesCount < credencialesNecesarias) {
-      const accesosDisponibles = credencialesDisponiblesCount * capacidadPorCredencial;
+      const accesosDisponibles =
+        credencialesDisponiblesCount * capacidadPorCredencial;
       throw new ConflictException(
         `No hay suficiente disponibilidad en el horario solicitado. ` +
-        `Solo ${accesosDisponibles > 0 ? accesosDisponibles : 0} accesos disponibles en este horario`,
+          `Solo ${accesosDisponibles > 0 ? accesosDisponibles : 0} accesos disponibles en este horario`,
       );
     }
   }
@@ -425,12 +429,16 @@ export class ReservaService {
       ).length;
 
       return {
-        total: totalDisponibles.length,
-        general: generalDisponibles,
-        docente: docenteDisponibles,
-        capacidad_por_credencial: capacidadPorCredencial,
-        capacidad_total_disponible:
-          totalDisponibles.length * capacidadPorCredencial,
+        credenciales_disponibles: {
+          total: totalDisponibles.length,
+          generales: generalDisponibles,
+          docentes: docenteDisponibles,
+        },
+        capacidad: {
+          por_credencial: capacidadPorCredencial,
+          general_disponible: generalDisponibles * capacidadPorCredencial,
+          docente_disponible: docenteDisponibles * capacidadPorCredencial,
+        },
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
