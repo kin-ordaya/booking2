@@ -11,6 +11,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Clase } from './entities/clase.entity';
 import { Not, Repository } from 'typeorm';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
+import { RecursoDocenteClaseDto } from './dto/recurso-docente-clase.dto';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import { Recurso } from 'src/recurso/entities/recurso.entity';
 
 @Injectable()
 export class ClaseService {
@@ -19,6 +22,10 @@ export class ClaseService {
     private readonly claseRepository: Repository<Clase>,
     @InjectRepository(CursoModalidad)
     private readonly cursoModalidadRepository: Repository<CursoModalidad>,
+    @InjectRepository(Recurso)
+    private readonly recursoRepository: Repository<Recurso>,
+    @InjectRepository(RolUsuario)
+    private readonly rolUsuarioRepository: Repository<RolUsuario>,
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
@@ -102,6 +109,117 @@ export class ClaseService {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
+  async getClasesByRecursoDocente(
+    recursoDocenteClaseDto: RecursoDocenteClaseDto,
+  ) {
+    try {
+      const { recurso_id, rol_usuario_id } = recursoDocenteClaseDto;
+
+      // 1. Verificaciones iniciales
+      const [recursoExists, rolUsuarioExists] = await Promise.all([
+        this.recursoRepository.existsBy({ id: recurso_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: rol_usuario_id },
+          relations: ['rol', 'usuario'],
+        }),
+      ]);
+
+      if (!recursoExists)
+        throw new NotFoundException('No existe un recurso con ese id');
+      if (!rolUsuarioExists)
+        throw new NotFoundException('No existe un docente con ese id');
+      if (rolUsuarioExists.rol.nombre !== 'DOCENTE') {
+        throw new BadRequestException('El usuario no tiene rol de DOCENTE');
+      }
+
+      // 2. Consulta principal con todas las relaciones necesarias
+      const query = this.claseRepository
+        .createQueryBuilder('clase')
+        // Relación con docente
+        .innerJoin('clase.responsable', 'responsable')
+        .innerJoin(
+          'responsable.rolUsuario',
+          'rolUsuario',
+          'rolUsuario.id = :rolUsuarioId',
+          { rolUsuarioId: rol_usuario_id },
+        )
+        // Relación con curso (IMPORTANTE: innerJoinAndSelect para cargar los datos)
+        .innerJoinAndSelect('clase.cursoModalidad', 'cursoModalidad')
+        .innerJoinAndSelect('cursoModalidad.curso', 'curso')
+        // Relación con recurso
+        .innerJoin('curso.recurso_curso', 'recursoCurso')
+        .innerJoin(
+          'recursoCurso.recurso',
+          'recurso',
+          'recurso.id = :recursoId',
+          { recursoId: recurso_id },
+        )
+        // Conteo de matriculados
+        .loadRelationCountAndMap(
+          'clase.matriculadosCount',
+          'clase.matricula_clase',
+          'matricula',
+          (qb) => qb.andWhere('matricula.estado = 1'),
+        )
+        // Selección de campos
+        .select([
+          'clase.id',
+          'clase.nrc',
+          'clase.periodo',
+          'clase.tipo',
+          'clase.inicio',
+          'clase.fin',
+          'clase.inscritos',
+          'curso.id',
+          'curso.codigo',
+          'curso.nombre',
+          'curso.descripcion',
+          'cursoModalidad.id',
+        ])
+        .orderBy('clase.periodo', 'DESC')
+        .addOrderBy('clase.inicio', 'DESC');
+
+      // 3. Ejecutar consulta y mapear resultados
+      const clases = await query.getMany();
+
+      // 4. Formatear respuesta final
+      return clases.map((clase) => {
+        // Verificar que las relaciones existen
+        if (!clase.cursoModalidad || !clase.cursoModalidad.curso) {
+          throw new InternalServerErrorException(
+            'Error al cargar la información del curso',
+          );
+        }
+
+        return {
+          id: clase.id,
+          nrc: clase.nrc,
+          inscritos: clase.inscritos,
+          // periodo: clase.periodo,
+          // tipo: clase.tipo,
+          // inicio: clase.inicio,
+          // fin: clase.fin,
+          //totalMatriculados: (clase as any).matriculadosCount || 0,
+
+          // id: clase.cursoModalidad.curso.id,
+          codigo_curso: clase.cursoModalidad.curso.codigo,
+          nombre_curso: clase.cursoModalidad.curso.nombre,
+          // descripcion: clase.cursoModalidad.curso.descripcion
+        };
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error al obtener las clases del docente: ' + error.message,
+      );
     }
   }
 

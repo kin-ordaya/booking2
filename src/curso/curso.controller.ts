@@ -14,7 +14,7 @@ import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
 import { PaginationCursoDto } from './dto/pagination.dto';
 import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
-import { RecursoDocenteCursoDto } from './dto/recurso-docente-curso.dto';
+
 
 @Controller('curso')
 export class CursoController {
@@ -25,14 +25,14 @@ export class CursoController {
     return this.cursoService.create(createCursoDto);
   }
 
-  @Get('recurso-docente')
-  async getCursosByRecursoDocente(
-    @Query() recursoDocenteCursoDto: RecursoDocenteCursoDto,
-  ) {
-    return this.cursoService.getCursosByRecursoDocente(
-      recursoDocenteCursoDto
-    );
-  }
+  // @Get('recurso-docente')
+  // async getCursosByRecursoDocente(
+  //   @Query() recursoDocenteCursoDto: RecursoDocenteCursoDto,
+  // ) {
+  //   return this.cursoService.getCursosByRecursoDocente(
+  //     recursoDocenteCursoDto
+  //   );
+  // }
 
   @Get()
   findAll(@Query() paginationCursoDto: PaginationCursoDto) {

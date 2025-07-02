@@ -15,7 +15,7 @@ import { Eap } from 'src/eap/entities/eap.entity';
 import { Plan } from 'src/plan/entities/plan.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
-import { RecursoDocenteCursoDto } from './dto/recurso-docente-curso.dto';
+
 
 @Injectable()
 export class CursoService {
@@ -25,11 +25,7 @@ export class CursoService {
     @InjectRepository(Eap)
     private readonly eapRepository: Repository<Eap>,
     @InjectRepository(Plan)
-    private readonly planRepository: Repository<Plan>,
-    @InjectRepository(Recurso)
-    private readonly recursoRepository: Repository<Recurso>,
-    @InjectRepository(RolUsuario)
-    private readonly rolUsuarioRepository: Repository<RolUsuario>,
+    private readonly planRepository: Repository<Plan>
   ) {}
 
   async create(createCursoDto: CreateCursoDto): Promise<Curso> {
@@ -137,62 +133,54 @@ export class CursoService {
     }
   }
 
-  async getCursosByRecursoDocente(
-    recursoDocenteCursoDto: RecursoDocenteCursoDto,
-  ) {
-    try {
-      const { recurso_id, rol_usuario_id } = recursoDocenteCursoDto;
-      console.log(recurso_id, rol_usuario_id);
+  // async getCursosByRecursoDocente(
+  //   recursoDocenteCursoDto: RecursoDocenteCursoDto,
+  // ) {
+  //   try {
+  //     const { recurso_id, rol_usuario_id } = recursoDocenteCursoDto;
 
-      // Verificar existencia (mejorado)
-      const [recursoExists, rolUsuarioExists] = await Promise.all([
-        this.recursoRepository.existsBy({ id: recurso_id }),
-        this.rolUsuarioRepository.findOne({
-          where: { id: rol_usuario_id },
-          relations: ['rol'],
-        }),
-      ]);
+  //     // Verificaciones iniciales (se mantienen igual)
+  //     const [recursoExists, rolUsuarioExists] = await Promise.all([
+  //       this.recursoRepository.existsBy({ id: recurso_id }),
+  //       this.rolUsuarioRepository.findOne({
+  //         where: { id: rol_usuario_id },
+  //         relations: ['rol'],
+  //       }),
+  //     ]);
 
-      if (!recursoExists) {
-        throw new NotFoundException('No existe un recurso con ese id');
-      }
-      if (!rolUsuarioExists) {
-        throw new NotFoundException('No existe un docente con ese id');
-      }
-      // Verificar que el rol sea DOCENTE
-      if (rolUsuarioExists.rol.nombre !== 'DOCENTE') {
-        throw new BadRequestException('El usuario no tiene rol de DOCENTE');
-      }
+  //     if (!recursoExists) throw new NotFoundException('No existe un recurso con ese id');
+  //     if (!rolUsuarioExists) throw new NotFoundException('No existe un docente con ese id');
+  //     if (rolUsuarioExists.rol.nombre !== 'DOCENTE') {
+  //       throw new BadRequestException('El usuario no tiene rol de DOCENTE');
+  //     }
 
-      return await this.rolUsuarioRepository
-        .createQueryBuilder('rolUsuario')
-        .innerJoinAndSelect(
-          'rolUsuario.usuario',
-          'usuario',
-          'usuario.estado = 1',
-        )
-        .innerJoin('rolUsuario.responsable', 'responsable')
-        .innerJoin('responsable.cursoModalidad', 'cursoModalidad')
-        .innerJoin('cursoModalidad.curso', 'curso')
-        .innerJoin('curso.recurso_curso', 'recursoCurso')
-        .innerJoin('recursoCurso.recurso', 'recurso')
-        .innerJoin('rolUsuario.rol', 'rol')
-        .select(['usuario.nombres', 'usuario.apellidos'])
-        .where('recurso.id = :recursoId', { recursoId: recurso_id })
-        .andWhere('rol.nombre = :rolNombre', { rolNombre: 'DOCENTE' })
-        .getMany();
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error al obtener los cursos del docente',
-      );
-    }
-  }
+  //     // Consulta principal corregida
+  //     return await this.cursoRepository
+  //       .createQueryBuilder('curso')
+  //       // Relación con recurso (para filtrar)
+  //       .innerJoin('curso.recurso_curso', 'recursoCurso')
+  //       .innerJoin('recursoCurso.recurso', 'recurso', 'recurso.id = :recursoId', { recursoId: recurso_id })
+  //       // Relación con el docente a través de responsable
+  //       .innerJoin('curso.curso_modalidad', 'cursoModalidad')
+  //       .innerJoin('cursoModalidad.clase', 'clase')
+  //       .innerJoin('clase.responsable', 'responsable')
+  //       .innerJoin('responsable.rolUsuario', 'rolUsuario', 'rolUsuario.id = :rolUsuarioId', { rolUsuarioId: rol_usuario_id })
+  //       .innerJoin('rolUsuario.rol', 'rol', 'rol.nombre = :rolNombre', { rolNombre: 'DOCENTE' })
+  //       .innerJoin('rolUsuario.usuario', 'usuario', 'usuario.estado = 1')
+  //       // Selección de campos
+  //       .select([
+  //         'curso.id',
+  //         'curso.codigo',
+  //         'curso.nombre',
+  //         'curso.estado'])
+  //       .getMany();
+  //   } catch (error) {
+  //     if (error instanceof NotFoundException || error instanceof BadRequestException) {
+  //       throw error;
+  //     }
+  //     throw error
+  //   }
+  // }
 
   async findOne(id: string) {
     try {

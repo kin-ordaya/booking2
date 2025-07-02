@@ -1,16 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ClaseService } from './clase.service';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
+import { RecursoDocenteClaseDto } from './dto/recurso-docente-clase.dto';
 
 @Controller('clase')
 export class ClaseController {
-  constructor(
-    private readonly claseService: ClaseService) {}
+  constructor(private readonly claseService: ClaseService) {}
 
   @Post()
   create(@Body() createClaseDto: CreateClaseDto) {
     return this.claseService.create(createClaseDto);
+  }
+
+  @Get('recurso-docente')
+  async getClasesByRecursoDocente(
+    @Query() recursoDocenteClaseDto: RecursoDocenteClaseDto,
+  ) {
+    return this.claseService.getClasesByRecursoDocente(recursoDocenteClaseDto);
   }
 
   @Get()
