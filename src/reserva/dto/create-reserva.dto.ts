@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID, Matches, MaxLength } from "class-validator";
+import { IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID, Matches, MaxLength, Min } from "class-validator";
 
 export class CreateReservaDto {
 
@@ -32,7 +32,13 @@ export class CreateReservaDto {
     @IsInt()
     @IsPositive({message: 'El campo cantidad_accesos debe ser positivo'})
     @Type(() => Number)
-    cantidad_accesos: number;
+    cantidad_accesos_general: number;
+
+    @IsNotEmpty()
+    @IsInt()
+    @Min(0, {message: 'El campo cantidad_accesos_docente debe ser mayor o igual a 0'})
+    @Type(() => Number)
+    cantidad_accesos_docente: number;
 
     @IsNotEmpty()
     @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })

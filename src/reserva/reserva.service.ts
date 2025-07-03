@@ -10,7 +10,14 @@ import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reserva } from './entities/reserva.entity';
-import { Repository, DataSource, Between, FindOptionsWhere } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  Between,
+  LessThan,
+  IsNull,
+  MoreThan,
+} from 'typeorm';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
@@ -54,6 +61,7 @@ export class ReservaService {
     private readonly dataSource: DataSource,
   ) {}
 
+  //TODO Agregar un campo mas de accesos deben ser tanto para docente y estudiantes o generales
   async create(createReservaDto: CreateReservaDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -64,25 +72,33 @@ export class ReservaService {
         mantenimiento,
         inicio,
         fin,
-        cantidad_accesos,
+        cantidad_accesos_general,
+        cantidad_accesos_docente,
         recurso_id,
         clase_id,
         docente_id,
         autor_id,
       } = createReservaDto;
 
-      // // 1. Convertir strings ISO a objetos Date
-      // const inicioDate = new Date(inicio);
-      // const finDate = new Date(fin);
+      console.log(
+        `[CREATE RESERVA] Inicio - recurso: ${recurso_id}, inicio: ${inicio}, fin: ${fin}`,
+      );
+      console.log(
+        `[PARÁMETROS] Accesos general: ${cantidad_accesos_general}, docente: ${cantidad_accesos_docente}`,
+      );
 
-      // Validar que la fecha de fin sea posterior a la de inicio
+      // Validación de fechas
       if (fin <= inicio) {
+        console.error(
+          `[ERROR] Fecha fin ${fin} no es posterior a inicio ${inicio}`,
+        );
         throw new ConflictException(
           'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
         );
       }
 
-      // 2. Validar existencia de entidades relacionadas
+      // Validar existencia de entidades relacionadas
+      console.log('[VALIDACIÓN] Verificando entidades relacionadas...');
       const [recurso, clase, docente, autor] = await Promise.all([
         this.recursoRepository.findOneBy({ id: recurso_id }),
         this.claseRepository.findOneBy({ id: clase_id }),
@@ -96,13 +112,27 @@ export class ReservaService {
         }),
       ]);
 
-      if (!recurso) throw new NotFoundException('Recurso no encontrado');
-      if (!clase) throw new NotFoundException('Clase no encontrado');
-      if (!docente) throw new NotFoundException('Rol usuario no encontrado');
-      if (!autor) throw new NotFoundException('Rol usuario no encontrado');
+      if (!recurso) {
+        console.error(`[ERROR] Recurso no encontrado: ${recurso_id}`);
+        throw new NotFoundException('Recurso no encontrado');
+      }
+      if (!clase) {
+        console.error(`[ERROR] Clase no encontrada: ${clase_id}`);
+        throw new NotFoundException('Clase no encontrada');
+      }
+      if (!docente) {
+        console.error(`[ERROR] Docente no encontrado: ${docente_id}`);
+        throw new NotFoundException('Rol usuario no encontrado');
+      }
+      if (!autor) {
+        console.error(`[ERROR] Autor no encontrado: ${autor_id}`);
+        throw new NotFoundException('Rol usuario no encontrado');
+      }
 
-      // 3. Validar permisos (DOCENTE)
+      // Validar roles
+      console.log('[VALIDACIÓN] Verificando roles...');
       if (docente.rol.nombre !== 'DOCENTE') {
+        console.error(`[ERROR] Rol docente inválido: ${docente.rol.nombre}`);
         throw new ConflictException('El docente_id no es de rol docente');
       }
 
@@ -110,96 +140,76 @@ export class ReservaService {
         autor.rol.nombre !== 'DOCENTE' &&
         autor.rol.nombre !== 'ADMINISTRADOR'
       ) {
+        console.error(`[ERROR] Rol autor inválido: ${autor.rol.nombre}`);
         throw new ConflictException(
           'El autor_id no es de rol docente o administrador',
         );
       }
 
-      // 4. Obtener todas las credenciales disponibles para el recurso
-      const credencialesDisponibles = await this.credencialRepository.find({
-        where: { recurso: { id: recurso_id } },
-        relations: ['recurso'],
-      });
+      // Obtener credenciales por tipo
+      console.log('[CREDENCIALES] Obteniendo credenciales...');
+      const [credencialesGenerales, credencialesDocentes] = await Promise.all([
+        this.credencialRepository.find({
+          where: {
+            recurso: { id: recurso_id },
+            rol: IsNull(),
+          },
+          relations: ['recurso'],
+        }),
+        this.credencialRepository.find({
+          where: {
+            recurso: { id: recurso_id },
+            rol: { nombre: 'DOCENTE' },
+          },
+          relations: ['recurso', 'rol'],
+        }),
+      ]);
 
-      if (credencialesDisponibles.length === 0) {
-        throw new ConflictException(
-          'No hay credenciales disponibles para este recurso',
-        );
-      }
+      console.log(
+        `[CREDENCIALES] Generales: ${credencialesGenerales.length}, Docentes: ${credencialesDocentes.length}`,
+      );
 
-      // 4. Validar que el docente (rol_usuario_id) esté asignado a la clase
-      const claseConModalidad = await this.claseRepository.findOne({
-        where: { id: clase_id },
-        relations: ['cursoModalidad'],
-      });
-      // console.log('claseConModalidad');
-      // console.log(claseConModalidad);
+      const usarSoloGenerales = credencialesDocentes.length === 0;
+      const capacidadPorCredencial =
+        credencialesGenerales[0]?.recurso.capacidad || 1;
+      console.log(
+        `[CAPACIDAD] Por credencial: ${capacidadPorCredencial}, Usar solo generales: ${usarSoloGenerales}`,
+      );
 
-      if (!claseConModalidad)
-        throw new NotFoundException('Clase no encontrada');
-      if (!claseConModalidad.cursoModalidad)
-        throw new NotFoundException(
-          'Modalidad de curso no encontrada para la clase',
-        );
-
-      // Verificar si el docente es responsable de esta modalidad de curso
-      const esResponsable = await this.responsableRepository.findOne({
-        where: {
-          rolUsuario: { id: docente_id },
-          clase: { id: clase_id },
-        },
-      });
-
-      if (!esResponsable) {
-        throw new ConflictException('El docente no está asignado a esta clase');
-      }
-
-      // 5. Validar que el recurso esté asignado al curso de la clase
-      const cursoModalidad = await this.cursoModalidadRepository.findOne({
-        where: { id: claseConModalidad.cursoModalidad.id },
-        relations: ['curso'],
-      });
-
-      if (!cursoModalidad || !cursoModalidad.curso) {
-        throw new NotFoundException('Curso no encontrado para la modalidad');
-      }
-      //console.log('curso id');
-      //console.log(cursoModalidad.curso.id);
-      const recursoAsignadoAlCurso = await this.recursoCursoRepository.findOne({
-        where: {
-          curso: { id: cursoModalidad.curso.id },
-          recurso: { id: recurso_id },
-        },
-      });
-
-      if (!recursoAsignadoAlCurso) {
-        throw new ConflictException('El recurso no está asignado a este curso');
-      }
-
-      // 6. Validar disponibilidad del recurso
-      await this.validarDisponibilidadRecurso(
+      // Validar disponibilidad con logs detallados
+      console.log('[VALIDACIÓN] Verificando disponibilidad...');
+      const {
+        credencialesGeneralesDisponibles,
+        credencialesDocentesDisponibles,
+      } = await this.validarYSeleccionarCredenciales(
         recurso_id,
         inicio,
         fin,
-        cantidad_accesos,
-        credencialesDisponibles,
+        cantidad_accesos_general,
+        cantidad_accesos_docente,
+        credencialesGenerales,
+        credencialesDocentes,
+        usarSoloGenerales,
+        capacidadPorCredencial,
       );
 
-      // 7. Calcular cantidad de credenciales necesarias
-      const capacidadPorCredencial =
-        credencialesDisponibles[0].recurso.capacidad;
-      const cantidad_credenciales = Math.ceil(
-        cantidad_accesos / capacidadPorCredencial,
-      );
+      console.log('[CREDENCIALES SELECCIONADAS]', {
+        generales: credencialesGeneralesDisponibles.map((c) => c.id),
+        docentes: credencialesDocentesDisponibles.map((c) => c.id),
+      });
 
-      // 8. Crear reserva
+      // Crear reserva
+      console.log('[CREACIÓN] Creando entidad reserva...');
       const reserva = queryRunner.manager.create(Reserva, {
         codigo: `RES-${Date.now()}`,
         mantenimiento,
         inicio,
         fin,
-        cantidad_accesos,
-        cantidad_credenciales,
+        cantidad_accesos: cantidad_accesos_general,
+        cantidad_accesos_docente,
+        cantidad_credenciales:
+          credencialesGeneralesDisponibles.length +
+          credencialesDocentesDisponibles.length,
         recurso: { id: recurso_id },
         clase: { id: clase_id },
         docente: { id: docente_id },
@@ -207,26 +217,36 @@ export class ReservaService {
       });
 
       const reservaGuardada = await queryRunner.manager.save(reserva);
+      console.log(`[CREACIÓN] Reserva creada ID: ${reservaGuardada.id}`);
 
-      // 9. Asignar credenciales a la reserva (DetalleReserva)
-      const credencialesAsignar = credencialesDisponibles.slice(
-        0,
-        cantidad_credenciales,
-      );
-
-      const detallesReserva = credencialesAsignar.map((credencial) => {
-        return queryRunner.manager.create(DetalleReserva, {
-          reserva: { id: reservaGuardada.id },
-          credencial: { id: credencial.id },
-        });
-      });
+      // Crear detalles de reserva
+      console.log('[DETALLES] Creando detalles de reserva...');
+      const detallesReserva = [
+        ...credencialesGeneralesDisponibles.map((credencial) =>
+          queryRunner.manager.create(DetalleReserva, {
+            reserva: { id: reservaGuardada.id },
+            credencial: { id: credencial.id },
+            tipo: 'general',
+          }),
+        ),
+        ...credencialesDocentesDisponibles.map((credencial) =>
+          queryRunner.manager.create(DetalleReserva, {
+            reserva: { id: reservaGuardada.id },
+            credencial: { id: credencial.id },
+            tipo: 'docente',
+          }),
+        ),
+      ];
 
       await queryRunner.manager.save(detallesReserva);
+      console.log(`[DETALLES] ${detallesReserva.length} detalles creados`);
 
       await queryRunner.commitTransaction();
+      console.log('[TRANSACCIÓN] Commit realizado');
       return reservaGuardada;
     } catch (error) {
       await queryRunner.rollbackTransaction();
+      console.error('[ERROR]', error);
       if (
         error instanceof BadRequestException ||
         error instanceof ConflictException ||
@@ -234,9 +254,125 @@ export class ReservaService {
       ) {
         throw error;
       }
-      throw error;
+      throw new InternalServerErrorException('Error al crear la reserva');
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private async validarYSeleccionarCredenciales(
+    recursoId: string,
+    inicio: Date,
+    fin: Date,
+    cantidadGeneral: number,
+    cantidadDocente: number,
+    credencialesGenerales: Credencial[],
+    credencialesDocentes: Credencial[],
+    usarSoloGenerales: boolean,
+    capacidadPorCredencial: number,
+  ): Promise<{
+    credencialesGeneralesDisponibles: Credencial[];
+    credencialesDocentesDisponibles: Credencial[];
+  }> {
+    console.log('[DISPONIBILIDAD] Iniciando validación de credenciales...');
+
+    // 1. Obtener reservas existentes en el rango
+    const reservasSolapadas = await this.reservaRepository
+      .createQueryBuilder('reserva')
+      .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+      .innerJoinAndSelect('detalle.credencial', 'credencial')
+      .where('reserva.recurso_id = :recursoId', { recursoId })
+      .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
+        inicio,
+        fin,
+      })
+      .getMany();
+
+    console.log(
+      `[DISPONIBILIDAD] Reservas solapadas encontradas: ${reservasSolapadas.length}`,
+    );
+
+    // 2. Identificar credenciales ocupadas
+    const credencialesOcupadas = new Set<string>();
+    reservasSolapadas.forEach((reserva) => {
+      reserva.detalle_reserva.forEach((detalle) => {
+        if (detalle.credencial) {
+          console.log(
+            `[CREDENCIAL OCUPADA] ID: ${detalle.credencial.id} en reserva ID: ${reserva.id}`,
+          );
+          credencialesOcupadas.add(detalle.credencial.id);
+        }
+      });
+    });
+
+    console.log(
+      `[DISPONIBILIDAD] Total credenciales ocupadas: ${credencialesOcupadas.size}`,
+    );
+
+    // 3. Filtrar credenciales disponibles
+    const credencialesGeneralesDisponibles = credencialesGenerales.filter(
+      (c) => !credencialesOcupadas.has(c.id),
+    );
+
+    const credencialesDocentesDisponibles = credencialesDocentes.filter(
+      (c) => !credencialesOcupadas.has(c.id),
+    );
+
+    console.log(
+      `[DISPONIBILIDAD] Generales disponibles: ${credencialesGeneralesDisponibles.length}, Docentes disponibles: ${credencialesDocentesDisponibles.length}`,
+    );
+
+    // 4. Validar disponibilidad según tipo
+    if (usarSoloGenerales) {
+      const totalNecesario = Math.ceil(
+        (cantidadGeneral + cantidadDocente) / capacidadPorCredencial,
+      );
+      if (credencialesGeneralesDisponibles.length < totalNecesario) {
+        console.error(
+          `[ERROR] Insuficientes credenciales generales: necesarias ${totalNecesario}, disponibles ${credencialesGeneralesDisponibles.length}`,
+        );
+        throw new ConflictException(
+          'No hay suficientes credenciales generales disponibles',
+        );
+      }
+      return {
+        credencialesGeneralesDisponibles:
+          credencialesGeneralesDisponibles.slice(0, totalNecesario),
+        credencialesDocentesDisponibles: [],
+      };
+    } else {
+      const necesariasGenerales = Math.ceil(
+        cantidadGeneral / capacidadPorCredencial,
+      );
+      const necesariasDocentes = Math.ceil(
+        cantidadDocente / capacidadPorCredencial,
+      );
+
+      if (credencialesGeneralesDisponibles.length < necesariasGenerales) {
+        console.error(
+          `[ERROR] Insuficientes credenciales generales: necesarias ${necesariasGenerales}, disponibles ${credencialesGeneralesDisponibles.length}`,
+        );
+        throw new ConflictException(
+          'No hay suficientes credenciales generales disponibles',
+        );
+      }
+      if (credencialesDocentesDisponibles.length < necesariasDocentes) {
+        console.error(
+          `[ERROR] Insuficientes credenciales docentes: necesarias ${necesariasDocentes}, disponibles ${credencialesDocentesDisponibles.length}`,
+        );
+        throw new ConflictException(
+          'No hay suficientes credenciales docentes disponibles',
+        );
+      }
+
+      return {
+        credencialesGeneralesDisponibles:
+          credencialesGeneralesDisponibles.slice(0, necesariasGenerales),
+        credencialesDocentesDisponibles: credencialesDocentesDisponibles.slice(
+          0,
+          necesariasDocentes,
+        ),
+      };
     }
   }
 
@@ -244,53 +380,90 @@ export class ReservaService {
     recursoId: string,
     inicio: Date,
     fin: Date,
-    cantidadRequerida: number,
-    credencialesDisponibles: Credencial[],
+    cantidadGeneral: number,
+    cantidadDocente: number,
+    credencialesGenerales: Credencial[],
+    credencialesDocentes: Credencial[],
+    usarSoloGenerales: boolean,
   ): Promise<void> {
-    // Obtener reservas existentes con relaciones
-    const reservasExistente = await this.reservaRepository.find({
-      where: { recurso: { id: recursoId } },
-      relations: ['detalle_reserva', 'detalle_reserva.credencial'],
-    });
-
-    // Calcular capacidad
-    const capacidadPorCredencial = credencialesDisponibles[0].recurso.capacidad;
-    const totalCredenciales = credencialesDisponibles.length;
-    const capacidadTotal = totalCredenciales * capacidadPorCredencial;
-
-    if (cantidadRequerida > capacidadTotal) {
+    // Validar que haya credenciales
+    if (
+      credencialesGenerales.length === 0 &&
+      credencialesDocentes.length === 0
+    ) {
       throw new ConflictException(
-        `No hay suficientes accesos disponibles (${capacidadTotal} disponibles)`,
+        'No hay credenciales disponibles para este recurso',
       );
     }
 
-    // Verificar solapamientos
-    let credencialesOcupadas = new Set<string>();
+    // Obtener capacidades
+    const capacidadGeneral = credencialesGenerales[0]?.recurso?.capacidad || 1;
+    const capacidadDocente = credencialesDocentes[0]?.recurso?.capacidad || 1;
 
-    reservasExistente.forEach((reserva) => {
-      if (!(fin <= reserva.inicio || inicio >= reserva.fin)) {
-        reserva.detalle_reserva?.forEach((detalle) => {
-          if (detalle.credencial?.id) {
-            credencialesOcupadas.add(detalle.credencial.id);
-          }
-        });
-      }
+    // Obtener reservas solapadas (usando misma lógica que GET)
+    const reservasSolapadas = await this.reservaRepository
+      .createQueryBuilder('reserva')
+      .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+      .innerJoinAndSelect('detalle.credencial', 'credencial')
+      .where('reserva.recurso_id = :recursoId', { recursoId })
+      .andWhere(
+        `(
+            (reserva.inicio BETWEEN :inicio AND :fin) OR
+            (reserva.fin BETWEEN :inicio AND :fin) OR
+            (reserva.inicio <= :inicio AND reserva.fin >= :fin)
+        )`,
+        { inicio, fin },
+      )
+      .getMany();
+
+    // Calcular ocupación
+    const generalesOcupadas = new Set<string>();
+    const docentesOcupadas = new Set<string>();
+
+    reservasSolapadas.forEach((reserva) => {
+      reserva.detalle_reserva?.forEach((detalle) => {
+        if (!detalle.credencial) return;
+
+        if (detalle.credencial.rol?.nombre === 'DOCENTE') {
+          docentesOcupadas.add(detalle.credencial.id);
+        } else {
+          generalesOcupadas.add(detalle.credencial.id);
+        }
+      });
     });
 
-    // Calcular disponibilidad
-    const credencialesDisponiblesCount =
-      totalCredenciales - credencialesOcupadas.size;
-    const credencialesNecesarias = Math.ceil(
-      cantidadRequerida / capacidadPorCredencial,
-    );
-
-    if (credencialesDisponiblesCount < credencialesNecesarias) {
-      const accesosDisponibles =
-        credencialesDisponiblesCount * capacidadPorCredencial;
-      throw new ConflictException(
-        `No hay suficiente disponibilidad en el horario solicitado. ` +
-          `Solo ${accesosDisponibles > 0 ? accesosDisponibles : 0} accesos disponibles en este horario`,
+    // Validar disponibilidad
+    if (usarSoloGenerales) {
+      const disponibles = credencialesGenerales.length - generalesOcupadas.size;
+      const necesarias = Math.ceil(
+        (cantidadGeneral + cantidadDocente) / capacidadGeneral,
       );
+
+      if (disponibles < necesarias) {
+        throw new ConflictException(
+          `No hay suficientes credenciales generales disponibles (${disponibles} disponibles, ${necesarias} necesarias)`,
+        );
+      }
+    } else {
+      const disponiblesGenerales =
+        credencialesGenerales.length - generalesOcupadas.size;
+      const disponiblesDocentes =
+        credencialesDocentes.length - docentesOcupadas.size;
+
+      const necesariasGenerales = Math.ceil(cantidadGeneral / capacidadGeneral);
+      const necesariasDocentes = Math.ceil(cantidadDocente / capacidadDocente);
+
+      if (disponiblesGenerales < necesariasGenerales) {
+        throw new ConflictException(
+          `No hay suficientes credenciales generales (${disponiblesGenerales} disponibles, ${necesariasGenerales} necesarias)`,
+        );
+      }
+
+      if (disponiblesDocentes < necesariasDocentes) {
+        throw new ConflictException(
+          `No hay suficientes credenciales docentes (${disponiblesDocentes} disponibles, ${necesariasDocentes} necesarias)`,
+        );
+      }
     }
   }
 
@@ -363,9 +536,15 @@ export class ReservaService {
   ) {
     try {
       const { recurso_id, inicio, fin } = credencialesDisponiblesDto;
+      console.log(
+        `[countCredencialesDisponibles] Inicio - recurso_id: ${recurso_id}, inicio: ${inicio}, fin: ${fin}`,
+      );
 
       // 1. Validar fechas
       if (fin <= inicio) {
+        console.error(
+          `[VALIDACIÓN FECHAS] Error: fin (${fin}) <= inicio (${inicio})`,
+        );
         throw new BadRequestException(
           'La fecha de fin debe ser posterior a la de inicio',
         );
@@ -377,60 +556,112 @@ export class ReservaService {
         relations: ['recurso', 'rol'],
       });
 
-      if (credenciales.length === 0) {
+      console.log(`[CREDENCIALES] Total encontradas: ${credenciales.length}`);
+      credenciales.forEach((c, i) => {
+        console.log(
+          `[CREDENCIAL ${i}] ID: ${c.id}, Rol: ${c.rol?.nombre || 'Ninguno'}`,
+        );
+      });
+
+      const totalCredenciales = credenciales.length;
+
+      if (totalCredenciales === 0) {
+        console.log('[SIN CREDENCIALES] No hay credenciales para este recurso');
         return {
-          total: 0,
-          general: 0,
-          docente: 0,
-          capacidad_por_credencial: 0,
-          capacidad_total_disponible: 0,
+          credenciales_disponibles: {
+            total: 0,
+            generales: 0,
+            docentes: 0,
+          },
+          capacidad: {
+            por_credencial: 0,
+            general_disponible: 0,
+            docente_disponible: 0,
+          },
         };
       }
 
-      // 3. Obtener reservas que se solapan con el rango exacto
-      const reservasSolapadas = await this.reservaRepository
+      // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
+      const reservasEnRango = await this.reservaRepository
         .createQueryBuilder('reserva')
         .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-        .innerJoinAndSelect('detalle.credencial', 'credencial') // <-- Cambio clave aquí
+        .innerJoinAndSelect('detalle.credencial', 'credencial')
         .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-        .andWhere(
-          `(
-          (reserva.inicio BETWEEN :inicio AND :fin) OR
-          (reserva.fin BETWEEN :inicio AND :fin) OR
-          (reserva.inicio <= :inicio AND reserva.fin >= :fin)
-        )`,
-          { inicio, fin },
-        )
+        .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
+          inicio,
+          fin,
+        })
         .getMany();
 
-      // 4. Calcular credenciales ocupadas
+      console.log(
+        `[RESERVAS EN RANGO] Total reservas encontradas: ${reservasEnRango.length}`,
+      );
+
+      reservasEnRango.forEach((reserva, i) => {
+        console.log(
+          `[RESERVA ${i}] ID: ${reserva.id}, Inicio: ${reserva.inicio}, Fin: ${reserva.fin}`,
+        );
+        console.log(
+          `[DETALLES RESERVA ${i}] Total credenciales usadas: ${reserva.detalle_reserva.length}`,
+        );
+        reserva.detalle_reserva.forEach((detalle, j) => {
+          console.log(
+            `[DETALLE ${i}-${j}] Credencial ID: ${detalle.credencial?.id || 'N/A'}`,
+          );
+        });
+      });
+
+      // 4. Calcular credenciales ocupadas en el rango de fechas
       const credencialesOcupadas = new Set<string>();
-      reservasSolapadas.forEach((reserva) => {
+      reservasEnRango.forEach((reserva) => {
         reserva.detalle_reserva.forEach((detalle) => {
-          if (detalle.credencial && detalle.credencial.id) {
-            // <-- Validación adicional
+          if (detalle.credencial) {
+            console.log(
+              `[CREDENCIAL OCUPADA] Agregando credencial ID: ${detalle.credencial.id} de reserva ID: ${reserva.id}`,
+            );
             credencialesOcupadas.add(detalle.credencial.id);
           }
         });
       });
 
+      console.log(`[TOTAL CREDENCIALES OCUPADAS] ${credencialesOcupadas.size}`);
+      console.log(
+        '[CREDENCIALES OCUPADAS IDs]:',
+        Array.from(credencialesOcupadas),
+      );
+
       // 5. Filtrar disponibilidad por tipo
       const capacidadPorCredencial = credenciales[0].recurso.capacidad;
-      const totalDisponibles = credenciales.filter(
+      console.log(`[CAPACIDAD] Por credencial: ${capacidadPorCredencial}`);
+
+      const credencialesDisponibles = credenciales.filter(
         (c) => !credencialesOcupadas.has(c.id),
       );
 
-      const generalDisponibles = totalDisponibles.filter(
-        (c) => c.rol === null || c.rol.nombre !== 'DOCENTE',
+      console.log(
+        `[CREDENCIALES DISPONIBLES] Total: ${credencialesDisponibles.length}`,
+      );
+      credencialesDisponibles.forEach((c, i) => {
+        console.log(
+          `[DISPONIBLE ${i}] ID: ${c.id}, Rol: ${c.rol?.nombre || 'Ninguno'}`,
+        );
+      });
+
+      const generalDisponibles = credencialesDisponibles.filter(
+        (c) => !c.rol || c.rol.nombre !== 'DOCENTE',
       ).length;
 
-      const docenteDisponibles = totalDisponibles.filter(
+      const docenteDisponibles = credencialesDisponibles.filter(
         (c) => c.rol?.nombre === 'DOCENTE',
       ).length;
 
-      return {
+      console.log(
+        `[RESULTADO FINAL] General disponibles: ${generalDisponibles}, Docente disponibles: ${docenteDisponibles}`,
+      );
+
+      const resultado = {
         credenciales_disponibles: {
-          total: totalDisponibles.length,
+          total: credencialesDisponibles.length,
           generales: generalDisponibles,
           docentes: docenteDisponibles,
         },
@@ -440,7 +671,11 @@ export class ReservaService {
           docente_disponible: docenteDisponibles * capacidadPorCredencial,
         },
       };
+
+      console.log('[RESULTADO COMPLETO]:', JSON.stringify(resultado, null, 2));
+      return resultado;
     } catch (error) {
+      console.error('[ERROR]', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
