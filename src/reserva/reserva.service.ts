@@ -158,8 +158,8 @@ export class ReservaService {
         mantenimiento,
         inicio,
         fin,
-        cantidad_accesos: cantidad_accesos_general,
-        cantidad_accesos_docente,
+        //TODO: Evaluar si la entidad reserva debe tener un campo cantidad_accesos_general y cantidad_accesos_docente
+        cantidad_accesos: cantidad_accesos_general + cantidad_accesos_docente,
         cantidad_credenciales:
           credencialesGeneralesAsignar.length +
           credencialesDocentesAsignar.length,
@@ -293,96 +293,96 @@ export class ReservaService {
     };
   }
 
-  private async validarDisponibilidadRecurso(
-    recursoId: string,
-    inicio: Date,
-    fin: Date,
-    cantidadGeneral: number,
-    cantidadDocente: number,
-    credencialesGenerales: Credencial[],
-    credencialesDocentes: Credencial[],
-    usarSoloGenerales: boolean,
-  ): Promise<void> {
-    // Validar que haya credenciales
-    if (
-      credencialesGenerales.length === 0 &&
-      credencialesDocentes.length === 0
-    ) {
-      throw new ConflictException(
-        'No hay credenciales disponibles para este recurso',
-      );
-    }
+  // private async validarDisponibilidadRecurso(
+  //   recursoId: string,
+  //   inicio: Date,
+  //   fin: Date,
+  //   cantidadGeneral: number,
+  //   cantidadDocente: number,
+  //   credencialesGenerales: Credencial[],
+  //   credencialesDocentes: Credencial[],
+  //   usarSoloGenerales: boolean,
+  // ): Promise<void> {
+  //   // Validar que haya credenciales
+  //   if (
+  //     credencialesGenerales.length === 0 &&
+  //     credencialesDocentes.length === 0
+  //   ) {
+  //     throw new ConflictException(
+  //       'No hay credenciales disponibles para este recurso',
+  //     );
+  //   }
 
-    // Obtener capacidades
-    const capacidadGeneral = credencialesGenerales[0]?.recurso?.capacidad || 1;
-    const capacidadDocente = credencialesDocentes[0]?.recurso?.capacidad || 1;
+  //   // Obtener capacidades
+  //   const capacidadGeneral = credencialesGenerales[0]?.recurso?.capacidad || 1;
+  //   const capacidadDocente = credencialesDocentes[0]?.recurso?.capacidad || 1;
 
-    // Obtener reservas solapadas (usando misma lógica que GET)
-    const reservasSolapadas = await this.reservaRepository
-      .createQueryBuilder('reserva')
-      .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-      .innerJoinAndSelect('detalle.credencial', 'credencial')
-      .where('reserva.recurso_id = :recursoId', { recursoId })
-      .andWhere(
-        `(
-            (reserva.inicio BETWEEN :inicio AND :fin) OR
-            (reserva.fin BETWEEN :inicio AND :fin) OR
-            (reserva.inicio <= :inicio AND reserva.fin >= :fin)
-        )`,
-        { inicio, fin },
-      )
-      .getMany();
+  //   // Obtener reservas solapadas (usando misma lógica que GET)
+  //   const reservasSolapadas = await this.reservaRepository
+  //     .createQueryBuilder('reserva')
+  //     .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+  //     .innerJoinAndSelect('detalle.credencial', 'credencial')
+  //     .where('reserva.recurso_id = :recursoId', { recursoId })
+  //     .andWhere(
+  //       `(
+  //           (reserva.inicio BETWEEN :inicio AND :fin) OR
+  //           (reserva.fin BETWEEN :inicio AND :fin) OR
+  //           (reserva.inicio <= :inicio AND reserva.fin >= :fin)
+  //       )`,
+  //       { inicio, fin },
+  //     )
+  //     .getMany();
 
-    // Calcular ocupación
-    const generalesOcupadas = new Set<string>();
-    const docentesOcupadas = new Set<string>();
+  //   // Calcular ocupación
+  //   const generalesOcupadas = new Set<string>();
+  //   const docentesOcupadas = new Set<string>();
 
-    reservasSolapadas.forEach((reserva) => {
-      reserva.detalle_reserva?.forEach((detalle) => {
-        if (!detalle.credencial) return;
+  //   reservasSolapadas.forEach((reserva) => {
+  //     reserva.detalle_reserva?.forEach((detalle) => {
+  //       if (!detalle.credencial) return;
 
-        if (detalle.credencial.rol?.nombre === 'DOCENTE') {
-          docentesOcupadas.add(detalle.credencial.id);
-        } else {
-          generalesOcupadas.add(detalle.credencial.id);
-        }
-      });
-    });
+  //       if (detalle.credencial.rol?.nombre === 'DOCENTE') {
+  //         docentesOcupadas.add(detalle.credencial.id);
+  //       } else {
+  //         generalesOcupadas.add(detalle.credencial.id);
+  //       }
+  //     });
+  //   });
 
-    // Validar disponibilidad
-    if (usarSoloGenerales) {
-      const disponibles = credencialesGenerales.length - generalesOcupadas.size;
-      const necesarias = Math.ceil(
-        (cantidadGeneral + cantidadDocente) / capacidadGeneral,
-      );
+  //   // Validar disponibilidad
+  //   if (usarSoloGenerales) {
+  //     const disponibles = credencialesGenerales.length - generalesOcupadas.size;
+  //     const necesarias = Math.ceil(
+  //       (cantidadGeneral + cantidadDocente) / capacidadGeneral,
+  //     );
 
-      if (disponibles < necesarias) {
-        throw new ConflictException(
-          `No hay suficientes credenciales generales disponibles (${disponibles} disponibles, ${necesarias} necesarias)`,
-        );
-      }
-    } else {
-      const disponiblesGenerales =
-        credencialesGenerales.length - generalesOcupadas.size;
-      const disponiblesDocentes =
-        credencialesDocentes.length - docentesOcupadas.size;
+  //     if (disponibles < necesarias) {
+  //       throw new ConflictException(
+  //         `No hay suficientes credenciales generales disponibles (${disponibles} disponibles, ${necesarias} necesarias)`,
+  //       );
+  //     }
+  //   } else {
+  //     const disponiblesGenerales =
+  //       credencialesGenerales.length - generalesOcupadas.size;
+  //     const disponiblesDocentes =
+  //       credencialesDocentes.length - docentesOcupadas.size;
 
-      const necesariasGenerales = Math.ceil(cantidadGeneral / capacidadGeneral);
-      const necesariasDocentes = Math.ceil(cantidadDocente / capacidadDocente);
+  //     const necesariasGenerales = Math.ceil(cantidadGeneral / capacidadGeneral);
+  //     const necesariasDocentes = Math.ceil(cantidadDocente / capacidadDocente);
 
-      if (disponiblesGenerales < necesariasGenerales) {
-        throw new ConflictException(
-          `No hay suficientes credenciales generales (${disponiblesGenerales} disponibles, ${necesariasGenerales} necesarias)`,
-        );
-      }
+  //     if (disponiblesGenerales < necesariasGenerales) {
+  //       throw new ConflictException(
+  //         `No hay suficientes credenciales generales (${disponiblesGenerales} disponibles, ${necesariasGenerales} necesarias)`,
+  //       );
+  //     }
 
-      if (disponiblesDocentes < necesariasDocentes) {
-        throw new ConflictException(
-          `No hay suficientes credenciales docentes (${disponiblesDocentes} disponibles, ${necesariasDocentes} necesarias)`,
-        );
-      }
-    }
-  }
+  //     if (disponiblesDocentes < necesariasDocentes) {
+  //       throw new ConflictException(
+  //         `No hay suficientes credenciales docentes (${disponiblesDocentes} disponibles, ${necesariasDocentes} necesarias)`,
+  //       );
+  //     }
+  //   }
+  // }
 
   async findAll(paginationReservaDto: PaginationReservaDto) {
     try {
