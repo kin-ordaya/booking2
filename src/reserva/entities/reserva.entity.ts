@@ -17,7 +17,7 @@ export class Reserva {
   @Column({ type: 'varchar', length: 100 })
   codigo: string;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int'})
   mantenimiento: number;
 
   // @Column({ type: 'varchar', length: 100, nullable: true })

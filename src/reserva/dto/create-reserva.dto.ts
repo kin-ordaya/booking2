@@ -1,58 +1,76 @@
-import { Type } from "class-transformer";
-import { IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID, Matches, MaxLength, Min } from "class-validator";
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateReservaDto {
+  @IsInt()
+  @IsIn([0, 1], { message: 'El campo mantenimiento debe ser 0 o 1' })
+  @Type(() => Number)
+  mantenimiento: number;
 
-    @IsOptional()
-    @IsInt()
-    @IsIn([ 1], {message: 'El campo mantenimiento debe ser 1'})
-    @Type(() => Number)
-    mantenimiento?: number;
+  // @IsOptional()
+  // @IsString()
+  // @MaxLength(100, {message: 'El campo descripcion debe tener un maximo de 100 caracteres'})
+  // descripcion?: string;
 
-    // @IsOptional()
-    // @IsString()
-    // @MaxLength(100, {message: 'El campo descripcion debe tener un maximo de 100 caracteres'})
-    // descripcion?: string;
+  // @IsNotEmpty()
+  // @IsDateString()
+  // fecha: string;
 
-    // @IsNotEmpty()
-    // @IsDateString()
-    // fecha: string;
+  @IsNotEmpty()
+  @IsDateString(
+    {},
+    { message: 'El campo inicio debe tener el formato YYYY-MM-DD' },
+  )
+  // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo inicio debe tener el formato HH:MM'})
+  inicio: Date;
 
-    @IsNotEmpty()
-    @IsDateString({}, {message: 'El campo inicio debe tener el formato YYYY-MM-DD'})
-    // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo inicio debe tener el formato HH:MM'})
-    inicio: Date
+  @IsNotEmpty()
+  @IsDateString(
+    {},
+    { message: 'El campo fin debe tener el formato YYYY-MM-DD' },
+  )
+  // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
+  fin: Date;
 
-    @IsNotEmpty()
-    @IsDateString({}, {message: 'El campo fin debe tener el formato YYYY-MM-DD'})
-    // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
-    fin: Date
+  @IsNotEmpty()
+  @IsInt()
+  @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
+  @Type(() => Number)
+  cantidad_accesos_general: number;
 
-    @IsNotEmpty()
-    @IsInt()
-    @IsPositive({message: 'El campo cantidad_accesos debe ser positivo'})
-    @Type(() => Number)
-    cantidad_accesos_general: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(0, {
+    message: 'El campo cantidad_accesos_docente debe ser mayor o igual a 0',
+  })
+  @Type(() => Number)
+  cantidad_accesos_docente: number;
 
-    @IsNotEmpty()
-    @IsInt()
-    @Min(0, {message: 'El campo cantidad_accesos_docente debe ser mayor o igual a 0'})
-    @Type(() => Number)
-    cantidad_accesos_docente: number;
+  @IsNotEmpty()
+  @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
+  recurso_id: string;
 
-    @IsNotEmpty()
-    @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
-    recurso_id: string;
+  @IsOptional()
+  @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
+  clase_id?: string;
 
-    @IsOptional()
-    @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
-    clase_id?: string;
+  @IsNotEmpty()
+  @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
+  docente_id: string;
 
-    @IsNotEmpty()
-    @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
-    docente_id: string;
-
-    @IsNotEmpty()
-    @IsUUID('4', { message: 'El campo alumno_id debe ser de tipo uuid' })
-    autor_id: string;
+  @IsNotEmpty()
+  @IsUUID('4', { message: 'El campo alumno_id debe ser de tipo uuid' })
+  autor_id: string;
 }
