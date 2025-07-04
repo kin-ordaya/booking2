@@ -33,9 +33,12 @@ export class CampusService {
       return await this.campusRepository.save(campus);
     } catch (error) {
       if (error instanceof ConflictException) {
-        throw new ConflictException(error.message);
+        throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException({
+        message: 'Ocurrio un error inesperado',
+        details: error.message,
+      });
     }
   }
 
@@ -43,8 +46,9 @@ export class CampusService {
     try {
       return await this.campusRepository.find({ order: { nombre: 'ASC' } });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
+      throw new InternalServerErrorException({
+        message: 'Ocurrio un error inesperado',
+        details: error.message,
       });
     }
   }
@@ -66,7 +70,10 @@ export class CampusService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException({
+        message: 'Ocurrio un error inesperado',
+        details: error.message,
+      });
     }
   }
 
@@ -114,7 +121,10 @@ export class CampusService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException({
+        message: 'Ocurrio un error inesperado',
+        details: error.message,
+      });
     }
   }
 
@@ -139,7 +149,10 @@ export class CampusService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException({
+        message: 'Ocurrio un error inesperado',
+        details: error.message,
+      });
     }
   }
 }
