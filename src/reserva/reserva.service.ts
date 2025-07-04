@@ -108,7 +108,18 @@ export class ReservaService {
         }),
       ]);
 
-      // ... (resto de validaciones de existencia)
+      if(!recurso){
+        throw new NotFoundException('Recurso no encontrado');
+      }
+      if(!autor){
+        throw new NotFoundException('Autor no encontrado');
+      }
+      if(!docente){
+        throw new NotFoundException('Docente no encontrado');
+      }
+      if(!clase){
+        throw new NotFoundException('Clase no encontrado');
+      }
 
       // Obtener TODAS las credenciales del recurso
       const credenciales = await this.credencialRepository.find({
