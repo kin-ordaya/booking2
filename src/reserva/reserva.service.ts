@@ -444,7 +444,7 @@ export class ReservaService {
           recurso: { id: recurso_id },
           inicio: Between(fechaInicio, fechaFin),
         },
-        order: { creacion: 'DESC' },
+        order: { inicio: 'ASC' },
       });
 
       // Procesar cada reserva para calcular disponibilidad
