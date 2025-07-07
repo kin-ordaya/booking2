@@ -94,31 +94,37 @@ export class ReservaService {
         );
       }
 
-      // Validar existencia de entidades relacionadas
-      const [recurso, clase, docente, autor] = await Promise.all([
+      const [recurso, autor] = await Promise.all([
         this.recursoRepository.findOneBy({ id: recurso_id }),
-        this.claseRepository.findOneBy({ id: clase_id }),
-        this.rolUsuarioRepository.findOne({
-          where: { id: docente_id },
-          relations: ['usuario', 'rol'],
-        }),
         this.rolUsuarioRepository.findOne({
           where: { id: autor_id },
           relations: ['usuario', 'rol'],
         }),
       ]);
 
-      if(!recurso){
+      if (!recurso) {
         throw new NotFoundException('Recurso no encontrado');
       }
-      if(!autor){
+      if (!autor) {
         throw new NotFoundException('Autor no encontrado');
       }
-      if(!docente){
-        throw new NotFoundException('Docente no encontrado');
-      }
-      if(!clase){
-        throw new NotFoundException('Clase no encontrado');
+
+      if (mantenimiento == 0) {
+        // Validar existencia de entidades relacionadas
+        const [clase, docente] = await Promise.all([
+          this.claseRepository.findOneBy({ id: clase_id }),
+          this.rolUsuarioRepository.findOne({
+            where: { id: docente_id },
+            relations: ['usuario', 'rol'],
+          }),
+        ]);
+
+        if (!docente) {
+          throw new NotFoundException('Docente no encontrado');
+        }
+        if (!clase) {
+          throw new NotFoundException('Clase no encontrado');
+        }
       }
 
       // Obtener TODAS las credenciales del recurso
@@ -151,8 +157,8 @@ export class ReservaService {
           recurso_id,
           inicio,
           fin,
-          cantidad_accesos_general,
-          cantidad_accesos_docente,
+          mantenimiento == 1 ? credencialesGeneralesEstudiantes.length : cantidad_accesos_general,
+          mantenimiento == 1 ? credencialesDocentes.length : cantidad_accesos_docente,
           credencialesGeneralesEstudiantes,
           credencialesDocentes,
           capacidadPorCredencial,
@@ -170,7 +176,9 @@ export class ReservaService {
         inicio,
         fin,
         //TODO: Evaluar si la entidad reserva debe tener un campo cantidad_accesos_general y cantidad_accesos_docente
-        cantidad_accesos: cantidad_accesos_general + cantidad_accesos_docente,
+        cantidad_accesos: mantenimiento == 1 
+          ? credencialesGeneralesAsignar.length + credencialesDocentesAsignar.length 
+          : cantidad_accesos_general + cantidad_accesos_docente,
         cantidad_credenciales:
           credencialesGeneralesAsignar.length +
           credencialesDocentesAsignar.length,
