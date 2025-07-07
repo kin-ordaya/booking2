@@ -533,17 +533,31 @@ export class ReservaService {
         };
       }
 
+      // Ajuste de zona horaria (igual que en findAll)
+    const adjustToUTC = (dateString: string) => {
+      const date = new Date(dateString);
+      date.setHours(date.getHours() - 5); // UTC-5
+      return date;
+    };
+
+    const fechaInicio = adjustToUTC(inicio);
+    const fechaFin = adjustToUTC(fin);
+
       // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
       const reservasEnRango = await this.reservaRepository
-        .createQueryBuilder('reserva')
-        .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-        .innerJoinAndSelect('detalle.credencial', 'credencial')
-        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-        .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
-          inicio,
-          fin,
-        })
-        .getMany();
+      .createQueryBuilder('reserva')
+      .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+      .innerJoinAndSelect('detalle.credencial', 'credencial')
+      .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
+      .andWhere(
+        `(
+          (reserva.inicio BETWEEN :inicio AND :fin) OR
+          (reserva.fin BETWEEN :inicio AND :fin) OR
+          (reserva.inicio <= :inicio AND reserva.fin >= :fin)
+        )`,
+        { inicio: fechaInicio, fin: fechaFin },
+      )
+      .getMany();
 
       console.log(
         `[RESERVAS EN RANGO] Total reservas encontradas: ${reservasEnRango.length}`,

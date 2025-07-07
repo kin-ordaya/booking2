@@ -8,14 +8,14 @@ export class CredencialesDisponiblesDto {
   @IsNotEmpty()
   @IsDateString(
     {},
-    { message: 'El campo inicio debe tener el formato YYYY-MM-DD' },
+    { message: 'El campo inicio debe tener el formato YYYY-MM-DDT00:00:00' },
   )
-  inicio: Date;
+  inicio: string;
 
   @IsNotEmpty()
   @IsDateString(
     {},
-    { message: 'El campo fin debe tener el formato YYYY-MM-DD' },
+    { message: 'El campo fin debe tener el formato YYYY-MM-DDT00:00:00' },
   )
-  fin: Date;
+  fin: string;
 }
