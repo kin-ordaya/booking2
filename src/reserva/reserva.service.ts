@@ -157,8 +157,12 @@ export class ReservaService {
           recurso_id,
           inicio,
           fin,
-          mantenimiento == 1 ? credencialesGeneralesEstudiantes.length : cantidad_accesos_general,
-          mantenimiento == 1 ? credencialesDocentes.length : cantidad_accesos_docente,
+          mantenimiento == 1
+            ? credencialesGeneralesEstudiantes.length
+            : cantidad_accesos_general,
+          mantenimiento == 1
+            ? credencialesDocentes.length
+            : cantidad_accesos_docente,
           credencialesGeneralesEstudiantes,
           credencialesDocentes,
           capacidadPorCredencial,
@@ -176,9 +180,11 @@ export class ReservaService {
         inicio,
         fin,
         //TODO: Evaluar si la entidad reserva debe tener un campo cantidad_accesos_general y cantidad_accesos_docente
-        cantidad_accesos: mantenimiento == 1 
-          ? credencialesGeneralesAsignar.length + credencialesDocentesAsignar.length 
-          : cantidad_accesos_general + cantidad_accesos_docente,
+        cantidad_accesos:
+          mantenimiento == 1
+            ? credencialesGeneralesAsignar.length +
+              credencialesDocentesAsignar.length
+            : cantidad_accesos_general + cantidad_accesos_docente,
         cantidad_credenciales:
           credencialesGeneralesAsignar.length +
           credencialesDocentesAsignar.length,
@@ -412,10 +418,20 @@ export class ReservaService {
         throw new BadRequestException('Se requieren recurso_id, inicio y fin');
       }
 
+      const adjustToUTC = (dateString: string) => {
+        const date = new Date(dateString);
+        // Restar 5 horas para UTC-5
+        date.setHours(date.getHours() - 5);
+        return date;
+      };
+
+      const fechaInicio = adjustToUTC(inicio);
+      const fechaFin = adjustToUTC(fin);
+
       // Convertir fechas
-      const fechaInicio = new Date(inicio);
-      const fechaFin = new Date(fin);
-      fechaFin.setHours(23, 59, 59, 999);
+      // const fechaInicio = new Date(inicio);
+      // const fechaFin = new Date(fin);
+      //fechaFin.setHours(23, 59, 59, 999);
 
       // Obtener el total de credenciales del recurso
       const totalCredenciales = await this.credencialRepository.count({

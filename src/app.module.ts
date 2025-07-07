@@ -54,7 +54,7 @@ import { DeclaracionJuradaModule } from './declaracion_jurada/declaracion_jurada
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
-      logging: true
+      logging: true,
     }),
     AulaModule,
     AuthModule,

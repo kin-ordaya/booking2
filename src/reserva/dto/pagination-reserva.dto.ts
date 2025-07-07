@@ -6,10 +6,10 @@ export class PaginationReservaDto {
   recurso_id: string;
 
   @IsNotEmpty()
-  @IsDateString()
+  @IsDateString({},{ message: 'El campo inicio debe ser de tipo fecha y en formato YYYY-MM-DDTHH:mm:ss' })
   inicio: string;
 
   @IsNotEmpty()
-  @IsDateString()
+  @IsDateString({},{ message: 'El campo inicio debe ser de tipo fecha y en formato YYYY-MM-DDTHH:mm:ss' })
   fin: string;
 }
