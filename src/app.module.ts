@@ -56,10 +56,6 @@ import { time } from 'console';
       autoLoadEntities: true,
       synchronize: true,
       logging: true,
-      extra: {
-        // Configuración para la zona horaria:
-        options: `-c timezone=${process.env.DB_TIMEZONE || 'UTC'}`,
-      },
     }),
     AulaModule,
     AuthModule,
