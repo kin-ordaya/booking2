@@ -419,19 +419,19 @@ export class ReservaService {
         throw new BadRequestException('Se requieren recurso_id, inicio y fin');
       }
 
-      const adjustToUTC = (dateString: string) => {
-        const date = new Date(dateString);
-        // Restar 5 horas para UTC-5
-        date.setHours(date.getHours() - 5);
-        return date;
-      };
+      // const adjustToUTC = (dateString: string) => {
+      //   const date = new Date(dateString);
+      //   // Restar 5 horas para UTC-5
+      //   date.setHours(date.getHours() - 5);
+      //   return date;
+      // };
 
-      const fechaInicio = adjustToUTC(inicio);
-      const fechaFin = adjustToUTC(fin);
+      // const fechaInicio = adjustToUTC(inicio);
+      // const fechaFin = adjustToUTC(fin);
 
       // Convertir fechas
-      // const fechaInicio = new Date(inicio);
-      // const fechaFin = new Date(fin);
+      const fechaInicio = new Date(inicio);
+      const fechaFin = new Date(fin);
       //fechaFin.setHours(23, 59, 59, 999);
 
       // Obtener el total de credenciales del recurso
@@ -536,15 +536,15 @@ export class ReservaService {
         };
       }
 
-      // Ajuste de zona horaria (igual que en findAll)
-      const adjustToUTC = (dateString: string) => {
-        const date = new Date(dateString);
-        date.setHours(date.getHours() - 5); // UTC-5
-        return date;
-      };
+      // // Ajuste de zona horaria (igual que en findAll)
+      // const adjustToUTC = (dateString: string) => {
+      //   const date = new Date(dateString);
+      //   date.setHours(date.getHours() - 5); // UTC-5
+      //   return date;
+      // };
 
-      const fechaInicio = adjustToUTC(inicio);
-      const fechaFin = adjustToUTC(fin);
+      // const fechaInicio = adjustToUTC(inicio);
+      // const fechaFin = adjustToUTC(fin);
 
       // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
       const reservasEnRango = await this.reservaRepository
@@ -558,7 +558,7 @@ export class ReservaService {
           (reserva.fin BETWEEN :inicio AND :fin) OR
           (reserva.inicio <= :inicio AND reserva.fin >= :fin)
         )`,
-          { inicio: fechaInicio, fin: fechaFin },
+          { inicio: inicio, fin: fin },
         )
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
