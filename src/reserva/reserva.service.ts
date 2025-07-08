@@ -248,6 +248,7 @@ export class ReservaService {
         inicio,
         fin,
       })
+      .andWhere('reserva.estado = :estado', { estado: 1})
       .getMany();
 
     console.log(
@@ -443,6 +444,7 @@ export class ReservaService {
         where: {
           recurso: { id: recurso_id },
           inicio: Between(fechaInicio, fechaFin),
+          estado: 1,
         },
         order: { inicio: 'ASC' },
       });
@@ -534,30 +536,31 @@ export class ReservaService {
       }
 
       // Ajuste de zona horaria (igual que en findAll)
-    const adjustToUTC = (dateString: string) => {
-      const date = new Date(dateString);
-      date.setHours(date.getHours() - 5); // UTC-5
-      return date;
-    };
+      const adjustToUTC = (dateString: string) => {
+        const date = new Date(dateString);
+        date.setHours(date.getHours() - 5); // UTC-5
+        return date;
+      };
 
-    const fechaInicio = adjustToUTC(inicio);
-    const fechaFin = adjustToUTC(fin);
+      const fechaInicio = adjustToUTC(inicio);
+      const fechaFin = adjustToUTC(fin);
 
       // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
       const reservasEnRango = await this.reservaRepository
-      .createQueryBuilder('reserva')
-      .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-      .innerJoinAndSelect('detalle.credencial', 'credencial')
-      .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-      .andWhere(
-        `(
+        .createQueryBuilder('reserva')
+        .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+        .innerJoinAndSelect('detalle.credencial', 'credencial')
+        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
+        .andWhere(
+          `(
           (reserva.inicio BETWEEN :inicio AND :fin) OR
           (reserva.fin BETWEEN :inicio AND :fin) OR
           (reserva.inicio <= :inicio AND reserva.fin >= :fin)
         )`,
-        { inicio: fechaInicio, fin: fechaFin },
-      )
-      .getMany();
+          { inicio: fechaInicio, fin: fechaFin },
+        )
+        .andWhere('reserva.estado = :estado', { estado: 1})
+        .getMany();
 
       console.log(
         `[RESERVAS EN RANGO] Total reservas encontradas: ${reservasEnRango.length}`,
@@ -650,7 +653,58 @@ export class ReservaService {
   }
 
   async findOne(id: string) {
-    return `This action returns a #${id} reserva`;
+    try {
+      if (!id) {
+        throw new BadRequestException('Se requiere el ID de la reserva');
+      }
+
+      const reserva = await this.reservaRepository.findOne({
+        where: { id },
+        relations: [
+          'clase',
+          'clase.cursoModalidad',
+          'clase.cursoModalidad.curso',
+          'docente',
+          'docente.usuario',
+        ],
+      });
+
+      if (!reserva) {
+        throw new NotFoundException('Reserva no encontrada');
+      }
+
+      // Transformación de los datos
+      return {
+        id: reserva.id,
+        creacion: reserva.creacion,
+        estado: reserva.estado,
+        codigo: reserva.codigo,
+        mantenimiento: reserva.mantenimiento,
+        inicio: reserva.inicio,
+        fin: reserva.fin,
+        cantidad_accesos: reserva.cantidad_accesos,
+        cantidad_credenciales: reserva.cantidad_credenciales,
+        // clase: `${reserva.clase?.cursoModalidad?.curso?.nombre || 'Curso no disponible'} - ${reserva.clase?.nrc || 'N/A'}`,
+        clase: {
+          nrc: reserva.clase?.nrc,
+          inscritos: reserva.clase?.inscritos,
+          codigo_curso: reserva.clase?.cursoModalidad?.curso?.codigo,
+          nombre_curso: reserva.clase?.cursoModalidad?.curso.nombre,
+        },
+        docente: {
+          nombres: reserva.docente?.usuario?.nombres,
+          apellidos: reserva.docente?.usuario?.apellidos,
+        },
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al obtener la reserva');
+    }
   }
 
   async update(id: string, updateReservaDto: UpdateReservaDto) {
