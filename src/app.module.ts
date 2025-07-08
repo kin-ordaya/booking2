@@ -56,6 +56,9 @@ import { time } from 'console';
       autoLoadEntities: true,
       synchronize: true,
       logging: true,
+      extra: {
+        options: '-c timezone=UTC', // 👈 Fuerza UTC en la conexión
+      },
     }),
     AulaModule,
     AuthModule,
