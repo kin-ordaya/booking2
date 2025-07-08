@@ -58,6 +58,15 @@ import { time } from 'console';
       logging: true,
       extra: {
         options: '-c timezone=UTC', // 👈 Fuerza UTC en la conexión
+        types: {
+          getTypeParser: (oid) => (val) => {
+            if (oid === 1114 || oid === 1184) {
+              // timestamp/timestamptz
+              return new Date(val + 'Z'); // Fuerza interpretación UTC
+            }
+            return val;
+          },
+        },
       },
     }),
     AulaModule,
