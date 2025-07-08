@@ -248,7 +248,7 @@ export class ReservaService {
         inicio,
         fin,
       })
-      .andWhere('reserva.estado = :estado', { estado: 1})
+      .andWhere('reserva.estado = :estado', { estado: 1 })
       .getMany();
 
     console.log(
@@ -444,7 +444,8 @@ export class ReservaService {
         where: {
           recurso: { id: recurso_id },
           inicio: Between(fechaInicio, fechaFin),
-          estado: 1,
+          //! Descomentar en produccion
+          // estado: 1,
         },
         order: { inicio: 'ASC' },
       });
@@ -559,7 +560,7 @@ export class ReservaService {
         )`,
           { inicio: fechaInicio, fin: fechaFin },
         )
-        .andWhere('reserva.estado = :estado', { estado: 1})
+        .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
 
       console.log(
@@ -707,11 +708,34 @@ export class ReservaService {
     }
   }
 
-  async update(id: string, updateReservaDto: UpdateReservaDto) {
-    return `This action updates a #${id} reserva`;
-  }
+  // async update(id: string, updateReservaDto: UpdateReservaDto) {
+  //   return `This action updates a #${id} reserva`;
+  // }
 
   async remove(id: string) {
-    return `This action removes a #${id} reserva`;
+    try {
+      if (!id) {
+        throw new BadRequestException('Se requiere el ID de la reserva');
+      }
+      const result = await this.reservaRepository
+        .createQueryBuilder()
+        .update()
+        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+        .where({ id })
+        .execute();
+
+        if(result.affected === 0) {
+          throw new NotFoundException('Reserva no encontrada');
+        }
+        return this.reservaRepository.findOneBy({id});
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al eliminar la reserva');
+    }
   }
 }

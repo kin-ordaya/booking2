@@ -34,6 +34,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { HorarioModule } from './horario/horario.module';
 import { ClaseAulaModule } from './clase_aula/clase_aula.module';
 import { DeclaracionJuradaModule } from './declaracion_jurada/declaracion_jurada.module';
+import { time } from 'console';
 
 @Module({
   imports: [
@@ -55,6 +56,10 @@ import { DeclaracionJuradaModule } from './declaracion_jurada/declaracion_jurada
       autoLoadEntities: true,
       synchronize: true,
       logging: true,
+      extra: {
+        // Configuración para la zona horaria:
+        options: `-c timezone=${process.env.DB_TIMEZONE || 'UTC'}`,
+      },
     }),
     AulaModule,
     AuthModule,

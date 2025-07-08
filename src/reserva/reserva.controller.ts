@@ -42,10 +42,10 @@ export class ReservaController {
     return this.reservaService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReservaDto: UpdateReservaDto) {
-    return this.reservaService.update(id, updateReservaDto);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() updateReservaDto: UpdateReservaDto) {
+  //   return this.reservaService.update(id, updateReservaDto);
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
