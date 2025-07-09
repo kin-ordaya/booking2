@@ -13,6 +13,7 @@ import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
+import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 
 @Controller('reserva')
 export class ReservaController {
@@ -30,6 +31,11 @@ export class ReservaController {
     return this.reservaService.countCredencialesDisponibles(
       credencialesDisponiblesDto,
     );
+  }
+
+  @Get('in-range')
+  findReservasInRange(@Query() paginationReservaInRangeDto: PaginationReservaInRangeDto) {
+    return this.reservaService.findReservasInRange(paginationReservaInRangeDto);
   }
 
   @Get()

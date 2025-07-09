@@ -17,6 +17,7 @@ import {
   LessThan,
   IsNull,
   MoreThan,
+  Brackets,
 } from 'typeorm';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
@@ -27,6 +28,7 @@ import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
+import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 
 @Injectable()
 export class ReservaService {
@@ -409,10 +411,118 @@ export class ReservaService {
   //     }
   //   }
   // }
-
   async findAll(paginationReservaDto: PaginationReservaDto) {
     try {
-      const { recurso_id, inicio, fin } = paginationReservaDto;
+      const {
+        recurso_id,
+        inicio,
+        fin,
+        sort_state = 1,
+        page = 1,
+        limit = 10,
+        search,
+      } = paginationReservaDto;
+
+      // Validaciones básicas
+      if (page < 1)
+        throw new BadRequestException('La página debe ser mayor a 0');
+      if (limit < 1)
+        throw new BadRequestException('El límite debe ser mayor a 0');
+
+      const recurso = await this.recursoRepository.existsBy({ id: recurso_id });
+      if (!recurso) {
+        throw new NotFoundException('Recurso no encontrado');
+      }
+
+      // Crear query builder con joins adecuados
+      const query = this.reservaRepository
+        .createQueryBuilder('reserva')
+        .leftJoinAndSelect('reserva.docente', 'docente')
+        .leftJoinAndSelect('docente.usuario', 'usuario')
+        .leftJoinAndSelect('reserva.clase', 'clase') // Agregado para clase
+        .leftJoinAndSelect('clase.cursoModalidad', 'cursoModalidad') // Asumiendo que Clase tiene relación con CursoModalidad
+        .leftJoinAndSelect('cursoModalidad.curso', 'curso') // Asumiendo que CursoModalidad tiene relación con Curso
+        .leftJoinAndSelect('reserva.autor', 'autor') // Agregado para autor
+        .leftJoinAndSelect('autor.rol', 'rolAutor') // Asumiendo que RolUsuario tiene relación con Rol
+        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });
+
+      // Filtro por estado
+      if (sort_state !== undefined) {
+        query.andWhere('reserva.estado = :estado', { estado: sort_state });
+      }
+
+      // Filtro por rango de fechas
+      if (inicio && fin) {
+        query.andWhere('reserva.creacion <= :fin AND reserva.creacion >= :inicio', {
+          fin,
+          inicio,
+        });
+      }
+
+      // Filtro por búsqueda por nrc, nombre de curso y nombres de docente
+      // Filtro por búsqueda por nrc, nombre de curso y nombres de docente
+      if (search) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('UPPER(clase.nrc) LIKE UPPER(:search)')
+              .orWhere('UPPER(curso.nombre) LIKE UPPER(:search)')
+              .orWhere('UPPER(usuario.nombres) LIKE UPPER(:search)')
+              .orWhere('UPPER(usuario.apellidos) LIKE UPPER(:search)');
+          }),
+          { search: `%${search}%` },
+        );
+      }
+
+      // Obtener resultados y total
+      const [reservas, totalCount] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      // Mapeo de resultados con los nuevos campos
+      const results = reservas.map((reserva) => ({
+        id: reserva.id,
+        creacion: reserva.creacion,
+        codigo: reserva.codigo,
+        inicio: reserva.inicio,
+        fin: reserva.fin,
+        cantidad_accesos: reserva.cantidad_accesos,
+        cantidad_credenciales: reserva.cantidad_credenciales,
+        docente: {
+          nombres: reserva.docente?.usuario?.nombres,
+          apellidos: reserva.docente?.usuario?.apellidos,
+        },
+        clase: reserva.clase
+          ? {
+              nrc: reserva.clase.nrc,
+              nombre_curso: reserva.clase.cursoModalidad.curso.nombre,
+            }
+          : null,
+        autor: {
+          rol: reserva.autor?.rol?.nombre, // Asumiendo
+        },
+      }));
+
+      return {
+        results,
+        meta: {
+          count: totalCount,
+          page,
+          limit,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      };
+    } catch (error) {
+      // Podrías loguear el error aquí
+      throw error;
+    }
+  }
+
+  async findReservasInRange(
+    paginationReservaInRangeDto: PaginationReservaInRangeDto,
+  ) {
+    try {
+      const { recurso_id, inicio, fin } = paginationReservaInRangeDto;
 
       // Validación de parámetros requeridos
       if (!recurso_id || !inicio || !fin) {
@@ -724,10 +834,10 @@ export class ReservaService {
         .where({ id })
         .execute();
 
-        if(result.affected === 0) {
-          throw new NotFoundException('Reserva no encontrada');
-        }
-        return this.reservaRepository.findOneBy({id});
+      if (result.affected === 0) {
+        throw new NotFoundException('Reserva no encontrada');
+      }
+      return this.reservaRepository.findOneBy({ id });
     } catch (error) {
       if (
         error instanceof BadRequestException ||

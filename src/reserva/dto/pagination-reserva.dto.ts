@@ -1,15 +1,25 @@
-import { IsDateString, IsNotEmpty, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDateString, IsIn, IsInt, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
-export class PaginationReservaDto {
+export class PaginationReservaDto extends PaginationDto {
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
   recurso_id: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsDateString({},{ message: 'El campo inicio debe ser de tipo fecha y en formato YYYY-MM-DDTHH:mm:ss' })
-  inicio: string;
+  inicio?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsDateString({},{ message: 'El campo inicio debe ser de tipo fecha y en formato YYYY-MM-DDTHH:mm:ss' })
-  fin: string;
+  fin?: string;
+
+  @IsOptional()
+  @IsInt({ message: 'El campo estado debe ser de tipo entero' })
+  @IsIn([1, 2], {
+    message: 'Ordernar por estado activo=1, inactivo=2',
+  })
+  @Type(() => Number)
+  sort_state?: number;
 }
