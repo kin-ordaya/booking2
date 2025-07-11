@@ -89,7 +89,15 @@ export class ReservaService {
         `[PARÁMETROS] Accesos general/estudiante: ${cantidad_accesos_general}, docente: ${cantidad_accesos_docente}`,
       );
 
+      const ahoraUTC = new Date().toISOString();
+      const inicioUTC = new Date(inicio).toISOString();
       // Validación de fechas
+      if (inicioUTC < ahoraUTC) {
+        throw new ConflictException(
+          `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        );
+      }
+
       if (fin <= inicio) {
         throw new ConflictException(
           'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
@@ -127,6 +135,11 @@ export class ReservaService {
         if (!clase) {
           throw new NotFoundException('Clase no encontrado');
         }
+      }
+      console.log(`[AUTOR] Rol: ${autor.rol.nombre}`);
+      // Validar tiempo mínimo de reserva solo si el autor no es administrador
+      if (autor.rol.nombre !== 'ADMINISTRADOR') {
+        await this.validarTiempoMinimoReserva(inicio, recurso.tiempo_reserva);
       }
 
       // Obtener TODAS las credenciales del recurso
@@ -331,6 +344,38 @@ export class ReservaService {
         necesariasDocentes,
       ),
     };
+  }
+
+  private async validarTiempoMinimoReserva(
+    fechaInicioReserva: Date,
+    tiempoReservaHoras: number,
+  ) {
+    if (tiempoReservaHoras <= 0) {
+      return;
+    }
+
+    // Asegurarnos que trabajamos con fechas en UTC
+    const ahoraUTC = new Date().toISOString();
+    const fechaInicioUTC = new Date(fechaInicioReserva).toISOString();
+
+    const fechaMinimaPermitida = new Date(
+      new Date(ahoraUTC).getTime() + tiempoReservaHoras * 60 * 60 * 1000,
+    );
+
+    console.log(`[VALIDACIÓN HORARIA]`, {
+      ahoraUTC,
+      fechaInicioUTC,
+      fechaMinimaPermitida: fechaMinimaPermitida.toISOString(),
+      tiempoReservaHoras,
+    });
+
+    if (new Date(fechaInicioUTC) < fechaMinimaPermitida) {
+      throw new ConflictException(
+        `Las reservas para este recurso deben hacerse con al menos ${tiempoReservaHoras} horas de anticipación. ` +
+          `La reserva más temprana permitida es a partir de ${fechaMinimaPermitida.toLocaleString('es-PE', { timeZone: 'America/Lima' })}. ` +
+          `(Intento de reserva para ${new Date(fechaInicioUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })})`,
+      );
+    }
   }
 
   // private async validarDisponibilidadRecurso(
