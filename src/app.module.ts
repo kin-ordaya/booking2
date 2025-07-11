@@ -34,7 +34,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { HorarioModule } from './horario/horario.module';
 import { ClaseAulaModule } from './clase_aula/clase_aula.module';
 import { DeclaracionJuradaModule } from './declaracion_jurada/declaracion_jurada.module';
-import { time } from 'console';
+import { types } from 'pg';
+
+// Configura los parsers de fecha ANTES de iniciar TypeORM
+types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
+types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
 
 @Module({
   imports: [
@@ -57,16 +61,16 @@ import { time } from 'console';
       synchronize: true,
       logging: true,
       extra: {
-        options: '-c timezone=UTC', // 👈 Fuerza UTC en la conexión
-        types: {
-          getTypeParser: (oid) => (val) => {
-            if (oid === 1114 || oid === 1184) {
-              // timestamp/timestamptz
-              return new Date(val + 'Z'); // Fuerza interpretación UTC
-            }
-            return val;
-          },
-        },
+        options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
+        // types: {
+        //   getTypeParser: (oid) => (val) => {
+        //     if (oid === 1114 || oid === 1184) {
+        //       // timestamp/timestamptz
+        //       return new Date(val + 'Z'); // Fuerza interpretación UTC
+        //     }
+        //     return val;
+        //   },
+        // },
       },
     }),
     AulaModule,

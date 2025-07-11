@@ -297,14 +297,26 @@ export class ReservaService {
 
     // 5. Validar disponibilidad
     if (generalesDisponibles.length < necesariasGenerales) {
+      const accesosDisponibles =
+        generalesDisponibles.length * capacidadPorCredencial;
       throw new ConflictException(
-        `No hay suficientes credenciales generales/estudiantes disponibles (${generalesDisponibles.length} disponibles, ${necesariasGenerales} necesarias)`,
+        `No hay suficientes credenciales generales/estudiantes disponibles. ` +
+          `Necesitas ${necesariasGenerales} credencial(es) (para ${cantidadGeneral} acceso(s)), ` +
+          `pero solo hay ${generalesDisponibles.length} disponible(s) ` +
+          `(equivalente a ${accesosDisponibles} acceso(s)). ` +
+          `Cada credencial tiene capacidad para ${capacidadPorCredencial} acceso(s).`,
       );
     }
 
     if (docentesDisponibles.length < necesariasDocentes) {
+      const accesosDisponibles =
+        docentesDisponibles.length * capacidadPorCredencial;
       throw new ConflictException(
-        `No hay suficientes credenciales docentes disponibles (${docentesDisponibles.length} disponibles, ${necesariasDocentes} necesarias)`,
+        `No hay suficientes credenciales docentes disponibles. ` +
+          `Necesitas ${necesariasDocentes} credencial(es) (para ${cantidadDocente} acceso(s)), ` +
+          `pero solo hay ${docentesDisponibles.length} disponible(s) ` +
+          `(equivalente a ${accesosDisponibles} acceso(s)). ` +
+          `Cada credencial tiene capacidad para ${capacidadPorCredencial} acceso(s).`,
       );
     }
 
@@ -453,10 +465,13 @@ export class ReservaService {
 
       // Filtro por rango de fechas
       if (inicio && fin) {
-        query.andWhere('reserva.creacion <= :fin AND reserva.creacion >= :inicio', {
-          fin,
-          inicio,
-        });
+        query.andWhere(
+          'reserva.creacion <= :fin AND reserva.creacion >= :inicio',
+          {
+            fin,
+            inicio,
+          },
+        );
       }
 
       // Filtro por búsqueda por nrc, nombre de curso y nombres de docente
@@ -554,8 +569,8 @@ export class ReservaService {
         where: {
           recurso: { id: recurso_id },
           inicio: Between(fechaInicio, fechaFin),
-          //! Descomentar en produccion
-          // estado: 1,
+          //! Descomentar en produccion y comentar en desarrollo
+          estado: 1,
         },
         order: { inicio: 'ASC' },
       });
