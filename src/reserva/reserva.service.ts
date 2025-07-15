@@ -119,15 +119,23 @@ export class ReservaService {
         throw new NotFoundException('Autor no encontrado');
       }
 
+      // Cambiar la declaración inicial para que coincida con los tipos esperados
+
+      let clase: Clase | null = null;
+      let docente: RolUsuario | null = null;
+
       if (mantenimiento == 0) {
         // Validar existencia de entidades relacionadas
-        const [clase, docente] = await Promise.all([
+        const results = await Promise.all([
           this.claseRepository.findOneBy({ id: clase_id }),
           this.rolUsuarioRepository.findOne({
             where: { id: docente_id },
             relations: ['usuario', 'rol'],
           }),
         ]);
+
+        clase = results[0];
+        docente = results[1];
 
         if (!docente) {
           throw new NotFoundException('Docente no encontrado');
@@ -136,6 +144,7 @@ export class ReservaService {
           throw new NotFoundException('Clase no encontrado');
         }
       }
+
       console.log(`[AUTOR] Rol: ${autor.rol.nombre}`);
       // Validar tiempo mínimo de reserva solo si el autor no es administrador
       if (autor.rol.nombre !== 'ADMINISTRADOR') {
@@ -174,10 +183,10 @@ export class ReservaService {
           fin,
           mantenimiento == 1
             ? credencialesGeneralesEstudiantes.length
-            : cantidad_accesos_general,
+            : cantidad_accesos_general!,
           mantenimiento == 1
             ? credencialesDocentes.length
-            : cantidad_accesos_docente,
+            : cantidad_accesos_docente!,
           credencialesGeneralesEstudiantes,
           credencialesDocentes,
           capacidadPorCredencial,
@@ -188,26 +197,28 @@ export class ReservaService {
         docentes: credencialesDocentesAsignar.map((c) => c.id),
       });
 
-      // Crear reserva
-      const reserva = queryRunner.manager.create(Reserva, {
-        codigo: `RES-${Date.now()}`,
-        mantenimiento,
-        inicio,
-        fin,
-        //TODO: Evaluar si la entidad reserva debe tener un campo cantidad_accesos_general y cantidad_accesos_docente
-        cantidad_accesos:
-          mantenimiento == 1
-            ? credencialesGeneralesAsignar.length +
-              credencialesDocentesAsignar.length
-            : cantidad_accesos_general + cantidad_accesos_docente,
-        cantidad_credenciales:
+      const reserva = new Reserva();
+      reserva.codigo = `RES-${Date.now()}`;
+      reserva.mantenimiento = mantenimiento;
+      reserva.inicio = inicio;
+      reserva.fin = fin;
+      (reserva.cantidad_accesos =
+        mantenimiento == 1
+          ? credencialesGeneralesAsignar.length +
+            credencialesDocentesAsignar.length
+          : cantidad_accesos_general! + cantidad_accesos_docente!),
+        (reserva.cantidad_credenciales =
           credencialesGeneralesAsignar.length +
-          credencialesDocentesAsignar.length,
-        recurso: { id: recurso_id },
-        clase: { id: clase_id },
-        docente: { id: docente_id },
-        autor: { id: autor_id },
-      });
+          credencialesDocentesAsignar.length);
+      reserva.recurso = recurso;
+      reserva.autor = autor;
+
+      // Solo asignar clase y docente si no es mantenimiento
+      if (mantenimiento === 0) {
+        // Usar operador de aserción no nula (!) ya que hemos validado que no son null
+        reserva.clase = clase!;
+        reserva.docente = docente!;
+      }
 
       const reservaGuardada = await queryRunner.manager.save(reserva);
 
@@ -252,6 +263,8 @@ export class ReservaService {
     capacidadPorCredencial: number,
   ) {
     console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
+
+    console.log('[Ver rango]', inicio, fin);
 
     // 1. Obtener reservas existentes en el rango
     const reservasSolapadas = await this.reservaRepository

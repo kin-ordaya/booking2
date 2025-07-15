@@ -54,7 +54,7 @@ export class Reserva {
     nullable: true,
   })
   @JoinColumn({ name: 'docente_id' })
-  docente: RolUsuario;
+  docente?: RolUsuario;
 
   @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.reservaCreada, {
     nullable: false,

@@ -41,19 +41,19 @@ export class CreateReservaDto {
   // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
   fin: Date;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
   @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
   @Type(() => Number)
-  cantidad_accesos_general: number;
+  cantidad_accesos_general?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
   @Min(0, {
     message: 'El campo cantidad_accesos_docente debe ser mayor o igual a 0',
   })
   @Type(() => Number)
-  cantidad_accesos_docente: number;
+  cantidad_accesos_docente?: number;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
@@ -63,11 +63,11 @@ export class CreateReservaDto {
   @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
   clase_id?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
-  docente_id: string;
+  docente_id?: string;
 
   @IsNotEmpty()
-  @IsUUID('4', { message: 'El campo alumno_id debe ser de tipo uuid' })
+  @IsUUID('4', { message: 'El campo autor_id debe ser de tipo uuid' })
   autor_id: string;
 }
