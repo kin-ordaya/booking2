@@ -61,7 +61,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
       synchronize: true,
       logging: true,
       extra: {
-        options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
+        options: '-c timezone=America/Lima', // 👈 Fuerza UTC enla conexión
         // types: {
         //   getTypeParser: (oid) => (val) => {
         //     if (oid === 1114 || oid === 1184) {
