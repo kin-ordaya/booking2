@@ -198,7 +198,7 @@ export class ReservaService {
       });
 
       const reserva = new Reserva();
-      reserva.codigo = `RES-${Date.now()}`;
+      reserva.codigo = `RES-${Math.floor(Date.now() / 1000)}`;
       reserva.mantenimiento = mantenimiento;
       reserva.inicio = inicio;
       reserva.fin = fin;
@@ -561,10 +561,12 @@ export class ReservaService {
         fin: reserva.fin,
         cantidad_accesos: reserva.cantidad_accesos,
         cantidad_credenciales: reserva.cantidad_credenciales,
-        docente: {
-          nombres: reserva.docente?.usuario?.nombres,
-          apellidos: reserva.docente?.usuario?.apellidos,
-        },
+        docente: reserva.docente
+          ? {
+              nombres: reserva.docente?.usuario?.nombres,
+              apellidos: reserva.docente?.usuario?.apellidos,
+            }
+          : null,
         clase: reserva.clase
           ? {
               nrc: reserva.clase.nrc,

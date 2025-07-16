@@ -14,12 +14,14 @@ import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('reserva')
 export class ReservaController {
   constructor(private readonly reservaService: ReservaService) {}
 
   @Post()
+  @ApiBody({ type: CreateReservaDto })
   create(@Body() createReservaDto: CreateReservaDto) {
     return this.reservaService.create(createReservaDto);
   }
@@ -34,7 +36,9 @@ export class ReservaController {
   }
 
   @Get('in-range')
-  findReservasInRange(@Query() paginationReservaInRangeDto: PaginationReservaInRangeDto) {
+  findReservasInRange(
+    @Query() paginationReservaInRangeDto: PaginationReservaInRangeDto,
+  ) {
     return this.reservaService.findReservasInRange(paginationReservaInRangeDto);
   }
 
