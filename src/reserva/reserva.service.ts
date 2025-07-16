@@ -178,10 +178,7 @@ export class ReservaService {
       let cantidadGeneralFinal = cantidadGeneral;
       let cantidadDocenteFinal = cantidadDocente;
 
-      if (
-        credencialesDocentes.length === 0 &&
-        cantidadDocente > 0
-      ) {
+      if (credencialesDocentes.length === 0 && cantidadDocente > 0) {
         console.log(
           `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
         );
@@ -637,68 +634,92 @@ export class ReservaService {
 
       console.log(`[CREDENCIALES TOTALES] ${totalCredenciales}`);
 
-      // 3. Obtener todas las reservas en el rango solicitado
-      const reservas = await this.reservaRepository
+      // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
+      const reservasEnRango = await this.reservaRepository
         .createQueryBuilder('reserva')
         .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+        .innerJoinAndSelect('detalle.credencial', 'credencial')
         .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-        .andWhere('reserva.inicio BETWEEN :inicio AND :fin', { inicio, fin })
+        .andWhere(
+          `(
+          (reserva.inicio BETWEEN :inicio AND :fin) OR
+          (reserva.fin BETWEEN :inicio AND :fin) OR
+          (reserva.inicio <= :inicio AND reserva.fin >= :fin)
+        )`,
+          { inicio, fin },
+        )
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
 
-      // 4. Procesar cada reserva para calcular disponibilidad
-      const reservasConDisponibilidad = await Promise.all(
-        reservas.map(async (reserva) => {
-          // Obtener credenciales ocupadas en reservas que se solapan (excluyendo la actual)
-          const credencialesOcupadas = await this.detalleReservaRepository
-            .createQueryBuilder('detalle')
-            .innerJoin('detalle.reserva', 'reserva')
-            .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-            .andWhere('reserva.id != :reservaId', { reservaId: reserva.id })
-            .andWhere(
-              'NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)',
-              {
-                inicio: reserva.inicio,
-                fin: reserva.fin,
-              },
-            )
-            .andWhere('reserva.estado = :estado', { estado: 1 })
-            .select('COUNT(DISTINCT(detalle.credencial_id))', 'count')
-            .getRawOne();
-
-          const credencialesOcupadasNum = parseInt(
-            credencialesOcupadas?.count || '0',
-            10,
-          );
-
-          // Credenciales usadas por esta reserva
-          const credencialesEstaReserva = reserva.detalle_reserva.length;
-
-          // Calcular credenciales disponibles
-          const credencialesDisponibles =
-            totalCredenciales -
-            credencialesOcupadasNum -
-            credencialesEstaReserva;
-
-          // Calcular capacidad disponible (credenciales disponibles * capacidad)
-          const capacidadDisponible =
-            credencialesDisponibles * capacidadPorCredencial;
-
-          return {
-            id: reserva.id,
-            creacion: reserva.creacion,
-            estado: reserva.estado,
-            codigo: reserva.codigo,
-            mantenimiento: reserva.mantenimiento,
-            inicio: reserva.inicio,
-            fin: reserva.fin,
-            cantidad_accesos: reserva.cantidad_accesos,
-            cantidad_credenciales: reserva.cantidad_credenciales,
-            disponibles: Math.max(0, capacidadDisponible),
-            credenciales_disponibles: Math.max(0, credencialesDisponibles),
-          };
-        }),
+      console.log(
+        `[RESERVAS EN RANGO] Total reservas encontradas: ${reservasEnRango.length}`,
       );
+
+      // 4. Calcular credenciales ocupadas en el rango de fechas
+      const credencialesOcupadas = new Set<string>();
+      reservasEnRango.forEach((reserva) => {
+        reserva.detalle_reserva.forEach((detalle) => {
+          if (detalle.credencial) {
+            credencialesOcupadas.add(detalle.credencial.id);
+          }
+        });
+      });
+
+      console.log(
+        `[CREDENCIALES OCUPADAS] Total: ${credencialesOcupadas.size}`,
+      );
+
+
+      // 6. Procesar cada reserva para calcular disponibilidad específica
+      const reservasConDisponibilidad = reservasEnRango.map((reserva) => {
+        // Calcular disponibilidad durante el período de esta reserva específica
+        const credencialesOcupadasDuranteReserva = new Set<string>();
+
+        reservasEnRango.forEach((otraReserva) => {
+          // Si las reservas se solapan (excluyendo la misma reserva)
+          if (
+            reserva.id !== otraReserva.id &&
+            new Date(otraReserva.inicio) < new Date(reserva.fin) &&
+            new Date(otraReserva.fin) > new Date(reserva.inicio)
+          ) {
+            otraReserva.detalle_reserva.forEach((detalle) => {
+              if (detalle.credencial) {
+                credencialesOcupadasDuranteReserva.add(detalle.credencial.id);
+              }
+            });
+          }
+        });
+
+        // Credenciales usadas por esta reserva
+        const credencialesEstaReserva = new Set(
+          reserva.detalle_reserva.map((d) => d.credencial?.id).filter(Boolean),
+        );
+
+        // Calcular disponibilidad específica para esta reserva
+        const credencialesDisponiblesParaReserva = Math.max(
+          0,
+          totalCredenciales -
+            credencialesOcupadasDuranteReserva.size -
+            credencialesEstaReserva.size,
+        );
+
+        const capacidadDisponibleParaReserva =
+          credencialesDisponiblesParaReserva * capacidadPorCredencial;
+
+        return {
+          id: reserva.id,
+          creacion: reserva.creacion,
+          estado: reserva.estado,
+          codigo: reserva.codigo,
+          mantenimiento: reserva.mantenimiento,
+          inicio: reserva.inicio,
+          fin: reserva.fin,
+          cantidad_accesos: reserva.cantidad_accesos,
+          cantidad_credenciales: reserva.cantidad_credenciales,
+          disponibles: capacidadDisponibleParaReserva,
+          credenciales_disponibles: credencialesDisponiblesParaReserva,
+        };
+      });
 
       return reservasConDisponibilidad;
     } catch (error) {
