@@ -373,8 +373,8 @@ export class ReservaService {
     }
 
     // Asegurarnos que trabajamos con fechas en UTC
-    const ahoraUTC = new Date()
-    const fechaInicioUTC = new Date(fechaInicioReserva)
+    const ahoraUTC = new Date().toISOString();
+    const fechaInicioUTC = new Date(fechaInicioReserva).toISOString();
 
     const fechaMinimaPermitida = new Date(
       new Date(ahoraUTC).getTime() + tiempoReservaHoras * 60 * 60 * 1000,
@@ -383,7 +383,7 @@ export class ReservaService {
     console.log(`[VALIDACIÓN HORARIA]`, {
       ahoraUTC,
       fechaInicioUTC,
-      fechaMinimaPermitida: fechaMinimaPermitida,
+      fechaMinimaPermitida: fechaMinimaPermitida.toISOString(),
       tiempoReservaHoras,
     });
 
