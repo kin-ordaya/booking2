@@ -593,83 +593,77 @@ export class ReservaService {
     }
   }
 
-  async findReservasInRange(
-    paginationReservaInRangeDto: PaginationReservaInRangeDto,
-  ) {
-    try {
-      const { recurso_id, inicio, fin } = paginationReservaInRangeDto;
+  async findReservasInRange(paginationReservaInRangeDto: PaginationReservaInRangeDto) {
+  try {
+    const { recurso_id, inicio, fin } = paginationReservaInRangeDto;
 
-      // Validación de parámetros requeridos
-      if (!recurso_id || !inicio || !fin) {
-        throw new BadRequestException('Se requieren recurso_id, inicio y fin');
-      }
+    // Obtener el total de credenciales del recurso
+    const totalCredenciales = await this.credencialRepository.count({
+      where: { recurso: { id: recurso_id } },
+    });
 
-      // const adjustToUTC = (dateString: string) => {
-      //   const date = new Date(dateString);
-      //   // Restar 5 horas para UTC-5
-      //   date.setHours(date.getHours() - 5);
-      //   return date;
-      // };
+    // Obtener todas las reservas en el rango solicitado
+    // const reservas = await this.reservaRepository.find({
+    //   where: {
+    //     recurso: { id: recurso_id },
+    //     inicio: Between(fechaInicio, fechaFin),
+    //     estado: 1,
+    //   },
+    //   relations: ['detalle_reserva'], // Solo cargar la relación necesaria para contar
+    //   order: { inicio: 'ASC' },
+    // });
+    const reservas = await this.reservaRepository.createQueryBuilder('reserva')
+      .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+      .innerJoinAndSelect('detalle.credencial', 'credencial')
+      .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
+      .andWhere('reserva.inicio BETWEEN :inicio AND :fin', { inicio, fin })
+      .andWhere('reserva.estado = :estado', { estado: 1 })
+      .getMany();
 
-      // const fechaInicio = adjustToUTC(inicio);
-      // const fechaFin = adjustToUTC(fin);
+    // Procesar cada reserva para calcular disponibilidad
+    const reservasConDisponibilidad = await Promise.all(
+      reservas.map(async (reserva) => {
+        // Contar credenciales usadas en reservas que se solapan (excluyendo la actual)
+        const credencialesUsadas = await this.detalleReservaRepository
+          .createQueryBuilder('detalle')
+          .innerJoin('detalle.reserva', 'reserva')
+          .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
+          .andWhere('reserva.id != :reservaId', { reservaId: reserva.id })
+          .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
+            inicio: reserva.inicio,
+            fin: reserva.fin,
+          })
+          .andWhere('reserva.estado = :estado', { estado: 1 })
+          .getCount();
 
-      // Convertir fechas
-      const fechaInicio = new Date(inicio);
-      const fechaFin = new Date(fin);
-      //fechaFin.setHours(23, 59, 59, 999);
+        // Calcular disponibilidad (total - usadas - las usadas por esta reserva)
+        const credencialesEstaReserva = reserva.detalle_reserva.length;
+        const disponibles = totalCredenciales - credencialesUsadas - credencialesEstaReserva;
 
-      // Obtener el total de credenciales del recurso
-      const totalCredenciales = await this.credencialRepository.count({
-        where: { recurso: { id: recurso_id } },
-      });
+        // Crear objeto de respuesta sin mostrar las credenciales
+        return {
+          id: reserva.id,
+          creacion: reserva.creacion,
+          estado: reserva.estado,
+          codigo: reserva.codigo,
+          mantenimiento: reserva.mantenimiento,
+          inicio: reserva.inicio,
+          fin: reserva.fin,
+          cantidad_accesos: reserva.cantidad_accesos,
+          cantidad_credenciales: reserva.cantidad_credenciales,
+          disponibles: Math.max(0, disponibles), // Asegurar que no sea negativo
+        };
+      }),
+    );
 
-      // Obtener todas las reservas en el rango solicitado
-      const reservas = await this.reservaRepository.find({
-        where: {
-          recurso: { id: recurso_id },
-          inicio: Between(fechaInicio, fechaFin),
-          //! Descomentar en produccion y comentar en desarrollo
-          estado: 1,
-        },
-        order: { inicio: 'ASC' },
-      });
-
-      // Procesar cada reserva para calcular disponibilidad
-      const reservasConDisponibilidad = await Promise.all(
-        reservas.map(async (reserva) => {
-          // Contar credenciales usadas en reservas que se solapan
-          const credencialesUsadas = await this.detalleReservaRepository
-            .createQueryBuilder('detalle')
-            .innerJoin('detalle.reserva', 'reserva')
-            .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-            .andWhere(
-              'NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)',
-              {
-                inicio: reserva.inicio,
-                fin: reserva.fin,
-              },
-            )
-            .getCount();
-
-          // Calcular disponibilidad (total - usadas)
-          const disponibles = totalCredenciales - credencialesUsadas;
-
-          return {
-            ...reserva,
-            disponibles,
-          };
-        }),
-      );
-
-      return reservasConDisponibilidad;
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error al obtener las reservas');
+    return reservasConDisponibilidad;
+  } catch (error) {
+    if (error instanceof BadRequestException) {
+      throw error;
     }
+    throw new InternalServerErrorException('Error al obtener las reservas');
   }
+}
   // En reserva.service.ts
   async countCredencialesDisponibles(
     credencialesDisponiblesDto: CredencialesDisponiblesDto,
