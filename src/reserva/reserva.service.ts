@@ -159,6 +159,9 @@ export class ReservaService {
 
       console.log(`[CREDENCIALES] Totales: ${credenciales.length}`);
 
+      const cantidadGeneral = cantidad_accesos_general || 0;
+      const cantidadDocente = cantidad_accesos_docente || 0;
+
       // Separar en generales/estudiantes (combinados) y docentes
       const credencialesGeneralesEstudiantes = credenciales.filter(
         (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
@@ -170,6 +173,21 @@ export class ReservaService {
       console.log(
         `[CREDENCIALES] Generales/Estudiantes: ${credencialesGeneralesEstudiantes.length}, Docentes: ${credencialesDocentes.length}`,
       );
+
+      // Nueva lógica: Si no hay credenciales docentes pero se solicita acceso docente
+      let cantidadGeneralFinal = cantidadGeneral;
+      let cantidadDocenteFinal = cantidadDocente;
+
+      if (
+        credencialesDocentes.length === 0 &&
+        cantidadDocente > 0
+      ) {
+        console.log(
+          `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
+        );
+        cantidadGeneralFinal += cantidadDocente;
+        cantidadDocenteFinal = 0;
+      }
 
       // Capacidad por credencial (asumimos todas tienen la misma capacidad)
       const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
@@ -183,10 +201,10 @@ export class ReservaService {
           fin,
           mantenimiento == 1
             ? credencialesGeneralesEstudiantes.length
-            : cantidad_accesos_general!,
+            : cantidadGeneralFinal!,
           mantenimiento == 1
             ? credencialesDocentes.length
-            : cantidad_accesos_docente!,
+            : cantidadDocenteFinal!,
           credencialesGeneralesEstudiantes,
           credencialesDocentes,
           capacidadPorCredencial,
