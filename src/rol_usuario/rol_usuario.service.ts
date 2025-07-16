@@ -160,7 +160,8 @@ export class RolUsuarioService {
       return await this.rolUsuarioRepository
         .createQueryBuilder('rolUsuario')
         .innerJoin('rolUsuario.responsable', 'responsable')
-        .innerJoin('responsable.cursoModalidad', 'cursoModalidad')
+        .innerJoin('responsable.clase', 'clase') // Cambio clave: ahora se une con clase directamente
+        .innerJoin('clase.cursoModalidad', 'cursoModalidad') // Luego a cursoModalidad desde clase
         .innerJoin('cursoModalidad.curso', 'curso')
         .innerJoin('curso.recurso_curso', 'recursoCurso')
         .innerJoin('recursoCurso.recurso', 'recurso')
