@@ -89,17 +89,12 @@ export class ReservaService {
         `[PARÁMETROS] Accesos general/estudiante: ${cantidad_accesos_general}, docente: ${cantidad_accesos_docente}`,
       );
 
-      const ahora = new Date();
-      const fechaInicio = new Date(inicio);
-
-      // Ajustar a zona horaria local para comparación (opcional)
-      const offset = ahora.getTimezoneOffset() * 60000; // offset en milisegundos
-      const ahoraLocal = new Date(ahora.getTime() - offset);
-      const fechaInicioLocal = new Date(fechaInicio.getTime() - offset);
-
-      if (fechaInicioLocal < ahoraLocal) {
+      const ahoraUTC = new Date().toISOString();
+      const inicioUTC = new Date(inicio).toISOString();
+      // Validación de fechas
+      if (inicioUTC < ahoraUTC) {
         throw new ConflictException(
-          `La fecha/hora de inicio: ${fechaInicio.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+          `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
         );
       }
 
