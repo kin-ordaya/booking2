@@ -60,18 +60,18 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
       autoLoadEntities: true,
       synchronize: true,
       logging: true,
-      extra: {
-        options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
-        // types: {
-        //   getTypeParser: (oid) => (val) => {
-        //     if (oid === 1114 || oid === 1184) {
-        //       // timestamp/timestamptz
-        //       return new Date(val + 'Z'); // Fuerza interpretación UTC
-        //     }
-        //     return val;
-        //   },
-        // },
-      },
+      // extra: {
+      //   options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
+      //   // types: {
+      //   //   getTypeParser: (oid) => (val) => {
+      //   //     if (oid === 1114 || oid === 1184) {
+      //   //       // timestamp/timestamptz
+      //   //       return new Date(val + 'Z'); // Fuerza interpretación UTC
+      //   //     }
+      //   //     return val;
+      //   //   },
+      //   // },
+      // },
     }),
     AulaModule,
     AuthModule,
