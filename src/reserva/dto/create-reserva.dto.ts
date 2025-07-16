@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,
   IsIn,
   IsInt,
+  IsISO8601,
   IsNotEmpty,
   IsOptional,
   IsPositive,
@@ -27,18 +28,22 @@ export class CreateReservaDto {
   // fecha: string;
 
   @IsNotEmpty()
-  @IsDateString(
-    {},
-    { message: 'El campo inicio debe tener el formato YYYY-MM-DD' },
-  )
+  // @IsDateString(
+  //   {},
+  //   { message: 'El campo inicio debe tener el formato YYYY-MM-DD' },
+  // )
+  @IsISO8601({ strict: true }) // Valida formato ISO8601
+  @Transform(({ value }) => new Date(value).toISOString()) // Convierte a UTC
   // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo inicio debe tener el formato HH:MM'})
   inicio: Date;
 
   @IsNotEmpty()
-  @IsDateString(
-    {},
-    { message: 'El campo fin debe tener el formato YYYY-MM-DD' },
-  )
+  // @IsDateString(
+  //   {},
+  //   { message: 'El campo fin debe tener el formato YYYY-MM-DD' },
+  // )
+  @IsISO8601({ strict: true }) // Valida formato ISO8601
+  @Transform(({ value }) => new Date(value).toISOString()) // Convierte a UTC
   // @Matches(/^\d{2}:\d{2}$/, {message: 'El campo fin debe tener el formato HH:MM'})
   fin: Date;
 
