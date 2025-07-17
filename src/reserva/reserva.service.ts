@@ -915,7 +915,8 @@ export class ReservaService {
           'docente',
           'docente.usuario',
           'autor',
-          'autor.usuario'
+          'autor.usuario',
+          'autor.rol'
         ],
       });
 
@@ -946,6 +947,7 @@ export class ReservaService {
           apellidos: reserva.docente?.usuario?.apellidos,
         }: null,
         autor: {
+          rol: reserva.autor?.rol?.nombre,
           nombres: reserva.autor?.usuario?.nombres,
           apellidos: reserva.autor?.usuario?.apellidos,
         },
