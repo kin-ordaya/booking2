@@ -914,6 +914,8 @@ export class ReservaService {
           'clase.cursoModalidad.curso',
           'docente',
           'docente.usuario',
+          'autor',
+          'autor.usuario'
         ],
       });
 
@@ -933,15 +935,19 @@ export class ReservaService {
         cantidad_accesos: reserva.cantidad_accesos,
         cantidad_credenciales: reserva.cantidad_credenciales,
         // clase: `${reserva.clase?.cursoModalidad?.curso?.nombre || 'Curso no disponible'} - ${reserva.clase?.nrc || 'N/A'}`,
-        clase: {
+        clase: reserva.clase ? {
           nrc: reserva.clase?.nrc,
           inscritos: reserva.clase?.inscritos,
           codigo_curso: reserva.clase?.cursoModalidad?.curso?.codigo,
           nombre_curso: reserva.clase?.cursoModalidad?.curso.nombre,
-        },
-        docente: {
+        } : null,
+        docente: reserva.docente ? {
           nombres: reserva.docente?.usuario?.nombres,
           apellidos: reserva.docente?.usuario?.apellidos,
+        }: null,
+        autor: {
+          nombres: reserva.autor?.usuario?.nombres,
+          apellidos: reserva.autor?.usuario?.apellidos,
         },
       };
     } catch (error) {

@@ -35,6 +35,7 @@ import { HorarioModule } from './horario/horario.module';
 import { ClaseAulaModule } from './clase_aula/clase_aula.module';
 import { DeclaracionJuradaModule } from './declaracion_jurada/declaracion_jurada.module';
 import { types } from 'pg';
+import { EmailModule } from './email/email.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -105,6 +106,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
+    EmailModule,
   ],
 })
 export class AppModule {}
