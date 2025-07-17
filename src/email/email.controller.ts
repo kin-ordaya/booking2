@@ -11,7 +11,7 @@ export class EmailController {
   constructor(private readonly emailService: EmailService) {}
   @Post('send')
   async sendMail(@Body() dto: sendEmailDto) {
-    await this.emailService.sendEmail(dto);
-    return { message: 'Email sent successfully' };
+    return await this.emailService.sendEmail(dto);
+    // return { message: 'Email sent successfully' };
   }
 }

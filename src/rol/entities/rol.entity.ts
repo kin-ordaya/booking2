@@ -1,6 +1,5 @@
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
-import { Usuario } from 'src/usuario/entities/usuario.entity';
 import {
   Column,
   CreateDateColumn,

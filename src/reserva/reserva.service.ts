@@ -196,12 +196,8 @@ export class ReservaService {
           recurso_id,
           inicio,
           fin,
-          mantenimiento == 1
-            ? credencialesGeneralesEstudiantes.length
-            : cantidadGeneralFinal!,
-          mantenimiento == 1
-            ? credencialesDocentes.length
-            : cantidadDocenteFinal!,
+           cantidadGeneralFinal,
+           cantidadDocenteFinal,
           credencialesGeneralesEstudiantes,
           credencialesDocentes,
           capacidadPorCredencial,
