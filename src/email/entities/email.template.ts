@@ -1,145 +1,247 @@
 export const getReservaTemplate = (data: {
   recurso_nombre: string;
   fecha_html: string;
-  credenciales: any[];
-  credenciales_docente?: any[];
+  credenciales: Array<{ usuario?: string; clave: string; tipo?: string }>;
 }) => {
-  const { recurso_nombre, fecha_html, credenciales, credenciales_docente } = data;
+  const { recurso_nombre, fecha_html, credenciales } = data;
 
   return `
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Correo de Acceso a ${recurso_nombre}</title>
+    <title>Cuentas Reservadas - ALGETEC CIENCIAS BÁSICAS</title>
     <style>
-        /* Todos tus estilos CSS aquí */
-        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            background-color: #ccc;
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f9;
         }
-        h1 {
-            color: #7D2181;
+
+        header {
+            background-color: #003366;
+            color: white;
+            padding: 1.5rem;
             text-align: center;
-            margin-bottom: 20px;
+            border-bottom: 4px solid #000000;
         }
+
+        header h2 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .main {
+            max-width: 900px;
+            margin: 3rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h3 {
+            color: #003366;
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
         p {
-            color: #666;
+            font-size: 1rem;
+            margin: 1rem 0;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            border: 1px solid #9b9b9b;
-            border-radius: 10px;
+            margin-top: 2rem;
+            font-size: 0.95rem;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+
         th, td {
-            border: 1px solid #9b9b9b;
-            padding: 10px;
             text-align: left;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            font-size: 1rem;
         }
+
         th {
-            background-color: #f0f0f0;
-            color: #333;
+            background: #003366;
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
         }
-        td.correo {
-            color: #7D2181;
-            background-color: #f0f0f0;
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
-        td.clave {
-            color: #333;
-            background-color: #f0f0f0;
+
+        tbody tr:hover {
+            background-color: #e6f2ff;
         }
-        .firma {
-            margin-top: 20px;
+
+        footer {
+            margin-top: 3rem;
+            background-color: #003366;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 8px;
         }
-        .firma p {
-            margin-top: -10px;
-            color: #000000;
+
+        .signature img {
+            margin-left: -2rem;
+            width: 400px;
+            height: auto;
+            margin-bottom: -1rem;
+        }
+
+        .titulo {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .signature img {
+            width: 300px;
+            height: auto;
+            margin-bottom: 0.025rem;
+        }
+
+        .contact-info p {
+            font-size: 0.75rem;
+            margin: 0.025rem 0;
+        }
+
+        .contact-info h2 {
+            font-size: 1rem;
+            margin-bottom: 0.025rem;
+        }
+
+        .contact-info a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+
+        a {
+            color: #003366;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .warning {
+           width: 600px;
+            height: auto;
+            margin-bottom: 0.025rem;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background-color: #ddd;
+            margin: 1.5rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .signature {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .contact-info {
+                margin-left: 0;
+            }
+            
+            .warning {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Bienvenido a ${recurso_nombre}</h1>
-        
-        <p>Estimado Docente,</p>
-        <p>Nos complace informarle que su reserva ha sido confirmada.</p>
-        
-        ${fecha_html}
-        
-        <p>Agradecemos su preferencia y quedamos a su disposición para cualquier consulta adicional. 
-        A continuación, encontrará la información de acceso a su cuenta en ${recurso_nombre}:</p>
-        
-        <div class="container">
-            ${
-              credenciales_docente
-                ? `
-                <h3>Credenciales del Docente:</h3>
-                <table>
-                    <tr><th>Correo</th><th>Clave</th></tr>
-                    ${credenciales_docente
-                      .map(
-                        (c) => `
-                        <tr>
-                            <td class="correo">${c.usuario}</td>
-                            <td class="clave">${c.clave}</td>
-                        </tr>
-                    `,
-                      )
-                      .join('')}
-                </table>
-                <h3>Credenciales de los Estudiantes:</h3>
-            `
-                : ''
-            }
-            
-            <table>
-                <tr>
-                    ${
-                      credenciales[0].usuario
-                        ? '<th>Correo</th><th>Clave</th>'
-                        : '<th>Código de activación</th>'
-                    }
-                </tr>
-                ${credenciales
-                  .map(
-                    (credencial) => `
-                    <tr>
-                        ${
-                          credencial.usuario
-                            ? `
-                            <td class="correo">${credencial.usuario}</td>
-                            <td class="clave">${credencial.clave}</td>
-                        `
-                            : `
-                            <td class="clave">${credencial.clave}</td>
-                        `
-                        }
-                    </tr>
-                `,
-                  )
-                  .join('')}
-            </table>
-            
-            <p>Por favor, guarde esta información de manera segura y no la comparta con nadie.</p>
-            <p>Gracias por utilizar nuestros servicios.</p>
-        </div>
-        
-        <div class="firma">
-            <img src="https://ucontinental.edu.pe/documentos/logo/crea-tu-propia-historia.gif" alt="Logo">
-            <p style="font-weight: bold; font-size: 18px;">Recursos Académicos Virtuales</p>
-            <p>Laboratorios y Talleres <br> +51 945 605752</p>
-        </div>
+  <header>
+    <h2>CUENTAS RESERVADAS ALGETEC - Ciencias Básicas</h2>
+  </header>
+  
+  <div class="main">
+    <h3>Estimado docente</h3>
+    <p>Es un gusto saludarlo. Agradecemos su interés en integrar los recursos de ALGETEC en su enseñanza. Esperamos que esta herramienta sea de gran apoyo en sus clases.</p>
+    
+    <p>Para ingresar al laboratorio de ALGETEC es necesario seguir los pasos de la siguiente guía de acceso, puede compartirla con sus estudiantes: 
+    <a href="https://drive.google.com/file/d/1kaoRtXc40zJabjXpWDl-y5EAVRSvFggf/view?usp=sharing" target="_blank">Guía de Acceso</a>. 
+    Es importante que se comunique a los estudiantes que no se debe introducir información personal a las cuentas de ALGETEC.</p>
+    
+    <p>El link de acceso al laboratorio de ALGETEC es el siguiente: 
+    <a href="https://aulavirtual.continental.edu.pe/course/view.php?id=35958">Laboratorio Algetec</a></p>
+    
+    <hr>
+    
+    <h3>Detalles de su reserva:</h3>
+    <p><strong>Recurso:</strong> ${recurso_nombre}</p>
+    ${fecha_html}
+    
+    <h3>Credenciales de acceso:</h3>
+    <table>
+        <tr>
+            <th>${credenciales[0].usuario ? 'Usuario' : 'Tipo'}</th>
+            <th>Clave</th>
+            ${credenciales[0].tipo ? '<th>Tipo</th>' : ''}
+        </tr>
+        ${credenciales
+          .map(
+            (credencial) => `
+            <tr>
+                <td>${credencial.usuario || 'General'}</td>
+                <td>${credencial.clave}</td>
+                ${credencial.tipo ? `<td>${credencial.tipo}</td>` : ''}
+            </tr>
+        `,
+          )
+          .join('')}
+    </table>
+    
+    <hr>
+    
+    <h3>Advertencia:</h3>
+    <img class="warning" src="https://res.cloudinary.com/dpjoocxnd/image/upload/v1738082065/WhatsApp_Image_2025-01-28_at_10.56.57_AM_rpifkg.jpg" alt="Advertencia de seguridad">
+    <p>Si tiene alguna consulta adicional no dude en contactarse con nosotros. Saludos.</p>
+    
+    <h4>Quedo atento a sus dudas y comentarios. Saludos</h4>
+
+    <div class="signature">
+       <img src="https://ucontinental.edu.pe/documentos/logo/firma-generador.gif" alt="Logo Universidad Continental">
     </div>
+
+    <div class="contact-info">
+        <h2><strong>Pamela Xiomara Verastegui Paucar</strong></h2>
+        <p>Laboratorios y Talleres de Especialidad</p>
+        <p>Recursos Académicos Virtuales</p>
+        <p>Técnica RAV Gestión de Recursos</p>
+        <p>Teléfono: +51 989149427</p>
+        <p>Email: <a href="mailto:pverastegui@continental.edu.pe">pverastegui@continental.edu.pe</a></p>
+    </div>
+  </div>
+
+  <footer>
+    &copy; Universidad Continental - Todos los derechos reservados, 2025
+  </footer>
 </body>
 </html>
-`;
+  `;
 };

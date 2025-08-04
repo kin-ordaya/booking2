@@ -63,7 +63,7 @@ export class ReservaService {
     private readonly dataSource: DataSource,
   ) {}
 
-  //TODO Agregar un campo mas de accesos deben ser tanto para docente y estudiantes o generales
+  
   async create(createReservaDto: CreateReservaDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
