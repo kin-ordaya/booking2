@@ -63,7 +63,6 @@ export class ReservaService {
     private readonly dataSource: DataSource,
   ) {}
 
-  
   async create(createReservaDto: CreateReservaDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -117,6 +116,10 @@ export class ReservaService {
       }
       if (!autor) {
         throw new NotFoundException('Autor no encontrado');
+      }
+
+      if (autor.rol.nombre === 'DOCENTE') {
+        this.validarTiempoDocente(new Date(inicio), new Date(fin));
       }
 
       // Cambiar la declaración inicial para que coincida con los tipos esperados
@@ -196,8 +199,8 @@ export class ReservaService {
           recurso_id,
           inicio,
           fin,
-           cantidadGeneralFinal,
-           cantidadDocenteFinal,
+          cantidadGeneralFinal,
+          cantidadDocenteFinal,
           credencialesGeneralesEstudiantes,
           credencialesDocentes,
           capacidadPorCredencial,
@@ -260,6 +263,27 @@ export class ReservaService {
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private validarTiempoDocente(inicio: Date, fin: Date) {
+    console.log('inicio', inicio);
+    console.log('fin', fin);
+    const duracionMinima = 45 * 60 * 1000; // 45 minutos en milisegundos
+    const duracionMaxima = 190 * 60 * 1000; // 3 horas y 10 minutos en milisegundos
+
+    const duracion = fin.getTime() - inicio.getTime();
+
+    if (duracion < duracionMinima) {
+      throw new ConflictException(
+        `La duración mínima para docentes es de 45 minutos`,
+      );
+    }
+
+    if (duracion > duracionMaxima) {
+      throw new ConflictException(
+        `La duración máxima para docentes es de 3 horas y 10 minutos`,
+      );
     }
   }
 
@@ -665,7 +689,6 @@ export class ReservaService {
         `[CREDENCIALES OCUPADAS] Total: ${credencialesOcupadas.size}`,
       );
 
-
       // 6. Procesar cada reserva para calcular disponibilidad específica
       const reservasConDisponibilidad = reservasEnRango.map((reserva) => {
         // Calcular disponibilidad durante el período de esta reserva específica
@@ -912,7 +935,7 @@ export class ReservaService {
           'docente.usuario',
           'autor',
           'autor.usuario',
-          'autor.rol'
+          'autor.rol',
         ],
       });
 
@@ -932,16 +955,20 @@ export class ReservaService {
         cantidad_accesos: reserva.cantidad_accesos,
         cantidad_credenciales: reserva.cantidad_credenciales,
         // clase: `${reserva.clase?.cursoModalidad?.curso?.nombre || 'Curso no disponible'} - ${reserva.clase?.nrc || 'N/A'}`,
-        clase: reserva.clase ? {
-          nrc: reserva.clase?.nrc,
-          inscritos: reserva.clase?.inscritos,
-          codigo_curso: reserva.clase?.cursoModalidad?.curso?.codigo,
-          nombre_curso: reserva.clase?.cursoModalidad?.curso.nombre,
-        } : null,
-        docente: reserva.docente ? {
-          nombres: reserva.docente?.usuario?.nombres,
-          apellidos: reserva.docente?.usuario?.apellidos,
-        }: null,
+        clase: reserva.clase
+          ? {
+              nrc: reserva.clase?.nrc,
+              inscritos: reserva.clase?.inscritos,
+              codigo_curso: reserva.clase?.cursoModalidad?.curso?.codigo,
+              nombre_curso: reserva.clase?.cursoModalidad?.curso.nombre,
+            }
+          : null,
+        docente: reserva.docente
+          ? {
+              nombres: reserva.docente?.usuario?.nombres,
+              apellidos: reserva.docente?.usuario?.apellidos,
+            }
+          : null,
         autor: {
           rol: reserva.autor?.rol?.nombre,
           nombres: reserva.autor?.usuario?.nombres,
