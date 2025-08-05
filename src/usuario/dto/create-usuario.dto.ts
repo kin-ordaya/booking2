@@ -17,9 +17,9 @@ export class CreateUsuarioDto {
     @Transform(({ value }) => value?.toUpperCase().trim())
     numero_documento: string;
 
-    @IsOptional()
+    @IsNotEmpty()
     @IsEmail({},{ message: 'El campo correo_institucional no puede estar vacío' })
-    correo_institucional?: string;
+    correo_institucional: string;
 
     @IsOptional()
     @IsEmail({},{ message: 'El campo correo_personal no puede estar vacío' })

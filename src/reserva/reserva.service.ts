@@ -818,14 +818,10 @@ export class ReservaService {
         .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
         .innerJoinAndSelect('detalle.credencial', 'credencial')
         .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-        .andWhere(
-          `(
-          (reserva.inicio BETWEEN :inicio AND :fin) OR
-          (reserva.fin BETWEEN :inicio AND :fin) OR
-          (reserva.inicio <= :inicio AND reserva.fin >= :fin)
-        )`,
-          { inicio: inicio, fin: fin },
-        )
+        .andWhere('reserva.fin > :inicio AND reserva.inicio < :fin', {
+          inicio,
+          fin,
+        })
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
 

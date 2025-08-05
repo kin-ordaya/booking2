@@ -28,7 +28,7 @@ export class Aula {
   codigo?: string;
 
   @ManyToOne(() => Pabellon, (pabellon) => pabellon.aula, {nullable: false})
-  @JoinColumn({ name: 'campus_id' })
+  @JoinColumn({ name: 'pabellon_id' })
   pabellon: Pabellon;
 
   // @OneToMany(() => Clase, (clase) => clase.aula)
