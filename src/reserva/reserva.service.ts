@@ -118,9 +118,11 @@ export class ReservaService {
         throw new NotFoundException('Autor no encontrado');
       }
 
-      if (autor.rol.nombre === 'DOCENTE') {
-        this.validarTiempoDocente(new Date(inicio), new Date(fin));
-      }
+      this.validarTiempoReserva(
+        autor.rol.nombre,
+        new Date(inicio),
+        new Date(fin),
+      );
 
       // Cambiar la declaración inicial para que coincida con los tipos esperados
 
@@ -266,24 +268,42 @@ export class ReservaService {
     }
   }
 
-  private validarTiempoDocente(inicio: Date, fin: Date) {
-    console.log('inicio', inicio);
-    console.log('fin', fin);
-    const duracionMinima = 45 * 60 * 1000; // 45 minutos en milisegundos
-    const duracionMaxima = 190 * 60 * 1000; // 3 horas y 10 minutos en milisegundos
+  private validarTiempoReserva(rol: string, inicio: Date, fin: Date) {
+    // Tiempos en milisegundos
+    const duracionMin = 45 * 60 * 1000; // 45 minutos mínimo
+    const duracionMaxDocente = 190 * 60 * 1000; // 3h 10m
+    const duracionMaxAdmin = 23 * 60 * 60 * 1000 + 59 * 60 * 1000; // 23:59h
+    const duracionMaxDefault = 4 * 60 * 60 * 1000; // 4h para otros roles
 
     const duracion = fin.getTime() - inicio.getTime();
 
-    if (duracion < duracionMinima) {
+    // Validación mínima para todos los roles
+    if (duracion < duracionMin) {
       throw new ConflictException(
-        `La duración mínima para docentes es de 45 minutos`,
+        `La duración mínima de reserva es de 45 minutos para todos los roles`,
       );
     }
 
-    if (duracion > duracionMaxima) {
-      throw new ConflictException(
-        `La duración máxima para docentes es de 3 horas y 10 minutos`,
-      );
+    // Validación por rol
+    switch (rol) {
+      case 'ADMINISTRADOR':
+        if (duracion > duracionMaxAdmin) {
+          throw new ConflictException(
+            `La duración máxima para administradores es de 23 horas y 59 minutos`,
+          );
+        }
+        break;
+
+      case 'DOCENTE':
+        if (duracion > duracionMaxDocente) {
+          throw new ConflictException(
+            `La duración máxima para docentes es de 3 horas y 10 minutos`,
+          );
+        }
+        break;
+
+      default:
+        throw new ConflictException(`Rol no permitido para reservar: ${rol}`);
     }
   }
 
