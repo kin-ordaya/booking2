@@ -181,6 +181,7 @@ export class ReservaService {
         let cantidadDocenteFinal: number;
 
         if (mantenimiento === 1) {
+          if( cantidad_accesos_docente === undefined || cantidad_accesos_general === undefined){
             // En modo mantenimiento, usar TODAS las credenciales disponibles
             cantidadGeneralFinal = credenciales.filter(
                 c => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE'
@@ -188,6 +189,11 @@ export class ReservaService {
             cantidadDocenteFinal = credenciales.filter(
                 c => c.rol.nombre === 'DOCENTE'
             ).length;
+          } else {
+            // En modo mantenimiento, usar los valores proporcionados
+            cantidadGeneralFinal = cantidad_accesos_general || 0;
+            cantidadDocenteFinal = cantidad_accesos_docente || 0;
+          }   
         } else {
             // Modo normal, usar los valores proporcionados
             cantidadGeneralFinal = cantidad_accesos_general || 0;
