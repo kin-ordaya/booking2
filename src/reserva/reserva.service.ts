@@ -118,6 +118,13 @@ export class ReservaService {
         throw new NotFoundException('Autor no encontrado');
       }
 
+      // Si es DOCENTE y está intentando hacer una reserva de mantenimiento
+      if (autor.rol.nombre === 'DOCENTE' && mantenimiento === 1) {
+        throw new ConflictException(
+          'Los docentes no pueden realizar reservas en modo mantenimiento',
+        );
+      }
+
       this.validarTiempoReserva(
         autor.rol.nombre,
         new Date(inicio),
@@ -149,6 +156,11 @@ export class ReservaService {
           throw new NotFoundException('Clase no encontrado');
         }
       }
+      // if(mantenimiento === 1){
+      //   if( cantidad_accesos_docente === undefined || cantidad_accesos_general === undefined){
+      //     throw new ConflictException('Se debe especificar cantidad_accesos_general y cantidad_accesos_docente para reservas en modo mantenimiento');
+      //   }
+      // }
 
       console.log(`[AUTOR] Rol: ${autor.rol.nombre}`);
       // Validar tiempo mínimo de reserva solo si el autor no es administrador
@@ -164,8 +176,23 @@ export class ReservaService {
 
       console.log(`[CREDENCIALES] Totales: ${credenciales.length}`);
 
-      const cantidadGeneral = cantidad_accesos_general || 0;
-      const cantidadDocente = cantidad_accesos_docente || 0;
+      // MODIFICACIÓN PRINCIPAL: Lógica para modo mantenimiento
+        let cantidadGeneralFinal: number;
+        let cantidadDocenteFinal: number;
+
+        if (mantenimiento === 1) {
+            // En modo mantenimiento, usar TODAS las credenciales disponibles
+            cantidadGeneralFinal = credenciales.filter(
+                c => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE'
+            ).length;
+            cantidadDocenteFinal = credenciales.filter(
+                c => c.rol.nombre === 'DOCENTE'
+            ).length;
+        } else {
+            // Modo normal, usar los valores proporcionados
+            cantidadGeneralFinal = cantidad_accesos_general || 0;
+            cantidadDocenteFinal = cantidad_accesos_docente || 0;
+        }
 
       // Separar en generales/estudiantes (combinados) y docentes
       const credencialesGeneralesEstudiantes = credenciales.filter(
@@ -179,17 +206,17 @@ export class ReservaService {
         `[CREDENCIALES] Generales/Estudiantes: ${credencialesGeneralesEstudiantes.length}, Docentes: ${credencialesDocentes.length}`,
       );
 
-      // Nueva lógica: Si no hay credenciales docentes pero se solicita acceso docente
-      let cantidadGeneralFinal = cantidadGeneral;
-      let cantidadDocenteFinal = cantidadDocente;
+      // // Nueva lógica: Si no hay credenciales docentes pero se solicita acceso docente
+      // let cantidadGeneralFinal = cantidadGeneral;
+      // let cantidadDocenteFinal = cantidadDocente;
 
-      if (credencialesDocentes.length === 0 && cantidadDocente > 0) {
-        console.log(
-          `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
-        );
-        cantidadGeneralFinal += cantidadDocente;
-        cantidadDocenteFinal = 0;
-      }
+      // if (credencialesDocentes.length === 0 && cantidadDocente > 0) {
+      //   console.log(
+      //     `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
+      //   );
+      //   cantidadGeneralFinal += cantidadDocente;
+      //   cantidadDocenteFinal = 0;
+      // }
 
       // Capacidad por credencial (asumimos todas tienen la misma capacidad)
       const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
