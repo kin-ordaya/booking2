@@ -1,29 +1,49 @@
+import { CreateReservaGeneralDto } from './dto/create-reserva-general.dto';
 import {
   Controller,
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Query,
 } from '@nestjs/common';
 import { ReservaService } from './reserva.service';
-import { CreateReservaDto } from './dto/create-reserva.dto';
-import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { CreateReservaMantenimientoDto } from './dto/create-reserva.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 import { ApiBody } from '@nestjs/swagger';
+import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
 
 @Controller('reserva')
 export class ReservaController {
   constructor(private readonly reservaService: ReservaService) {}
 
-  @Post()
-  @ApiBody({ type: CreateReservaDto })
-  create(@Body() createReservaDto: CreateReservaDto) {
-    return this.reservaService.create(createReservaDto);
+  @Post('mantenimiento')
+  @ApiBody({ type: CreateReservaMantenimientoDto })
+  createReservaMantenimiento(@Body() createReservaMantenimientoDto: CreateReservaMantenimientoDto) {
+    return this.reservaService.createReservaMantenimiento(
+      createReservaMantenimientoDto,
+    );
+  }
+
+  @Post('general')
+  @ApiBody({ type: CreateReservaGeneralDto })
+  CreateReservaGeneral(@Body() createReservaGeneralDto: CreateReservaGeneralDto) {
+    return this.reservaService.createReservaGeneral(
+      createReservaGeneralDto,
+    );
+  }
+
+  @Post('mixto')
+  @ApiBody({ type: CreateReservaMixtoDto })
+  CreateReservaDocenteEstudiante(
+    @Body() createReservaMixtoDto: CreateReservaMixtoDto,
+  ) {
+    return this.reservaService.createReservaDocenteEstudiante(
+      createReservaMixtoDto,
+    );
   }
 
   @Get('credenciales-disponibles')

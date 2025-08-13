@@ -1,3 +1,4 @@
+import { CreateReservaGeneralDto } from './dto/create-reserva-general.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import {
   BadRequestException,
@@ -6,50 +7,30 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateReservaDto } from './dto/create-reserva.dto';
-import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { CreateReservaMantenimientoDto } from './dto/create-reserva.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reserva } from './entities/reserva.entity';
-import {
-  Repository,
-  DataSource,
-  Between,
-  LessThan,
-  IsNull,
-  MoreThan,
-  Brackets,
-} from 'typeorm';
+import { Repository, DataSource, Brackets } from 'typeorm';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
-import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
-import { Responsable } from 'src/responsable/entities/responsable.entity';
-import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
+import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
 
 @Injectable()
 export class ReservaService {
   constructor(
-    @InjectRepository(DetalleReserva)
-    private readonly detalleReservaRepository: Repository<DetalleReserva>,
-
     @InjectRepository(Reserva)
     private readonly reservaRepository: Repository<Reserva>,
 
     @InjectRepository(Recurso)
     private readonly recursoRepository: Repository<Recurso>,
 
-    @InjectRepository(RecursoCurso)
-    private readonly recursoCursoRepository: Repository<RecursoCurso>,
-
     @InjectRepository(Clase)
     private readonly claseRepository: Repository<Clase>,
-
-    @InjectRepository(CursoModalidad)
-    private readonly cursoModalidadRepository: Repository<CursoModalidad>,
 
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
@@ -57,267 +38,62 @@ export class ReservaService {
     @InjectRepository(Credencial)
     private readonly credencialRepository: Repository<Credencial>,
 
-    @InjectRepository(Responsable)
-    private readonly responsableRepository: Repository<Responsable>,
-
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createReservaDto: CreateReservaDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  // Métodos comunes
+  private async validateBasicReservationData(
+    recursoId: string,
+    autorId: string,
+    inicio: Date,
+    fin: Date,
+  ) {
+    const [recurso, autor] = await Promise.all([
+      this.recursoRepository.findOneBy({ id: recursoId }),
+      this.rolUsuarioRepository.findOne({
+        where: { id: autorId },
+        relations: ['usuario', 'rol'],
+      }),
+    ]);
 
-    try {
-      const {
-        mantenimiento,
-        inicio,
-        fin,
-        cantidad_accesos_general,
-        cantidad_accesos_docente,
-        recurso_id,
-        clase_id,
-        docente_id,
-        autor_id,
-      } = createReservaDto;
+    if (!recurso) throw new NotFoundException('Recurso no encontrado');
+    if (!autor) throw new NotFoundException('Autor no encontrado');
 
-      console.log(
-        `[CREATE RESERVA] Inicio - recurso: ${recurso_id}, inicio: ${inicio}, fin: ${fin}`,
+    await this.validarInicioyFinReserva(inicio, fin);
+    this.validarTiempoReserva(autor.rol.nombre, inicio, fin);
+
+    return { recurso, autor };
+  }
+
+  private async validarInicioyFinReserva(inicio: Date, fin: Date) {
+    const ahoraUTC = new Date().toISOString();
+    const inicioUTC = new Date(inicio).toISOString();
+
+    if (inicioUTC < ahoraUTC) {
+      throw new ConflictException(
+        `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
-      console.log(
-        `[PARÁMETROS] Accesos general/estudiante: ${cantidad_accesos_general}, docente: ${cantidad_accesos_docente}`,
+    }
+
+    if (fin <= inicio) {
+      throw new ConflictException(
+        'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
       );
-
-      const ahoraUTC = new Date().toISOString();
-      const inicioUTC = new Date(inicio).toISOString();
-      // Validación de fechas
-      if (inicioUTC < ahoraUTC) {
-        throw new ConflictException(
-          `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
-        );
-      }
-
-      if (fin <= inicio) {
-        throw new ConflictException(
-          'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
-        );
-      }
-
-      const [recurso, autor] = await Promise.all([
-        this.recursoRepository.findOneBy({ id: recurso_id }),
-        this.rolUsuarioRepository.findOne({
-          where: { id: autor_id },
-          relations: ['usuario', 'rol'],
-        }),
-      ]);
-
-      if (!recurso) {
-        throw new NotFoundException('Recurso no encontrado');
-      }
-      if (!autor) {
-        throw new NotFoundException('Autor no encontrado');
-      }
-
-      // Si es DOCENTE y está intentando hacer una reserva de mantenimiento
-      if (autor.rol.nombre === 'DOCENTE' && mantenimiento === 1) {
-        throw new ConflictException(
-          'Los docentes no pueden realizar reservas en modo mantenimiento',
-        );
-      }
-
-      this.validarTiempoReserva(
-        autor.rol.nombre,
-        new Date(inicio),
-        new Date(fin),
-      );
-
-      // Cambiar la declaración inicial para que coincida con los tipos esperados
-
-      let clase: Clase | null = null;
-      let docente: RolUsuario | null = null;
-
-      if (mantenimiento == 0) {
-        // Validar existencia de entidades relacionadas
-        const results = await Promise.all([
-          this.claseRepository.findOneBy({ id: clase_id }),
-          this.rolUsuarioRepository.findOne({
-            where: { id: docente_id },
-            relations: ['usuario', 'rol'],
-          }),
-        ]);
-
-        clase = results[0];
-        docente = results[1];
-
-        if (!docente) {
-          throw new NotFoundException('Docente no encontrado');
-        }
-        if (!clase) {
-          throw new NotFoundException('Clase no encontrado');
-        }
-      }
-      // if(mantenimiento === 1){
-      //   if( cantidad_accesos_docente === undefined || cantidad_accesos_general === undefined){
-      //     throw new ConflictException('Se debe especificar cantidad_accesos_general y cantidad_accesos_docente para reservas en modo mantenimiento');
-      //   }
-      // }
-
-      console.log(`[AUTOR] Rol: ${autor.rol.nombre}`);
-      // Validar tiempo mínimo de reserva solo si el autor no es administrador
-      if (autor.rol.nombre !== 'ADMINISTRADOR') {
-        await this.validarTiempoMinimoReserva(inicio, recurso.tiempo_reserva);
-      }
-
-      // Obtener TODAS las credenciales del recurso
-      const credenciales = await this.credencialRepository.find({
-        where: { recurso: { id: recurso_id } },
-        relations: ['recurso', 'rol'],
-      });
-
-      console.log(`[CREDENCIALES] Totales: ${credenciales.length}`);
-
-      // MODIFICACIÓN PRINCIPAL: Lógica para modo mantenimiento
-        let cantidadGeneralFinal: number;
-        let cantidadDocenteFinal: number;
-
-        if (mantenimiento === 1) {
-          if( cantidad_accesos_docente === undefined || cantidad_accesos_general === undefined){
-            // En modo mantenimiento, usar TODAS las credenciales disponibles
-            cantidadGeneralFinal = credenciales.filter(
-                c => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE'
-            ).length;
-            cantidadDocenteFinal = credenciales.filter(
-                c => c.rol.nombre === 'DOCENTE'
-            ).length;
-          } else {
-            // En modo mantenimiento, usar los valores proporcionados
-            cantidadGeneralFinal = cantidad_accesos_general || 0;
-            cantidadDocenteFinal = cantidad_accesos_docente || 0;
-          }   
-        } else {
-            // Modo normal, usar los valores proporcionados
-            cantidadGeneralFinal = cantidad_accesos_general || 0;
-            cantidadDocenteFinal = cantidad_accesos_docente || 0;
-        }
-
-      // Separar en generales/estudiantes (combinados) y docentes
-      const credencialesGeneralesEstudiantes = credenciales.filter(
-        (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
-      );
-      const credencialesDocentes = credenciales.filter(
-        (c) => c.rol.nombre === 'DOCENTE',
-      );
-
-      console.log(
-        `[CREDENCIALES] Generales/Estudiantes: ${credencialesGeneralesEstudiantes.length}, Docentes: ${credencialesDocentes.length}`,
-      );
-
-      // // Nueva lógica: Si no hay credenciales docentes pero se solicita acceso docente
-      // let cantidadGeneralFinal = cantidadGeneral;
-      // let cantidadDocenteFinal = cantidadDocente;
-
-      // if (credencialesDocentes.length === 0 && cantidadDocente > 0) {
-      //   console.log(
-      //     `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
-      //   );
-      //   cantidadGeneralFinal += cantidadDocente;
-      //   cantidadDocenteFinal = 0;
-      // }
-
-      // Capacidad por credencial (asumimos todas tienen la misma capacidad)
-      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
-      console.log(`[CAPACIDAD] Por credencial: ${capacidadPorCredencial}`);
-
-      // Validar disponibilidad
-      const { credencialesGeneralesAsignar, credencialesDocentesAsignar } =
-        await this.validarYAsignarCredenciales(
-          recurso_id,
-          inicio,
-          fin,
-          cantidadGeneralFinal,
-          cantidadDocenteFinal,
-          credencialesGeneralesEstudiantes,
-          credencialesDocentes,
-          capacidadPorCredencial,
-        );
-
-      console.log('[CREDENCIALES ASIGNADAS]', {
-        generalesEstudiantes: credencialesGeneralesAsignar.map((c) => c.id),
-        docentes: credencialesDocentesAsignar.map((c) => c.id),
-      });
-
-      const reserva = new Reserva();
-      reserva.codigo = `RES-${Math.floor(Date.now() / 1000)}`;
-      reserva.mantenimiento = mantenimiento;
-      reserva.inicio = inicio;
-      reserva.fin = fin;
-      (reserva.cantidad_accesos =
-        mantenimiento == 1
-          ? credencialesGeneralesAsignar.length +
-            credencialesDocentesAsignar.length
-          : cantidad_accesos_general! + cantidad_accesos_docente!),
-        (reserva.cantidad_credenciales =
-          credencialesGeneralesAsignar.length +
-          credencialesDocentesAsignar.length);
-      reserva.recurso = recurso;
-      reserva.autor = autor;
-
-      // Solo asignar clase y docente si no es mantenimiento
-      if (mantenimiento === 0) {
-        // Usar operador de aserción no nula (!) ya que hemos validado que no son null
-        reserva.clase = clase!;
-        reserva.docente = docente!;
-      }
-
-      const reservaGuardada = await queryRunner.manager.save(reserva);
-
-      // Crear detalles de reserva
-      const detallesReserva = [
-        ...credencialesGeneralesAsignar.map((credencial) =>
-          queryRunner.manager.create(DetalleReserva, {
-            reserva: { id: reservaGuardada.id },
-            credencial: { id: credencial.id },
-            tipo: 'general',
-          }),
-        ),
-        ...credencialesDocentesAsignar.map((credencial) =>
-          queryRunner.manager.create(DetalleReserva, {
-            reserva: { id: reservaGuardada.id },
-            credencial: { id: credencial.id },
-            tipo: 'docente',
-          }),
-        ),
-      ];
-
-      await queryRunner.manager.save(detallesReserva);
-      await queryRunner.commitTransaction();
-      return reservaGuardada;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('[ERROR]', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
     }
   }
 
   private validarTiempoReserva(rol: string, inicio: Date, fin: Date) {
-    // Tiempos en milisegundos
-    const duracionMin = 45 * 60 * 1000; // 45 minutos mínimo
-    const duracionMaxDocente = 190 * 60 * 1000; // 3h 10m
-    const duracionMaxAdmin = 23 * 60 * 60 * 1000 + 59 * 60 * 1000; // 23:59h
-    const duracionMaxDefault = 4 * 60 * 60 * 1000; // 4h para otros roles
-
+    const duracionMin = 45 * 60 * 1000;
+    const duracionMaxDocente = 190 * 60 * 1000;
+    const duracionMaxAdmin = 23 * 60 * 60 * 1000 + 59 * 60 * 1000;
     const duracion = fin.getTime() - inicio.getTime();
 
-    // Validación mínima para todos los roles
     if (duracion < duracionMin) {
       throw new ConflictException(
         `La duración mínima de reserva es de 45 minutos para todos los roles`,
       );
     }
 
-    // Validación por rol
     switch (rol) {
       case 'ADMINISTRADOR':
         if (duracion > duracionMaxAdmin) {
@@ -326,7 +102,6 @@ export class ReservaService {
           );
         }
         break;
-
       case 'DOCENTE':
         if (duracion > duracionMaxDocente) {
           throw new ConflictException(
@@ -334,7 +109,6 @@ export class ReservaService {
           );
         }
         break;
-
       default:
         throw new ConflictException(`Rol no permitido para reservar: ${rol}`);
     }
@@ -346,15 +120,10 @@ export class ReservaService {
     fin: Date,
     cantidadGeneral: number,
     cantidadDocente: number,
-    credencialesGeneralesEstudiantes: Credencial[],
+    credencialesGenerales: Credencial[],
     credencialesDocentes: Credencial[],
     capacidadPorCredencial: number,
   ) {
-    console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
-
-    console.log('[Ver rango]', inicio, fin);
-
-    // 1. Obtener reservas existentes en el rango
     const reservasSolapadas = await this.reservaRepository
       .createQueryBuilder('reserva')
       .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
@@ -367,11 +136,6 @@ export class ReservaService {
       .andWhere('reserva.estado = :estado', { estado: 1 })
       .getMany();
 
-    console.log(
-      `[DISPONIBILIDAD] Reservas solapadas: ${reservasSolapadas.length}`,
-    );
-
-    // 2. Identificar credenciales ocupadas
     const credencialesOcupadas = new Set<string>();
     reservasSolapadas.forEach((reserva) => {
       reserva.detalle_reserva.forEach((detalle) => {
@@ -381,23 +145,13 @@ export class ReservaService {
       });
     });
 
-    console.log(
-      `[DISPONIBILIDAD] Credenciales ocupadas: ${credencialesOcupadas.size}`,
-    );
-
-    // 3. Filtrar credenciales disponibles
-    const generalesDisponibles = credencialesGeneralesEstudiantes.filter(
+    const generalesDisponibles = credencialesGenerales.filter(
       (c) => !credencialesOcupadas.has(c.id),
     );
     const docentesDisponibles = credencialesDocentes.filter(
       (c) => !credencialesOcupadas.has(c.id),
     );
 
-    console.log(
-      `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
-    );
-
-    // 4. Calcular cuántas credenciales necesitamos
     const necesariasGenerales = Math.ceil(
       cantidadGeneral / capacidadPorCredencial,
     );
@@ -405,16 +159,11 @@ export class ReservaService {
       cantidadDocente / capacidadPorCredencial,
     );
 
-    console.log(
-      `[DISPONIBILIDAD] Necesarias: Generales/Estudiantes=${necesariasGenerales}, Docentes=${necesariasDocentes}`,
-    );
-
-    // 5. Validar disponibilidad
     if (generalesDisponibles.length < necesariasGenerales) {
       const accesosDisponibles =
         generalesDisponibles.length * capacidadPorCredencial;
       throw new ConflictException(
-        `No hay suficientes credenciales generales/estudiantes disponibles. ` +
+        `No hay suficientes credenciales generales disponibles. ` +
           `Necesitas ${necesariasGenerales} credencial(es) (para ${cantidadGeneral} acceso(s)), ` +
           `pero solo hay ${generalesDisponibles.length} disponible(s) ` +
           `(equivalente a ${accesosDisponibles} acceso(s)). ` +
@@ -434,7 +183,6 @@ export class ReservaService {
       );
     }
 
-    // 6. Seleccionar las credenciales a asignar (las primeras disponibles)
     return {
       credencialesGeneralesAsignar: generalesDisponibles.slice(
         0,
@@ -447,37 +195,811 @@ export class ReservaService {
     };
   }
 
-  private async validarTiempoMinimoReserva(
-    fechaInicioReserva: Date,
-    tiempoReservaHoras: number,
+  private async saveReservation(
+    queryRunner: any,
+    reservaData: {
+      codigo: string;
+      mantenimiento: number;
+      inicio: Date;
+      fin: Date;
+      cantidad_accesos: number;
+      cantidad_credenciales: number;
+      recurso: Recurso;
+      autor: RolUsuario;
+      clase?: Clase;
+      docente?: RolUsuario;
+    },
+    credencialesGeneralesAsignar: Credencial[],
+    credencialesDocentesAsignar: Credencial[] = [],
   ) {
-    if (tiempoReservaHoras <= 0) {
-      return;
-    }
+    const reserva = new Reserva();
+    Object.assign(reserva, reservaData);
 
-    // Asegurarnos que trabajamos con fechas en UTC
-    const ahoraUTC = new Date().toISOString();
-    const fechaInicioUTC = new Date(fechaInicioReserva).toISOString();
+    const reservaGuardada = await queryRunner.manager.save(reserva);
 
-    const fechaMinimaPermitida = new Date(
-      new Date(ahoraUTC).getTime() + tiempoReservaHoras * 60 * 60 * 1000,
-    );
+    const detallesReserva = [
+      ...credencialesGeneralesAsignar.map((credencial) =>
+        queryRunner.manager.create(DetalleReserva, {
+          reserva: { id: reservaGuardada.id },
+          credencial: { id: credencial.id },
+          tipo: 'general',
+        }),
+      ),
+      ...credencialesDocentesAsignar.map((credencial) =>
+        queryRunner.manager.create(DetalleReserva, {
+          reserva: { id: reservaGuardada.id },
+          credencial: { id: credencial.id },
+          tipo: 'docente',
+        }),
+      ),
+    ];
 
-    console.log(`[VALIDACIÓN HORARIA]`, {
-      ahoraUTC,
-      fechaInicioUTC,
-      fechaMinimaPermitida: fechaMinimaPermitida.toISOString(),
-      tiempoReservaHoras,
-    });
+    await queryRunner.manager.save(detallesReserva);
+    return reservaGuardada;
+  }
 
-    if (new Date(fechaInicioUTC) < fechaMinimaPermitida) {
-      throw new ConflictException(
-        `Las reservas para este recurso deben hacerse con al menos ${tiempoReservaHoras} horas de anticipación. ` +
-          `La reserva más temprana permitida es a partir de ${fechaMinimaPermitida.toLocaleString('es-PE', { timeZone: 'America/Lima' })}. ` +
-          `(Intento de reserva para ${new Date(fechaInicioUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })})`,
+  // Métodos específicos para cada tipo de reserva
+  async createReservaMantenimiento(
+    createReservaMantenimientoDto: CreateReservaMantenimientoDto,
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const { inicio, fin, recurso_id, autor_id } =
+        createReservaMantenimientoDto;
+      const { recurso, autor } = await this.validateBasicReservationData(
+        recurso_id,
+        autor_id,
+        new Date(inicio),
+        new Date(fin),
       );
+
+      if (autor.rol.nombre !== 'ADMINISTRADOR') {
+        throw new ConflictException(
+          'Solo administradores pueden crear reservas en modo mantenimiento',
+        );
+      }
+
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        throw new NotFoundException(
+          'El recurso no tiene credenciales configuradas',
+        );
+      }
+
+      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+
+      // En mantenimiento usamos todas las credenciales disponibles
+      const credencialesGeneralesEstudiantes = credenciales.filter(
+        (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
+      );
+      const credencialesDocentes = credenciales.filter(
+        (c) => c.rol.nombre === 'DOCENTE',
+      );
+
+      const cantidadGeneralFinal =
+        credencialesGeneralesEstudiantes.length * capacidadPorCredencial;
+      const cantidadDocenteFinal =
+        credencialesDocentes.length * capacidadPorCredencial;
+
+      const { credencialesGeneralesAsignar, credencialesDocentesAsignar } =
+        await this.validarYAsignarCredenciales(
+          recurso_id,
+          new Date(inicio),
+          new Date(fin),
+          cantidadGeneralFinal,
+          cantidadDocenteFinal,
+          credencialesGeneralesEstudiantes,
+          credencialesDocentes,
+          capacidadPorCredencial,
+        );
+
+      const reservaGuardada = await this.saveReservation(
+        queryRunner,
+        {
+          codigo: `RES-${Math.floor(Date.now() / 1000)}`,
+          mantenimiento: 1,
+          inicio: new Date(inicio),
+          fin: new Date(fin),
+          cantidad_accesos:
+            (credencialesGeneralesAsignar.length +
+              credencialesDocentesAsignar.length) *
+            capacidadPorCredencial,
+          cantidad_credenciales:
+            credencialesGeneralesAsignar.length +
+            credencialesDocentesAsignar.length,
+          recurso,
+          autor,
+        },
+        credencialesGeneralesAsignar,
+        credencialesDocentesAsignar,
+      );
+
+      await queryRunner.commitTransaction();
+      return reservaGuardada;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
+
+  async createReservaGeneral(createReservaGeneralDto: CreateReservaGeneralDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const {
+        inicio,
+        fin,
+        recurso_id,
+        autor_id,
+        cantidad_accesos_general,
+        clase_id,
+        docente_id,
+      } = createReservaGeneralDto;
+
+      const { recurso, autor } = await this.validateBasicReservationData(
+        recurso_id,
+        autor_id,
+        new Date(inicio),
+        new Date(fin),
+      );
+
+      const [clase, docente] = await Promise.all([
+        this.claseRepository.findOneBy({ id: clase_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: docente_id },
+          relations: ['usuario', 'rol'],
+        }),
+      ]);
+
+      if (!clase) throw new NotFoundException('Clase no encontrada');
+      if (!docente) throw new NotFoundException('Docente no encontrado');
+      if (docente.rol.nombre !== 'DOCENTE') {
+        throw new ConflictException('El docente_id debe ser de rol DOCENTE');
+      }
+
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        throw new NotFoundException(
+          'El recurso no tiene credenciales configuradas',
+        );
+      }
+      //Revisar si las credenciales son de tipo GENERAL
+      if (
+        credenciales.some((credencial) => credencial.rol.nombre !== 'GENERAL')
+      ) {
+        throw new ConflictException(
+          'Las credenciales deben ser de tipo GENERAL',
+        );
+      }
+
+      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+
+      // En reserva general solo usamos credenciales GENERAL (no ESTUDIANTE ni DOCENTE)
+      const credencialesGenerales = credenciales.filter(
+        (c) => c.rol.nombre === 'GENERAL',
+      );
+
+      const cantidadGeneralFinal = cantidad_accesos_general || 0;
+
+      const { credencialesGeneralesAsignar } =
+        await this.validarYAsignarCredenciales(
+          recurso_id,
+          new Date(inicio),
+          new Date(fin),
+          cantidadGeneralFinal,
+          0, // No usamos credenciales docentes en reservas generales
+          credencialesGenerales,
+          [], // No pasamos credenciales docentes
+          capacidadPorCredencial,
+        );
+
+      const reservaGuardada = await this.saveReservation(
+        queryRunner,
+        {
+          codigo: `RES-${Math.floor(Date.now() / 1000)}`,
+          mantenimiento: 0,
+          inicio: new Date(inicio),
+          fin: new Date(fin),
+          cantidad_accesos:
+            credencialesGeneralesAsignar.length * capacidadPorCredencial,
+          cantidad_credenciales: credencialesGeneralesAsignar.length,
+          recurso,
+          autor,
+          clase,
+          docente,
+        },
+        credencialesGeneralesAsignar,
+      );
+
+      await queryRunner.commitTransaction();
+      return reservaGuardada;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async createReservaDocenteEstudiante(
+    createReservaMixtoDto: CreateReservaMixtoDto,
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const {
+        inicio,
+        fin,
+        recurso_id,
+        autor_id,
+        cantidad_accesos_general,
+        cantidad_accesos_docente,
+        clase_id,
+        docente_id,
+      } = createReservaMixtoDto;
+
+      const { recurso, autor } = await this.validateBasicReservationData(
+        recurso_id,
+        autor_id,
+        new Date(inicio),
+        new Date(fin),
+      );
+
+      const [clase, docente] = await Promise.all([
+        this.claseRepository.findOneBy({ id: clase_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: docente_id },
+          relations: ['usuario', 'rol'],
+        }),
+      ]);
+
+      if (!clase) throw new NotFoundException('Clase no encontrada');
+      if (!docente) throw new NotFoundException('Docente no encontrado');
+      if (docente.rol.nombre !== 'DOCENTE') {
+        throw new ConflictException('El docente_id debe ser de rol DOCENTE');
+      }
+
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        throw new NotFoundException(
+          'El recurso no tiene credenciales configuradas',
+        );
+      }
+
+      // Validar que no haya credenciales GENERAL
+      if (
+        credenciales.some((credencial) => credencial.rol.nombre === 'GENERAL')
+      ) {
+        throw new ConflictException(
+          'Este recurso no debe tener credenciales de tipo GENERAL para reservas de docente/estudiante',
+        );
+      }
+
+      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+
+      // Separar credenciales por tipo
+      const credencialesEstudiantes = credenciales.filter(
+        (c) => c.rol.nombre === 'ESTUDIANTE',
+      );
+      const credencialesDocentes = credenciales.filter(
+        (c) => c.rol.nombre === 'DOCENTE',
+      );
+
+      if (
+        credencialesEstudiantes.length === 0 &&
+        credencialesDocentes.length === 0
+      ) {
+        throw new NotFoundException(
+          'No se encontraron credenciales de tipo ESTUDIANTE o DOCENTE para este recurso',
+        );
+      }
+
+      const {
+        credencialesGeneralesAsignar: credencialesEstudiantesAsignar,
+        credencialesDocentesAsignar,
+      } = await this.validarYAsignarCredenciales(
+        recurso_id,
+        new Date(inicio),
+        new Date(fin),
+        cantidad_accesos_general || 0,
+        cantidad_accesos_docente || 0,
+        credencialesEstudiantes,
+        credencialesDocentes,
+        capacidadPorCredencial,
+      );
+
+      const reservaGuardada = await this.saveReservation(
+        queryRunner,
+        {
+          codigo: `RES-${Math.floor(Date.now() / 1000)}`,
+          mantenimiento: 0,
+          inicio: new Date(inicio),
+          fin: new Date(fin),
+          cantidad_accesos:
+            (credencialesEstudiantesAsignar.length +
+              credencialesDocentesAsignar.length) *
+            capacidadPorCredencial,
+          cantidad_credenciales:
+            credencialesEstudiantesAsignar.length +
+            credencialesDocentesAsignar.length,
+          recurso,
+          autor,
+          clase,
+          docente,
+        },
+        credencialesEstudiantesAsignar,
+        credencialesDocentesAsignar,
+      );
+
+      await queryRunner.commitTransaction();
+      return reservaGuardada;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // async validarInicioyFinReserva(inicio: Date, fin: Date) {
+  //   const ahoraUTC = new Date().toISOString();
+  //   const inicioUTC = new Date(inicio).toISOString();
+  //   // Validación de fechas
+  //   if (inicioUTC < ahoraUTC) {
+  //     throw new ConflictException(
+  //       `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+  //     );
+  //   }
+
+  //   if (fin <= inicio) {
+  //     throw new ConflictException(
+  //       'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
+  //     );
+  //   }
+  // }
+
+  // async create(createReservaDto: CreateReservaMantenimientoDto) {
+  //   const queryRunner = this.dataSource.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
+
+  //   try {
+  //     const {
+  //       mantenimiento,
+  //       inicio,
+  //       fin,
+  //       cantidad_accesos_general,
+  //       cantidad_accesos_docente,
+  //       recurso_id,
+  //       clase_id,
+  //       docente_id,
+  //       autor_id,
+  //     } = createReservaDto;
+
+  //     console.log(
+  //       `[CREATE RESERVA] Inicio - recurso: ${recurso_id}, inicio: ${inicio}, fin: ${fin}`,
+  //     );
+  //     console.log(
+  //       `[PARÁMETROS] Accesos general/estudiante: ${cantidad_accesos_general}, docente: ${cantidad_accesos_docente}`,
+  //     );
+
+  //     const ahoraUTC = new Date().toISOString();
+  //     const inicioUTC = new Date(inicio).toISOString();
+  //     // Validación de fechas
+  //     if (inicioUTC < ahoraUTC) {
+  //       throw new ConflictException(
+  //         `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+  //       );
+  //     }
+
+  //     if (fin <= inicio) {
+  //       throw new ConflictException(
+  //         'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
+  //       );
+  //     }
+
+  //     const [recurso, autor] = await Promise.all([
+  //       this.recursoRepository.findOneBy({ id: recurso_id }),
+  //       this.rolUsuarioRepository.findOne({
+  //         where: { id: autor_id },
+  //         relations: ['usuario', 'rol'],
+  //       }),
+  //     ]);
+
+  //     if (!recurso) {
+  //       throw new NotFoundException('Recurso no encontrado');
+  //     }
+  //     if (!autor) {
+  //       throw new NotFoundException('Autor no encontrado');
+  //     }
+
+  //     // Si es DOCENTE y está intentando hacer una reserva de mantenimiento
+  //     if (autor.rol.nombre === 'DOCENTE' && mantenimiento === 1) {
+  //       throw new ConflictException(
+  //         'Los docentes no pueden realizar reservas en modo mantenimiento',
+  //       );
+  //     }
+
+  //     this.validarTiempoReserva(
+  //       autor.rol.nombre,
+  //       new Date(inicio),
+  //       new Date(fin),
+  //     );
+
+  //     // Cambiar la declaración inicial para que coincida con los tipos esperados
+
+  //     let clase: Clase | null = null;
+  //     let docente: RolUsuario | null = null;
+
+  //     if (mantenimiento == 0) {
+  //       // Validar existencia de entidades relacionadas
+  //       const results = await Promise.all([
+  //         this.claseRepository.findOneBy({ id: clase_id }),
+  //         this.rolUsuarioRepository.findOne({
+  //           where: { id: docente_id },
+  //           relations: ['usuario', 'rol'],
+  //         }),
+  //       ]);
+
+  //       clase = results[0];
+  //       docente = results[1];
+
+  //       if (!docente) {
+  //         throw new NotFoundException('Docente no encontrado');
+  //       }
+  //       if (!clase) {
+  //         throw new NotFoundException('Clase no encontrado');
+  //       }
+  //     }
+  //     // if(mantenimiento === 1){
+  //     //   if( cantidad_accesos_docente === undefined || cantidad_accesos_general === undefined){
+  //     //     throw new ConflictException('Se debe especificar cantidad_accesos_general y cantidad_accesos_docente para reservas en modo mantenimiento');
+  //     //   }
+  //     // }
+
+  //     console.log(`[AUTOR] Rol: ${autor.rol.nombre}`);
+  //     // Validar tiempo mínimo de reserva solo si el autor no es administrador
+  //     if (autor.rol.nombre !== 'ADMINISTRADOR') {
+  //       await this.validarTiempoMinimoReserva(inicio, recurso.tiempo_reserva);
+  //     }
+
+  //     // Obtener TODAS las credenciales del recurso
+  //     const credenciales = await this.credencialRepository.find({
+  //       where: { recurso: { id: recurso_id } },
+  //       relations: ['recurso', 'rol'],
+  //     });
+
+  //     console.log(`[CREDENCIALES] Totales: ${credenciales.length}`);
+
+  //     // Capacidad por credencial (asumimos todas tienen la misma capacidad)
+  //     const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+  //     console.log(`[CAPACIDAD] Por credencial: ${capacidadPorCredencial}`);
+
+  //     // MODIFICACIÓN PRINCIPAL: Lógica para modo mantenimiento
+  //     let cantidadGeneralFinal: number;
+  //     let cantidadDocenteFinal: number;
+
+  //     if (mantenimiento === 1) {
+  //       if (
+  //         cantidad_accesos_docente === undefined ||
+  //         cantidad_accesos_general === undefined
+  //       ) {
+  //         // En modo mantenimiento, usar TODAS las credenciales disponibles
+  //         cantidadGeneralFinal = credenciales.filter(
+  //           (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
+  //         ).length;
+  //         cantidadDocenteFinal = credenciales.filter(
+  //           (c) => c.rol.nombre === 'DOCENTE',
+  //         ).length;
+  //         // Multiplicar por la capacidad para obtener el total de accesos
+  //         cantidadGeneralFinal = cantidadGeneralFinal * capacidadPorCredencial;
+  //         cantidadDocenteFinal = cantidadDocenteFinal * capacidadPorCredencial;
+  //       } else {
+  //         // En modo mantenimiento, usar los valores proporcionados
+  //         cantidadGeneralFinal = cantidad_accesos_general || 0;
+  //         cantidadDocenteFinal = cantidad_accesos_docente || 0;
+  //       }
+  //     } else {
+  //       // Modo normal, usar los valores proporcionados
+  //       cantidadGeneralFinal = cantidad_accesos_general || 0;
+  //       cantidadDocenteFinal = cantidad_accesos_docente || 0;
+  //     }
+
+  //     // Separar en generales/estudiantes (combinados) y docentes
+  //     const credencialesGeneralesEstudiantes = credenciales.filter(
+  //       (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
+  //     );
+  //     const credencialesDocentes = credenciales.filter(
+  //       (c) => c.rol.nombre === 'DOCENTE',
+  //     );
+
+  //     console.log(
+  //       `[CREDENCIALES] Generales/Estudiantes: ${credencialesGeneralesEstudiantes.length}, Docentes: ${credencialesDocentes.length}`,
+  //     );
+
+  //     // // Nueva lógica: Si no hay credenciales docentes pero se solicita acceso docente
+  //     // let cantidadGeneralFinal = cantidadGeneral;
+  //     // let cantidadDocenteFinal = cantidadDocente;
+
+  //     // if (credencialesDocentes.length === 0 && cantidadDocente > 0) {
+  //     //   console.log(
+  //     //     `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
+  //     //   );
+  //     //   cantidadGeneralFinal += cantidadDocente;
+  //     //   cantidadDocenteFinal = 0;
+  //     // }
+
+  //     // Validar disponibilidad
+  //     const { credencialesGeneralesAsignar, credencialesDocentesAsignar } =
+  //       await this.validarYAsignarCredenciales(
+  //         recurso_id,
+  //         inicio,
+  //         fin,
+  //         cantidadGeneralFinal,
+  //         cantidadDocenteFinal,
+  //         credencialesGeneralesEstudiantes,
+  //         credencialesDocentes,
+  //         capacidadPorCredencial,
+  //       );
+
+  //     console.log('[CREDENCIALES ASIGNADAS]', {
+  //       generalesEstudiantes: credencialesGeneralesAsignar.map((c) => c.id),
+  //       docentes: credencialesDocentesAsignar.map((c) => c.id),
+  //     });
+
+  //     const reserva = new Reserva();
+  //     reserva.codigo = `RES-${Math.floor(Date.now() / 1000)}`;
+  //     reserva.mantenimiento = mantenimiento;
+  //     reserva.inicio = inicio;
+  //     reserva.fin = fin;
+  //     (reserva.cantidad_accesos =
+  //       mantenimiento == 1
+  //         ? credencialesGeneralesAsignar.length +
+  //           credencialesDocentesAsignar.length
+  //         : cantidad_accesos_general! + cantidad_accesos_docente!),
+  //       (reserva.cantidad_credenciales =
+  //         credencialesGeneralesAsignar.length +
+  //         credencialesDocentesAsignar.length);
+  //     reserva.recurso = recurso;
+  //     reserva.autor = autor;
+
+  //     // Solo asignar clase y docente si no es mantenimiento
+  //     if (mantenimiento === 0) {
+  //       // Usar operador de aserción no nula (!) ya que hemos validado que no son null
+  //       reserva.clase = clase!;
+  //       reserva.docente = docente!;
+  //     }
+
+  //     const reservaGuardada = await queryRunner.manager.save(reserva);
+
+  //     // Crear detalles de reserva
+  //     const detallesReserva = [
+  //       ...credencialesGeneralesAsignar.map((credencial) =>
+  //         queryRunner.manager.create(DetalleReserva, {
+  //           reserva: { id: reservaGuardada.id },
+  //           credencial: { id: credencial.id },
+  //           tipo: 'general',
+  //         }),
+  //       ),
+  //       ...credencialesDocentesAsignar.map((credencial) =>
+  //         queryRunner.manager.create(DetalleReserva, {
+  //           reserva: { id: reservaGuardada.id },
+  //           credencial: { id: credencial.id },
+  //           tipo: 'docente',
+  //         }),
+  //       ),
+  //     ];
+
+  //     await queryRunner.manager.save(detallesReserva);
+  //     await queryRunner.commitTransaction();
+  //     return reservaGuardada;
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
+  //     console.error('[ERROR]', error);
+  //     throw error;
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
+
+  // private validarTiempoReserva(rol: string, inicio: Date, fin: Date) {
+  //   // Tiempos en milisegundos
+  //   const duracionMin = 45 * 60 * 1000; // 45 minutos mínimo
+  //   const duracionMaxDocente = 190 * 60 * 1000; // 3h 10m
+  //   const duracionMaxAdmin = 23 * 60 * 60 * 1000 + 59 * 60 * 1000; // 23:59h
+  //   const duracionMaxDefault = 4 * 60 * 60 * 1000; // 4h para otros roles
+
+  //   const duracion = fin.getTime() - inicio.getTime();
+
+  //   // Validación mínima para todos los roles
+  //   if (duracion < duracionMin) {
+  //     throw new ConflictException(
+  //       `La duración mínima de reserva es de 45 minutos para todos los roles`,
+  //     );
+  //   }
+
+  //   // Validación por rol
+  //   switch (rol) {
+  //     case 'ADMINISTRADOR':
+  //       if (duracion > duracionMaxAdmin) {
+  //         throw new ConflictException(
+  //           `La duración máxima para administradores es de 23 horas y 59 minutos`,
+  //         );
+  //       }
+  //       break;
+
+  //     case 'DOCENTE':
+  //       if (duracion > duracionMaxDocente) {
+  //         throw new ConflictException(
+  //           `La duración máxima para docentes es de 3 horas y 10 minutos`,
+  //         );
+  //       }
+  //       break;
+
+  //     default:
+  //       throw new ConflictException(`Rol no permitido para reservar: ${rol}`);
+  //   }
+  // }
+
+  // private async validarYAsignarCredenciales(
+  //   recursoId: string,
+  //   inicio: Date,
+  //   fin: Date,
+  //   cantidadGeneral: number,
+  //   cantidadDocente: number,
+  //   credencialesGeneralesEstudiantes: Credencial[],
+  //   credencialesDocentes: Credencial[],
+  //   capacidadPorCredencial: number,
+  // ) {
+  //   console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
+
+  //   console.log('[Ver rango]', inicio, fin);
+
+  //   // 1. Obtener reservas existentes en el rango
+  //   const reservasSolapadas = await this.reservaRepository
+  //     .createQueryBuilder('reserva')
+  //     .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
+  //     .innerJoinAndSelect('detalle.credencial', 'credencial')
+  //     .where('reserva.recurso_id = :recursoId', { recursoId })
+  //     .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
+  //       inicio,
+  //       fin,
+  //     })
+  //     .andWhere('reserva.estado = :estado', { estado: 1 })
+  //     .getMany();
+
+  //   console.log(
+  //     `[DISPONIBILIDAD] Reservas solapadas: ${reservasSolapadas.length}`,
+  //   );
+
+  //   // 2. Identificar credenciales ocupadas
+  //   const credencialesOcupadas = new Set<string>();
+  //   reservasSolapadas.forEach((reserva) => {
+  //     reserva.detalle_reserva.forEach((detalle) => {
+  //       if (detalle.credencial) {
+  //         credencialesOcupadas.add(detalle.credencial.id);
+  //       }
+  //     });
+  //   });
+
+  //   console.log(
+  //     `[DISPONIBILIDAD] Credenciales ocupadas: ${credencialesOcupadas.size}`,
+  //   );
+
+  //   // 3. Filtrar credenciales disponibles
+  //   const generalesDisponibles = credencialesGeneralesEstudiantes.filter(
+  //     (c) => !credencialesOcupadas.has(c.id),
+  //   );
+  //   const docentesDisponibles = credencialesDocentes.filter(
+  //     (c) => !credencialesOcupadas.has(c.id),
+  //   );
+
+  //   console.log(
+  //     `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
+  //   );
+
+  //   // 4. Calcular cuántas credenciales necesitamos
+  //   const necesariasGenerales = Math.ceil(
+  //     cantidadGeneral / capacidadPorCredencial,
+  //   );
+  //   const necesariasDocentes = Math.ceil(
+  //     cantidadDocente / capacidadPorCredencial,
+  //   );
+
+  //   console.log(
+  //     `[DISPONIBILIDAD] Necesarias: Generales/Estudiantes=${necesariasGenerales}, Docentes=${necesariasDocentes}`,
+  //   );
+
+  //   // 5. Validar disponibilidad
+  //   if (generalesDisponibles.length < necesariasGenerales) {
+  //     const accesosDisponibles =
+  //       generalesDisponibles.length * capacidadPorCredencial;
+  //     throw new ConflictException(
+  //       `No hay suficientes credenciales generales/estudiantes disponibles. ` +
+  //         `Necesitas ${necesariasGenerales} credencial(es) (para ${cantidadGeneral} acceso(s)), ` +
+  //         `pero solo hay ${generalesDisponibles.length} disponible(s) ` +
+  //         `(equivalente a ${accesosDisponibles} acceso(s)). ` +
+  //         `Cada credencial tiene capacidad para ${capacidadPorCredencial} acceso(s).`,
+  //     );
+  //   }
+
+  //   if (docentesDisponibles.length < necesariasDocentes) {
+  //     const accesosDisponibles =
+  //       docentesDisponibles.length * capacidadPorCredencial;
+  //     throw new ConflictException(
+  //       `No hay suficientes credenciales docentes disponibles. ` +
+  //         `Necesitas ${necesariasDocentes} credencial(es) (para ${cantidadDocente} acceso(s)), ` +
+  //         `pero solo hay ${docentesDisponibles.length} disponible(s) ` +
+  //         `(equivalente a ${accesosDisponibles} acceso(s)). ` +
+  //         `Cada credencial tiene capacidad para ${capacidadPorCredencial} acceso(s).`,
+  //     );
+  //   }
+
+  //   // 6. Seleccionar las credenciales a asignar (las primeras disponibles)
+  //   return {
+  //     credencialesGeneralesAsignar: generalesDisponibles.slice(
+  //       0,
+  //       necesariasGenerales,
+  //     ),
+  //     credencialesDocentesAsignar: docentesDisponibles.slice(
+  //       0,
+  //       necesariasDocentes,
+  //     ),
+  //   };
+  // }
+
+  // private async validarTiempoMinimoReserva(
+  //   fechaInicioReserva: Date,
+  //   tiempoReservaHoras: number,
+  // ) {
+  //   if (tiempoReservaHoras <= 0) {
+  //     return;
+  //   }
+
+  //   // Asegurarnos que trabajamos con fechas en UTC
+  //   const ahoraUTC = new Date().toISOString();
+  //   const fechaInicioUTC = new Date(fechaInicioReserva).toISOString();
+
+  //   const fechaMinimaPermitida = new Date(
+  //     new Date(ahoraUTC).getTime() + tiempoReservaHoras * 60 * 60 * 1000,
+  //   );
+
+  //   console.log(`[VALIDACIÓN HORARIA]`, {
+  //     ahoraUTC,
+  //     fechaInicioUTC,
+  //     fechaMinimaPermitida: fechaMinimaPermitida.toISOString(),
+  //     tiempoReservaHoras,
+  //   });
+
+  //   if (new Date(fechaInicioUTC) < fechaMinimaPermitida) {
+  //     throw new ConflictException(
+  //       `Las reservas para este recurso deben hacerse con al menos ${tiempoReservaHoras} horas de anticipación. ` +
+  //         `La reserva más temprana permitida es a partir de ${fechaMinimaPermitida.toLocaleString('es-PE', { timeZone: 'America/Lima' })}. ` +
+  //         `(Intento de reserva para ${new Date(fechaInicioUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })})`,
+  //     );
+  //   }
+  // }
 
   // private async validarDisponibilidadRecurso(
   //   recursoId: string,
