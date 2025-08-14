@@ -6,18 +6,16 @@ import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
-import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
-import { Responsable } from 'src/responsable/entities/responsable.entity';
+import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Recurso,
       Reserva,
+      Recurso,
       DetalleReserva,
       Credencial,
-      RolUsuario,
-      Responsable,
+      SeccionEmail
     ]),
   ],
   controllers: [EmailController],

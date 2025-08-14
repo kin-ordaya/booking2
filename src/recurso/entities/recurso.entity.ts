@@ -4,6 +4,7 @@ import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
+import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
 import { TipoAcceso } from 'src/tipo_acceso/entities/tipo_acceso.entity';
 import { TipoRecurso } from 'src/tipo_recurso/entities/tipo_recurso.entity';
 import {
@@ -38,6 +39,12 @@ export class Recurso {
   @Column({ type: 'varchar', length: 255 })
   link_declaracion: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  link_guia?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  link_aula_virtual?: string;
+
   @Column({ type: 'int' })
   tiempo_reserva: number;
 
@@ -64,6 +71,9 @@ export class Recurso {
 
   @OneToMany(() => Responsable, (responsable) => responsable.recurso)
   responsable: Responsable[];
+
+  @OneToMany(() => SeccionEmail, (seccionEmail) => seccionEmail.recurso)
+  seccion_email: SeccionEmail[];
 
   @OneToMany(() => Reserva, (reserva) => reserva.recurso)
   reserva: Reserva[];

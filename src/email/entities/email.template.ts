@@ -2,34 +2,51 @@ export const getReservaTemplate = (data: {
   recurso_nombre: string;
   fecha_html: string;
   credenciales: Array<{ usuario?: string; clave: string; tipo?: string }>;
+  link_guia?: string; // Nuevo campo opcional
+  link_aula_virtual?: string; // Nuevo campo opcional
+  secciones_email?: Array<{
+    // Nuevo campo para las secciones
+    asunto: 'ADVERTENCIA' | 'INFORMACION' | 'INSTRUCCION';
+    link?: string;
+  }>;
 }) => {
-  const { recurso_nombre, fecha_html, credenciales } = data;
+  const {
+    recurso_nombre,
+    fecha_html,
+    credenciales,
+    link_guia,
+    link_aula_virtual,
+    secciones_email = [],
+  } = data;
 
   // Verificar si hay al menos una credencial con usuario
-  const hasUsuarios = credenciales.some(c => c.usuario);
+  const hasUsuarios = credenciales.some((c) => c.usuario);
 
   // Agrupar credenciales por tipo
-  const credencialesPorTipo = credenciales.reduce((acc, credencial) => {
-    const tipo = credencial.tipo || 'general';
-    if (!acc[tipo]) {
-      acc[tipo] = [];
-    }
-    acc[tipo].push(credencial);
-    return acc;
-  }, {} as Record<string, typeof credenciales>);
+  const credencialesPorTipo = credenciales.reduce(
+    (acc, credencial) => {
+      const tipo = credencial.tipo || 'general';
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+      acc[tipo].push(credencial);
+      return acc;
+    },
+    {} as Record<string, typeof credenciales>,
+  );
 
   // Mapeo de nombres amigables para los tipos
   const nombresTipo: Record<string, string> = {
     general: 'Generales',
     estudiante: 'Estudiantes',
-    docente: 'Docentes'
+    docente: 'Docentes',
   };
 
   // Generar las tablas dinámicas
   const tablasCredenciales = Object.entries(credencialesPorTipo)
     .map(([tipo, creds]) => {
       if (creds.length === 0) return '';
-      
+
       return `
         <h3>Credenciales ${nombresTipo[tipo] || tipo}</h3>
         <table>
@@ -37,12 +54,16 @@ export const getReservaTemplate = (data: {
             ${hasUsuarios ? '<th>Usuario</th>' : ''}
             <th>Clave</th>
           </tr>
-          ${creds.map(credencial => `
+          ${creds
+            .map(
+              (credencial) => `
             <tr>
               ${hasUsuarios ? `<td>${credencial.usuario || '-'}</td>` : ''}
               <td>${credencial.clave}</td>
             </tr>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </table>
       `;
     })
@@ -215,6 +236,35 @@ export const getReservaTemplate = (data: {
                 width: 100%;
             }
         }
+
+        .seccion-email {
+          margin: 1.5rem 0;
+          padding: 1rem;
+          border-radius: 8px;
+          border-left: 4px solid;
+        }
+
+        .seccion-email.advertencia {
+          background-color: #fff3f3;
+          border-left-color: #ff6b6b;
+        }
+
+        .seccion-email.informacion {
+          background-color: #f0f7ff;
+          border-left-color: #4dabf7;
+        }
+
+        .seccion-email.instruccion {
+          background-color: #f8f9fa;
+          border-left-color: #adb5bd;
+        }
+
+        .seccion-image {
+          max-width: 100%;
+          height: auto;
+          margin: 0.5rem 0;
+          border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -226,12 +276,24 @@ export const getReservaTemplate = (data: {
     <h3>Estimado docente</h3>
     <p>Es un gusto saludarlo. Agradecemos su interés en integrar los recursos de ${recurso_nombre} en su enseñanza. Esperamos que esta herramienta sea de gran apoyo en sus clases.</p>
     
+    ${
+      link_guia
+        ? `
     <p>Para ingresar al laboratorio de ${recurso_nombre} es necesario seguir los pasos de la siguiente guía de acceso, puede compartirla con sus estudiantes: 
-    <a href="https://drive.google.com/file/d/1kaoRtXc40zJabjXpWDl-y5EAVRSvFggf/view?usp=sharing" target="_blank">Guía de Acceso</a>. 
+    <a href="${link_guia}" target="_blank">Guía de Acceso</a>. 
     Es importante que se comunique a los estudiantes que no se debe introducir información personal a las cuentas de ${recurso_nombre}.</p>
+    `
+        : ''
+    }
     
+    ${
+      link_aula_virtual
+        ? `
     <p>El link de acceso al laboratorio de ${recurso_nombre} es el siguiente:
-    <a href="https://aulavirtual.continental.edu.pe/course/view.php?id=35958">Laboratorio Algetec</a></p>
+    <a href="${link_aula_virtual}">Laboratorio</a></p>
+    `
+        : ''
+    }
     
     <hr>
     
@@ -244,22 +306,37 @@ export const getReservaTemplate = (data: {
     
     <hr>
     
-    <h3>Advertencia:</h3>
-    <img class="warning" src="https://res.cloudinary.com/dpjoocxnd/image/upload/v1738082065/WhatsApp_Image_2025-01-28_at_10.56.57_AM_rpifkg.jpg" alt="Advertencia de seguridad">
-    <p>Si tiene alguna consulta adicional no dude en contactarse con nosotros. Saludos.</p>
+    ${
+      secciones_email.length > 0
+        ? `
+    <hr>
     
-    <h4>Quedo atento a sus dudas y comentarios. Saludos</h4>
+    <!-- Secciones de email dinámicas -->
+    ${secciones_email
+      .map(
+        (seccion) => `
+      <div class="seccion-email ${seccion.asunto.toLowerCase()}">
+        <h3>${seccion.asunto}:</h3>
+        ${seccion.link ? `<img src="${seccion.link}" alt="${seccion.asunto}" class="seccion-image">` : ''}
+        <!-- Aquí podrías agregar más contenido si expandes la entidad SeccionEmail -->
+      </div>
+    `,
+      )
+      .join('')}
+    `
+        : ''
+    }
+    
+    <h4>Quedamos atentos a sus dudas y comentarios. Saludos</h4>
 
     <div class="signature">
        <img src="https://ucontinental.edu.pe/documentos/logo/firma-generador.gif" alt="Logo Universidad Continental">
     </div>
 
     <div class="contact-info">
-        <h2><strong>Pamela Xiomara Verastegui Paucar</strong></h2>
         <p>Laboratorios y Talleres de Especialidad</p>
         <p>Recursos Académicos Virtuales</p>
         <p>Técnica RAV Gestión de Recursos</p>
-        <p>Teléfono: +51 989149427</p>
         <p>Email: <a href="mailto:pverastegui@continental.edu.pe">pverastegui@continental.edu.pe</a></p>
     </div>
   </div>

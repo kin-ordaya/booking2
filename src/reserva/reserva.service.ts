@@ -125,6 +125,10 @@ export class ReservaService {
     credencialesDocentes: Credencial[],
     capacidadPorCredencial: number,
   ) {
+    console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
+
+    console.log('[Ver rango]', inicio, fin);
+
     const reservasSolapadas = await this.reservaRepository
       .createQueryBuilder('reserva')
       .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
@@ -137,6 +141,12 @@ export class ReservaService {
       .andWhere('reserva.estado = :estado', { estado: 1 })
       .getMany();
 
+    console.log(
+      `[DISPONIBILIDAD] Reservas solapadas: ${reservasSolapadas.length}`,
+    );
+
+    console.log(`[CREDENCIALES SOLAPADAS] Total reservas encontradas: ${reservasSolapadas}`);
+
     const credencialesOcupadas = new Set<string>();
     reservasSolapadas.forEach((reserva) => {
       reserva.detalle_reserva.forEach((detalle) => {
@@ -146,6 +156,10 @@ export class ReservaService {
       });
     });
 
+    console.log(
+      `[DISPONIBILIDAD] Credenciales ocupadas: ${credencialesOcupadas.size}`,
+    );
+
     const generalesDisponibles = credencialesGenerales.filter(
       (c) => !credencialesOcupadas.has(c.id),
     );
@@ -153,11 +167,19 @@ export class ReservaService {
       (c) => !credencialesOcupadas.has(c.id),
     );
 
+    console.log(
+      `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
+    );
+
     const necesariasGenerales = Math.ceil(
       cantidadGeneral / capacidadPorCredencial,
     );
     const necesariasDocentes = Math.ceil(
       cantidadDocente / capacidadPorCredencial,
+    );
+
+    console.log(
+      `[DISPONIBILIDAD] Necesarias: Generales/Estudiantes=${necesariasGenerales}, Docentes=${necesariasDocentes}`,
     );
 
     if (generalesDisponibles.length < necesariasGenerales) {
@@ -304,8 +326,8 @@ export class ReservaService {
       const { credencialesGeneralesAsignar } =
         await this.validarYAsignarCredenciales(
           recurso_id,
-          new Date(inicio),
-          new Date(fin),
+          inicio,
+          fin,
           cantidadGeneralFinal,
           0,
           credencialesGenerales,
@@ -424,8 +446,8 @@ export class ReservaService {
         credencialesDocentesAsignar,
       } = await this.validarYAsignarCredenciales(
         recurso_id,
-        new Date(inicio),
-        new Date(fin),
+        inicio,
+        fin,
         cantidad_accesos_general || 0,
         cantidad_accesos_docente || 0,
         credencialesEstudiantes,
@@ -532,8 +554,8 @@ export class ReservaService {
       const { credencialesGeneralesAsignar } =
         await this.validarYAsignarCredenciales(
           recurso_id,
-          new Date(inicio),
-          new Date(fin),
+          inicio,
+          fin,
           cantidadGeneralFinal,
           0, // No usamos credenciales docentes en reservas generales
           credencialesGenerales,
@@ -651,8 +673,8 @@ export class ReservaService {
         credencialesDocentesAsignar,
       } = await this.validarYAsignarCredenciales(
         recurso_id,
-        new Date(inicio),
-        new Date(fin),
+        inicio,
+        fin,
         cantidad_accesos_general || 0,
         cantidad_accesos_docente || 0,
         credencialesEstudiantes,
@@ -693,535 +715,6 @@ export class ReservaService {
     }
   }
 
-  // async validarInicioyFinReserva(inicio: Date, fin: Date) {
-  //   const ahoraUTC = new Date().toISOString();
-  //   const inicioUTC = new Date(inicio).toISOString();
-  //   // Validación de fechas
-  //   if (inicioUTC < ahoraUTC) {
-  //     throw new ConflictException(
-  //       `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
-  //     );
-  //   }
-
-  //   if (fin <= inicio) {
-  //     throw new ConflictException(
-  //       'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
-  //     );
-  //   }
-  // }
-
-  // async create(createReservaDto: CreateReservaMantenimientoDto) {
-  //   const queryRunner = this.dataSource.createQueryRunner();
-  //   await queryRunner.connect();
-  //   await queryRunner.startTransaction();
-
-  //   try {
-  //     const {
-  //       mantenimiento,
-  //       inicio,
-  //       fin,
-  //       cantidad_accesos_general,
-  //       cantidad_accesos_docente,
-  //       recurso_id,
-  //       clase_id,
-  //       docente_id,
-  //       autor_id,
-  //     } = createReservaDto;
-
-  //     console.log(
-  //       `[CREATE RESERVA] Inicio - recurso: ${recurso_id}, inicio: ${inicio}, fin: ${fin}`,
-  //     );
-  //     console.log(
-  //       `[PARÁMETROS] Accesos general/estudiante: ${cantidad_accesos_general}, docente: ${cantidad_accesos_docente}`,
-  //     );
-
-  //     const ahoraUTC = new Date().toISOString();
-  //     const inicioUTC = new Date(inicio).toISOString();
-  //     // Validación de fechas
-  //     if (inicioUTC < ahoraUTC) {
-  //       throw new ConflictException(
-  //         `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
-  //       );
-  //     }
-
-  //     if (fin <= inicio) {
-  //       throw new ConflictException(
-  //         'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
-  //       );
-  //     }
-
-  //     const [recurso, autor] = await Promise.all([
-  //       this.recursoRepository.findOneBy({ id: recurso_id }),
-  //       this.rolUsuarioRepository.findOne({
-  //         where: { id: autor_id },
-  //         relations: ['usuario', 'rol'],
-  //       }),
-  //     ]);
-
-  //     if (!recurso) {
-  //       throw new NotFoundException('Recurso no encontrado');
-  //     }
-  //     if (!autor) {
-  //       throw new NotFoundException('Autor no encontrado');
-  //     }
-
-  //     // Si es DOCENTE y está intentando hacer una reserva de mantenimiento
-  //     if (autor.rol.nombre === 'DOCENTE' && mantenimiento === 1) {
-  //       throw new ConflictException(
-  //         'Los docentes no pueden realizar reservas en modo mantenimiento',
-  //       );
-  //     }
-
-  //     this.validarTiempoReserva(
-  //       autor.rol.nombre,
-  //       new Date(inicio),
-  //       new Date(fin),
-  //     );
-
-  //     // Cambiar la declaración inicial para que coincida con los tipos esperados
-
-  //     let clase: Clase | null = null;
-  //     let docente: RolUsuario | null = null;
-
-  //     if (mantenimiento == 0) {
-  //       // Validar existencia de entidades relacionadas
-  //       const results = await Promise.all([
-  //         this.claseRepository.findOneBy({ id: clase_id }),
-  //         this.rolUsuarioRepository.findOne({
-  //           where: { id: docente_id },
-  //           relations: ['usuario', 'rol'],
-  //         }),
-  //       ]);
-
-  //       clase = results[0];
-  //       docente = results[1];
-
-  //       if (!docente) {
-  //         throw new NotFoundException('Docente no encontrado');
-  //       }
-  //       if (!clase) {
-  //         throw new NotFoundException('Clase no encontrado');
-  //       }
-  //     }
-  //     // if(mantenimiento === 1){
-  //     //   if( cantidad_accesos_docente === undefined || cantidad_accesos_general === undefined){
-  //     //     throw new ConflictException('Se debe especificar cantidad_accesos_general y cantidad_accesos_docente para reservas en modo mantenimiento');
-  //     //   }
-  //     // }
-
-  //     console.log(`[AUTOR] Rol: ${autor.rol.nombre}`);
-  //     // Validar tiempo mínimo de reserva solo si el autor no es administrador
-  //     if (autor.rol.nombre !== 'ADMINISTRADOR') {
-  //       await this.validarTiempoMinimoReserva(inicio, recurso.tiempo_reserva);
-  //     }
-
-  //     // Obtener TODAS las credenciales del recurso
-  //     const credenciales = await this.credencialRepository.find({
-  //       where: { recurso: { id: recurso_id } },
-  //       relations: ['recurso', 'rol'],
-  //     });
-
-  //     console.log(`[CREDENCIALES] Totales: ${credenciales.length}`);
-
-  //     // Capacidad por credencial (asumimos todas tienen la misma capacidad)
-  //     const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
-  //     console.log(`[CAPACIDAD] Por credencial: ${capacidadPorCredencial}`);
-
-  //     // MODIFICACIÓN PRINCIPAL: Lógica para modo mantenimiento
-  //     let cantidadGeneralFinal: number;
-  //     let cantidadDocenteFinal: number;
-
-  //     if (mantenimiento === 1) {
-  //       if (
-  //         cantidad_accesos_docente === undefined ||
-  //         cantidad_accesos_general === undefined
-  //       ) {
-  //         // En modo mantenimiento, usar TODAS las credenciales disponibles
-  //         cantidadGeneralFinal = credenciales.filter(
-  //           (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
-  //         ).length;
-  //         cantidadDocenteFinal = credenciales.filter(
-  //           (c) => c.rol.nombre === 'DOCENTE',
-  //         ).length;
-  //         // Multiplicar por la capacidad para obtener el total de accesos
-  //         cantidadGeneralFinal = cantidadGeneralFinal * capacidadPorCredencial;
-  //         cantidadDocenteFinal = cantidadDocenteFinal * capacidadPorCredencial;
-  //       } else {
-  //         // En modo mantenimiento, usar los valores proporcionados
-  //         cantidadGeneralFinal = cantidad_accesos_general || 0;
-  //         cantidadDocenteFinal = cantidad_accesos_docente || 0;
-  //       }
-  //     } else {
-  //       // Modo normal, usar los valores proporcionados
-  //       cantidadGeneralFinal = cantidad_accesos_general || 0;
-  //       cantidadDocenteFinal = cantidad_accesos_docente || 0;
-  //     }
-
-  //     // Separar en generales/estudiantes (combinados) y docentes
-  //     const credencialesGeneralesEstudiantes = credenciales.filter(
-  //       (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
-  //     );
-  //     const credencialesDocentes = credenciales.filter(
-  //       (c) => c.rol.nombre === 'DOCENTE',
-  //     );
-
-  //     console.log(
-  //       `[CREDENCIALES] Generales/Estudiantes: ${credencialesGeneralesEstudiantes.length}, Docentes: ${credencialesDocentes.length}`,
-  //     );
-
-  //     // // Nueva lógica: Si no hay credenciales docentes pero se solicita acceso docente
-  //     // let cantidadGeneralFinal = cantidadGeneral;
-  //     // let cantidadDocenteFinal = cantidadDocente;
-
-  //     // if (credencialesDocentes.length === 0 && cantidadDocente > 0) {
-  //     //   console.log(
-  //     //     `[ADVERTENCIA] El recurso no tiene credenciales docentes, pero se solicitó ${cantidad_accesos_docente} accesos docentes. Se sumarán a los accesos generales.`,
-  //     //   );
-  //     //   cantidadGeneralFinal += cantidadDocente;
-  //     //   cantidadDocenteFinal = 0;
-  //     // }
-
-  //     // Validar disponibilidad
-  //     const { credencialesGeneralesAsignar, credencialesDocentesAsignar } =
-  //       await this.validarYAsignarCredenciales(
-  //         recurso_id,
-  //         inicio,
-  //         fin,
-  //         cantidadGeneralFinal,
-  //         cantidadDocenteFinal,
-  //         credencialesGeneralesEstudiantes,
-  //         credencialesDocentes,
-  //         capacidadPorCredencial,
-  //       );
-
-  //     console.log('[CREDENCIALES ASIGNADAS]', {
-  //       generalesEstudiantes: credencialesGeneralesAsignar.map((c) => c.id),
-  //       docentes: credencialesDocentesAsignar.map((c) => c.id),
-  //     });
-
-  //     const reserva = new Reserva();
-  //     reserva.codigo = `RES-${Math.floor(Date.now() / 1000)}`;
-  //     reserva.mantenimiento = mantenimiento;
-  //     reserva.inicio = inicio;
-  //     reserva.fin = fin;
-  //     (reserva.cantidad_accesos =
-  //       mantenimiento == 1
-  //         ? credencialesGeneralesAsignar.length +
-  //           credencialesDocentesAsignar.length
-  //         : cantidad_accesos_general! + cantidad_accesos_docente!),
-  //       (reserva.cantidad_credenciales =
-  //         credencialesGeneralesAsignar.length +
-  //         credencialesDocentesAsignar.length);
-  //     reserva.recurso = recurso;
-  //     reserva.autor = autor;
-
-  //     // Solo asignar clase y docente si no es mantenimiento
-  //     if (mantenimiento === 0) {
-  //       // Usar operador de aserción no nula (!) ya que hemos validado que no son null
-  //       reserva.clase = clase!;
-  //       reserva.docente = docente!;
-  //     }
-
-  //     const reservaGuardada = await queryRunner.manager.save(reserva);
-
-  //     // Crear detalles de reserva
-  //     const detallesReserva = [
-  //       ...credencialesGeneralesAsignar.map((credencial) =>
-  //         queryRunner.manager.create(DetalleReserva, {
-  //           reserva: { id: reservaGuardada.id },
-  //           credencial: { id: credencial.id },
-  //           tipo: 'general',
-  //         }),
-  //       ),
-  //       ...credencialesDocentesAsignar.map((credencial) =>
-  //         queryRunner.manager.create(DetalleReserva, {
-  //           reserva: { id: reservaGuardada.id },
-  //           credencial: { id: credencial.id },
-  //           tipo: 'docente',
-  //         }),
-  //       ),
-  //     ];
-
-  //     await queryRunner.manager.save(detallesReserva);
-  //     await queryRunner.commitTransaction();
-  //     return reservaGuardada;
-  //   } catch (error) {
-  //     await queryRunner.rollbackTransaction();
-  //     console.error('[ERROR]', error);
-  //     throw error;
-  //   } finally {
-  //     await queryRunner.release();
-  //   }
-  // }
-
-  // private validarTiempoReserva(rol: string, inicio: Date, fin: Date) {
-  //   // Tiempos en milisegundos
-  //   const duracionMin = 45 * 60 * 1000; // 45 minutos mínimo
-  //   const duracionMaxDocente = 190 * 60 * 1000; // 3h 10m
-  //   const duracionMaxAdmin = 23 * 60 * 60 * 1000 + 59 * 60 * 1000; // 23:59h
-  //   const duracionMaxDefault = 4 * 60 * 60 * 1000; // 4h para otros roles
-
-  //   const duracion = fin.getTime() - inicio.getTime();
-
-  //   // Validación mínima para todos los roles
-  //   if (duracion < duracionMin) {
-  //     throw new ConflictException(
-  //       `La duración mínima de reserva es de 45 minutos para todos los roles`,
-  //     );
-  //   }
-
-  //   // Validación por rol
-  //   switch (rol) {
-  //     case 'ADMINISTRADOR':
-  //       if (duracion > duracionMaxAdmin) {
-  //         throw new ConflictException(
-  //           `La duración máxima para administradores es de 23 horas y 59 minutos`,
-  //         );
-  //       }
-  //       break;
-
-  //     case 'DOCENTE':
-  //       if (duracion > duracionMaxDocente) {
-  //         throw new ConflictException(
-  //           `La duración máxima para docentes es de 3 horas y 10 minutos`,
-  //         );
-  //       }
-  //       break;
-
-  //     default:
-  //       throw new ConflictException(`Rol no permitido para reservar: ${rol}`);
-  //   }
-  // }
-
-  // private async validarYAsignarCredenciales(
-  //   recursoId: string,
-  //   inicio: Date,
-  //   fin: Date,
-  //   cantidadGeneral: number,
-  //   cantidadDocente: number,
-  //   credencialesGeneralesEstudiantes: Credencial[],
-  //   credencialesDocentes: Credencial[],
-  //   capacidadPorCredencial: number,
-  // ) {
-  //   console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
-
-  //   console.log('[Ver rango]', inicio, fin);
-
-  //   // 1. Obtener reservas existentes en el rango
-  //   const reservasSolapadas = await this.reservaRepository
-  //     .createQueryBuilder('reserva')
-  //     .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-  //     .innerJoinAndSelect('detalle.credencial', 'credencial')
-  //     .where('reserva.recurso_id = :recursoId', { recursoId })
-  //     .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
-  //       inicio,
-  //       fin,
-  //     })
-  //     .andWhere('reserva.estado = :estado', { estado: 1 })
-  //     .getMany();
-
-  //   console.log(
-  //     `[DISPONIBILIDAD] Reservas solapadas: ${reservasSolapadas.length}`,
-  //   );
-
-  //   // 2. Identificar credenciales ocupadas
-  //   const credencialesOcupadas = new Set<string>();
-  //   reservasSolapadas.forEach((reserva) => {
-  //     reserva.detalle_reserva.forEach((detalle) => {
-  //       if (detalle.credencial) {
-  //         credencialesOcupadas.add(detalle.credencial.id);
-  //       }
-  //     });
-  //   });
-
-  //   console.log(
-  //     `[DISPONIBILIDAD] Credenciales ocupadas: ${credencialesOcupadas.size}`,
-  //   );
-
-  //   // 3. Filtrar credenciales disponibles
-  //   const generalesDisponibles = credencialesGeneralesEstudiantes.filter(
-  //     (c) => !credencialesOcupadas.has(c.id),
-  //   );
-  //   const docentesDisponibles = credencialesDocentes.filter(
-  //     (c) => !credencialesOcupadas.has(c.id),
-  //   );
-
-  //   console.log(
-  //     `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
-  //   );
-
-  //   // 4. Calcular cuántas credenciales necesitamos
-  //   const necesariasGenerales = Math.ceil(
-  //     cantidadGeneral / capacidadPorCredencial,
-  //   );
-  //   const necesariasDocentes = Math.ceil(
-  //     cantidadDocente / capacidadPorCredencial,
-  //   );
-
-  //   console.log(
-  //     `[DISPONIBILIDAD] Necesarias: Generales/Estudiantes=${necesariasGenerales}, Docentes=${necesariasDocentes}`,
-  //   );
-
-  //   // 5. Validar disponibilidad
-  //   if (generalesDisponibles.length < necesariasGenerales) {
-  //     const accesosDisponibles =
-  //       generalesDisponibles.length * capacidadPorCredencial;
-  //     throw new ConflictException(
-  //       `No hay suficientes credenciales generales/estudiantes disponibles. ` +
-  //         `Necesitas ${necesariasGenerales} credencial(es) (para ${cantidadGeneral} acceso(s)), ` +
-  //         `pero solo hay ${generalesDisponibles.length} disponible(s) ` +
-  //         `(equivalente a ${accesosDisponibles} acceso(s)). ` +
-  //         `Cada credencial tiene capacidad para ${capacidadPorCredencial} acceso(s).`,
-  //     );
-  //   }
-
-  //   if (docentesDisponibles.length < necesariasDocentes) {
-  //     const accesosDisponibles =
-  //       docentesDisponibles.length * capacidadPorCredencial;
-  //     throw new ConflictException(
-  //       `No hay suficientes credenciales docentes disponibles. ` +
-  //         `Necesitas ${necesariasDocentes} credencial(es) (para ${cantidadDocente} acceso(s)), ` +
-  //         `pero solo hay ${docentesDisponibles.length} disponible(s) ` +
-  //         `(equivalente a ${accesosDisponibles} acceso(s)). ` +
-  //         `Cada credencial tiene capacidad para ${capacidadPorCredencial} acceso(s).`,
-  //     );
-  //   }
-
-  //   // 6. Seleccionar las credenciales a asignar (las primeras disponibles)
-  //   return {
-  //     credencialesGeneralesAsignar: generalesDisponibles.slice(
-  //       0,
-  //       necesariasGenerales,
-  //     ),
-  //     credencialesDocentesAsignar: docentesDisponibles.slice(
-  //       0,
-  //       necesariasDocentes,
-  //     ),
-  //   };
-  // }
-
-  // private async validarTiempoMinimoReserva(
-  //   fechaInicioReserva: Date,
-  //   tiempoReservaHoras: number,
-  // ) {
-  //   if (tiempoReservaHoras <= 0) {
-  //     return;
-  //   }
-
-  //   // Asegurarnos que trabajamos con fechas en UTC
-  //   const ahoraUTC = new Date().toISOString();
-  //   const fechaInicioUTC = new Date(fechaInicioReserva).toISOString();
-
-  //   const fechaMinimaPermitida = new Date(
-  //     new Date(ahoraUTC).getTime() + tiempoReservaHoras * 60 * 60 * 1000,
-  //   );
-
-  //   console.log(`[VALIDACIÓN HORARIA]`, {
-  //     ahoraUTC,
-  //     fechaInicioUTC,
-  //     fechaMinimaPermitida: fechaMinimaPermitida.toISOString(),
-  //     tiempoReservaHoras,
-  //   });
-
-  //   if (new Date(fechaInicioUTC) < fechaMinimaPermitida) {
-  //     throw new ConflictException(
-  //       `Las reservas para este recurso deben hacerse con al menos ${tiempoReservaHoras} horas de anticipación. ` +
-  //         `La reserva más temprana permitida es a partir de ${fechaMinimaPermitida.toLocaleString('es-PE', { timeZone: 'America/Lima' })}. ` +
-  //         `(Intento de reserva para ${new Date(fechaInicioUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })})`,
-  //     );
-  //   }
-  // }
-
-  // private async validarDisponibilidadRecurso(
-  //   recursoId: string,
-  //   inicio: Date,
-  //   fin: Date,
-  //   cantidadGeneral: number,
-  //   cantidadDocente: number,
-  //   credencialesGenerales: Credencial[],
-  //   credencialesDocentes: Credencial[],
-  //   usarSoloGenerales: boolean,
-  // ): Promise<void> {
-  //   // Validar que haya credenciales
-  //   if (
-  //     credencialesGenerales.length === 0 &&
-  //     credencialesDocentes.length === 0
-  //   ) {
-  //     throw new ConflictException(
-  //       'No hay credenciales disponibles para este recurso',
-  //     );
-  //   }
-
-  //   // Obtener capacidades
-  //   const capacidadGeneral = credencialesGenerales[0]?.recurso?.capacidad || 1;
-  //   const capacidadDocente = credencialesDocentes[0]?.recurso?.capacidad || 1;
-
-  //   // Obtener reservas solapadas (usando misma lógica que GET)
-  //   const reservasSolapadas = await this.reservaRepository
-  //     .createQueryBuilder('reserva')
-  //     .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-  //     .innerJoinAndSelect('detalle.credencial', 'credencial')
-  //     .where('reserva.recurso_id = :recursoId', { recursoId })
-  //     .andWhere(
-  //       `(
-  //           (reserva.inicio BETWEEN :inicio AND :fin) OR
-  //           (reserva.fin BETWEEN :inicio AND :fin) OR
-  //           (reserva.inicio <= :inicio AND reserva.fin >= :fin)
-  //       )`,
-  //       { inicio, fin },
-  //     )
-  //     .getMany();
-
-  //   // Calcular ocupación
-  //   const generalesOcupadas = new Set<string>();
-  //   const docentesOcupadas = new Set<string>();
-
-  //   reservasSolapadas.forEach((reserva) => {
-  //     reserva.detalle_reserva?.forEach((detalle) => {
-  //       if (!detalle.credencial) return;
-
-  //       if (detalle.credencial.rol?.nombre === 'DOCENTE') {
-  //         docentesOcupadas.add(detalle.credencial.id);
-  //       } else {
-  //         generalesOcupadas.add(detalle.credencial.id);
-  //       }
-  //     });
-  //   });
-
-  //   // Validar disponibilidad
-  //   if (usarSoloGenerales) {
-  //     const disponibles = credencialesGenerales.length - generalesOcupadas.size;
-  //     const necesarias = Math.ceil(
-  //       (cantidadGeneral + cantidadDocente) / capacidadGeneral,
-  //     );
-
-  //     if (disponibles < necesarias) {
-  //       throw new ConflictException(
-  //         `No hay suficientes credenciales generales disponibles (${disponibles} disponibles, ${necesarias} necesarias)`,
-  //       );
-  //     }
-  //   } else {
-  //     const disponiblesGenerales =
-  //       credencialesGenerales.length - generalesOcupadas.size;
-  //     const disponiblesDocentes =
-  //       credencialesDocentes.length - docentesOcupadas.size;
-
-  //     const necesariasGenerales = Math.ceil(cantidadGeneral / capacidadGeneral);
-  //     const necesariasDocentes = Math.ceil(cantidadDocente / capacidadDocente);
-
-  //     if (disponiblesGenerales < necesariasGenerales) {
-  //       throw new ConflictException(
-  //         `No hay suficientes credenciales generales (${disponiblesGenerales} disponibles, ${necesariasGenerales} necesarias)`,
-  //       );
-  //     }
-
-  //     if (disponiblesDocentes < necesariasDocentes) {
-  //       throw new ConflictException(
-  //         `No hay suficientes credenciales docentes (${disponiblesDocentes} disponibles, ${necesariasDocentes} necesarias)`,
-  //       );
-  //     }
-  //   }
-  // }
   async findAll(paginationReservaDto: PaginationReservaDto) {
     try {
       const {

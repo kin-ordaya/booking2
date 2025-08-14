@@ -30,6 +30,14 @@ export class CreateRecursoDto {
   @IsUrl({}, { message: 'El campo link_declaracion debe ser de tipo url' })
   link_declaracion: string;
 
+  @IsOptional()
+  @IsUrl({}, { message: 'El campo link_guia debe ser de tipo url' })
+  link_guia?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'El campo link_aula_virtual debe ser de tipo url' })
+  link_aula_virtual?: string;
+
   @IsNotEmpty()
   @IsInt({ message: 'El campo tiempo_reserva debe ser de tipo int' })
   @IsPositive({ message: 'El campo tiempo_reserva debe ser positivo' })
