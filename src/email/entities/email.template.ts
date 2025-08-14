@@ -5,6 +5,49 @@ export const getReservaTemplate = (data: {
 }) => {
   const { recurso_nombre, fecha_html, credenciales } = data;
 
+  // Verificar si hay al menos una credencial con usuario
+  const hasUsuarios = credenciales.some(c => c.usuario);
+
+  // Agrupar credenciales por tipo
+  const credencialesPorTipo = credenciales.reduce((acc, credencial) => {
+    const tipo = credencial.tipo || 'general';
+    if (!acc[tipo]) {
+      acc[tipo] = [];
+    }
+    acc[tipo].push(credencial);
+    return acc;
+  }, {} as Record<string, typeof credenciales>);
+
+  // Mapeo de nombres amigables para los tipos
+  const nombresTipo: Record<string, string> = {
+    general: 'Generales',
+    estudiante: 'Estudiantes',
+    docente: 'Docentes'
+  };
+
+  // Generar las tablas dinámicas
+  const tablasCredenciales = Object.entries(credencialesPorTipo)
+    .map(([tipo, creds]) => {
+      if (creds.length === 0) return '';
+      
+      return `
+        <h3>Credenciales ${nombresTipo[tipo] || tipo}</h3>
+        <table>
+          <tr>
+            ${hasUsuarios ? '<th>Usuario</th>' : ''}
+            <th>Clave</th>
+          </tr>
+          ${creds.map(credencial => `
+            <tr>
+              ${hasUsuarios ? `<td>${credencial.usuario || '-'}</td>` : ''}
+              <td>${credencial.clave}</td>
+            </tr>
+          `).join('')}
+        </table>
+      `;
+    })
+    .join('');
+
   return `
 <!DOCTYPE html>
 <html lang="es">
@@ -176,18 +219,18 @@ export const getReservaTemplate = (data: {
 </head>
 <body>
   <header>
-    <h2>CUENTAS RESERVADAS ALGETEC - Ciencias Básicas</h2>
+    <h2>CUENTAS RESERVADAS ${recurso_nombre}</h2>
   </header>
   
   <div class="main">
     <h3>Estimado docente</h3>
-    <p>Es un gusto saludarlo. Agradecemos su interés en integrar los recursos de ALGETEC en su enseñanza. Esperamos que esta herramienta sea de gran apoyo en sus clases.</p>
+    <p>Es un gusto saludarlo. Agradecemos su interés en integrar los recursos de ${recurso_nombre} en su enseñanza. Esperamos que esta herramienta sea de gran apoyo en sus clases.</p>
     
-    <p>Para ingresar al laboratorio de ALGETEC es necesario seguir los pasos de la siguiente guía de acceso, puede compartirla con sus estudiantes: 
+    <p>Para ingresar al laboratorio de ${recurso_nombre} es necesario seguir los pasos de la siguiente guía de acceso, puede compartirla con sus estudiantes: 
     <a href="https://drive.google.com/file/d/1kaoRtXc40zJabjXpWDl-y5EAVRSvFggf/view?usp=sharing" target="_blank">Guía de Acceso</a>. 
-    Es importante que se comunique a los estudiantes que no se debe introducir información personal a las cuentas de ALGETEC.</p>
+    Es importante que se comunique a los estudiantes que no se debe introducir información personal a las cuentas de ${recurso_nombre}.</p>
     
-    <p>El link de acceso al laboratorio de ALGETEC es el siguiente: 
+    <p>El link de acceso al laboratorio de ${recurso_nombre} es el siguiente:
     <a href="https://aulavirtual.continental.edu.pe/course/view.php?id=35958">Laboratorio Algetec</a></p>
     
     <hr>
@@ -196,25 +239,8 @@ export const getReservaTemplate = (data: {
     <p><strong>Recurso:</strong> ${recurso_nombre}</p>
     ${fecha_html}
     
-    <h3>Credenciales de acceso:</h3>
-    <table>
-        <tr>
-            <th>${credenciales[0].usuario ? 'Usuario' : 'Tipo'}</th>
-            <th>Clave</th>
-            ${credenciales[0].tipo ? '<th>Tipo</th>' : ''}
-        </tr>
-        ${credenciales
-          .map(
-            (credencial) => `
-            <tr>
-                <td>${credencial.usuario || 'General'}</td>
-                <td>${credencial.clave}</td>
-                ${credencial.tipo ? `<td>${credencial.tipo}</td>` : ''}
-            </tr>
-        `,
-          )
-          .join('')}
-    </table>
+    <!-- Sección modificada para tablas dinámicas -->
+    ${tablasCredenciales}
     
     <hr>
     

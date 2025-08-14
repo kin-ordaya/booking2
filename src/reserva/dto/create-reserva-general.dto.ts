@@ -1,24 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
-  IsInt,
   IsNotEmpty,
-  IsPositive,
   IsUUID,
 } from 'class-validator';
-import { CreateReservaMantenimientoDto } from './create-reserva.dto';
+import { CreateReservaMantenimientoGeneralDto } from './create-reserva-mantenimiento-general.dto';
 
-export class CreateReservaGeneralDto extends CreateReservaMantenimientoDto {
-  @IsNotEmpty()
-  @ApiPropertyOptional({
-    description:
-      'cantidad_accesos_general opcional cuando es mantenimiento = 1',
-  })
-  @IsInt()
-  @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
-  @Type(() => Number)
-  cantidad_accesos_general: number;
-
+export class CreateReservaGeneralDto extends CreateReservaMantenimientoGeneralDto {
+  
   @IsNotEmpty()
   @ApiPropertyOptional({
     description: 'clase_id opcional cuando es mantenimiento = 1',

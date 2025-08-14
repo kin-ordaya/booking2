@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateReservaMantenimientoDto } from './dto/create-reserva.dto';
+import { CreateReservaMantenimientoGeneralDto } from './dto/create-reserva-mantenimiento-general.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reserva } from './entities/reserva.entity';
 import { Repository, DataSource, Brackets } from 'typeorm';
@@ -19,6 +19,7 @@ import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.ent
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
+import { CreateReservaMantenimientoMixtoDto } from './dto/create-reserva-mantenimiento-mixto.dto';
 
 @Injectable()
 export class ReservaService {
@@ -60,7 +61,7 @@ export class ReservaService {
     if (!autor) throw new NotFoundException('Autor no encontrado');
 
     await this.validarInicioyFinReserva(inicio, fin);
-    this.validarTiempoReserva(autor.rol.nombre, inicio, fin);
+    this.validateReservationDuration(autor.rol.nombre, inicio, fin);
 
     return { recurso, autor };
   }
@@ -82,7 +83,7 @@ export class ReservaService {
     }
   }
 
-  private validarTiempoReserva(rol: string, inicio: Date, fin: Date) {
+  private validateReservationDuration(rol: string, inicio: Date, fin: Date) {
     const duracionMin = 45 * 60 * 1000;
     const duracionMaxDocente = 190 * 60 * 1000;
     const duracionMaxAdmin = 23 * 60 * 60 * 1000 + 59 * 60 * 1000;
@@ -239,16 +240,17 @@ export class ReservaService {
   }
 
   // Métodos específicos para cada tipo de reserva
-  async createReservaMantenimiento(
-    createReservaMantenimientoDto: CreateReservaMantenimientoDto,
+  async createReservaMantenimientoGeneral(
+    createReservaMantenimientoGeneralDto: CreateReservaMantenimientoGeneralDto,
   ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const { inicio, fin, recurso_id, autor_id } =
-        createReservaMantenimientoDto;
+      const { inicio, fin, recurso_id, autor_id, cantidad_accesos_general } =
+        createReservaMantenimientoGeneralDto;
+
       const { recurso, autor } = await this.validateBasicReservationData(
         recurso_id,
         autor_id,
@@ -273,30 +275,41 @@ export class ReservaService {
         );
       }
 
+      if (
+        credenciales.some((credencial) => credencial.rol.nombre !== 'GENERAL')
+      ) {
+        throw new ConflictException(
+          'El recurso no tiene credenciales de tipo GENERAL',
+        );
+      }
+
       const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
 
       // En mantenimiento usamos todas las credenciales disponibles
-      const credencialesGeneralesEstudiantes = credenciales.filter(
-        (c) => c.rol.nombre === 'GENERAL' || c.rol.nombre === 'ESTUDIANTE',
-      );
-      const credencialesDocentes = credenciales.filter(
-        (c) => c.rol.nombre === 'DOCENTE',
+      const credencialesGenerales = credenciales.filter(
+        (c) => c.rol.nombre === 'GENERAL',
       );
 
-      const cantidadGeneralFinal =
-        credencialesGeneralesEstudiantes.length * capacidadPorCredencial;
-      const cantidadDocenteFinal =
-        credencialesDocentes.length * capacidadPorCredencial;
+      const cantidadGeneralFinal = cantidad_accesos_general || 0;
 
-      const { credencialesGeneralesAsignar, credencialesDocentesAsignar } =
+      // const credencialesDocentes = credenciales.filter(
+      //   (c) => c.rol.nombre === 'DOCENTE',
+      // );
+
+      // const cantidadGeneralFinal =
+      //   credencialesGeneralesEstudiantes.length * capacidadPorCredencial;
+      // const cantidadDocenteFinal =
+      //   credencialesDocentes.length * capacidadPorCredencial;
+
+      const { credencialesGeneralesAsignar } =
         await this.validarYAsignarCredenciales(
           recurso_id,
           new Date(inicio),
           new Date(fin),
           cantidadGeneralFinal,
-          cantidadDocenteFinal,
-          credencialesGeneralesEstudiantes,
-          credencialesDocentes,
+          0,
+          credencialesGenerales,
+          [],
           capacidadPorCredencial,
         );
 
@@ -308,16 +321,136 @@ export class ReservaService {
           inicio: new Date(inicio),
           fin: new Date(fin),
           cantidad_accesos:
-            (credencialesGeneralesAsignar.length +
-              credencialesDocentesAsignar.length) *
-            capacidadPorCredencial,
-          cantidad_credenciales:
-            credencialesGeneralesAsignar.length +
-            credencialesDocentesAsignar.length,
+            credencialesGeneralesAsignar.length * capacidadPorCredencial,
+          cantidad_credenciales: credencialesGeneralesAsignar.length,
           recurso,
           autor,
         },
         credencialesGeneralesAsignar,
+      );
+
+      await queryRunner.commitTransaction();
+      return reservaGuardada;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async createReservaMantenimientoMixto(
+    createReservaMantenimientoMixtoDto: CreateReservaMantenimientoMixtoDto,
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const {
+        inicio,
+        fin,
+        recurso_id,
+        autor_id,
+        cantidad_accesos_general,
+        cantidad_accesos_docente,
+      } = createReservaMantenimientoMixtoDto;
+
+      const { recurso, autor } = await this.validateBasicReservationData(
+        recurso_id,
+        autor_id,
+        new Date(inicio),
+        new Date(fin),
+      );
+
+      if (autor.rol.nombre !== 'ADMINISTRADOR') {
+        throw new ConflictException(
+          'Solo administradores pueden crear reservas en modo mantenimiento',
+        );
+      }
+
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        throw new NotFoundException(
+          'El recurso no tiene credenciales configuradas',
+        );
+      }
+
+      if (
+        credenciales.some((credencial) => credencial.rol.nombre === 'GENERAL')
+      ) {
+        throw new ConflictException(
+          'El recurso no debe tener credenciales de tipo GENERAL para reservas de mantenimiento docente/estudiante',
+        );
+      }
+
+      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+
+      // En mantenimiento usamos todas las credenciales disponibles
+      const credencialesEstudiantes = credenciales.filter(
+        (c) => c.rol.nombre === 'ESTUDIANTE',
+      );
+
+      const credencialDocentes = credenciales.filter(
+        (c) => c.rol.nombre === 'DOCENTE',
+      );
+
+      if (
+        credencialesEstudiantes.length === 0 &&
+        credencialDocentes.length === 0
+      ) {
+        throw new ConflictException(
+          'No se encontraron credenciales de tipo ESTUDIANTE o DOCENTE para este recurso',
+        );
+      }
+
+      //const cantidadGeneralFinal = cantidad_accesos_general || 0;
+
+      // const credencialesDocentes = credenciales.filter(
+      //   (c) => c.rol.nombre === 'DOCENTE',
+      // );
+
+      // const cantidadGeneralFinal =
+      //   credencialesGeneralesEstudiantes.length * capacidadPorCredencial;
+      // const cantidadDocenteFinal =
+      //   credencialesDocentes.length * capacidadPorCredencial;
+
+      const {
+        credencialesGeneralesAsignar: credencialesEstudiantesAsignar,
+        credencialesDocentesAsignar,
+      } = await this.validarYAsignarCredenciales(
+        recurso_id,
+        new Date(inicio),
+        new Date(fin),
+        cantidad_accesos_general || 0,
+        cantidad_accesos_docente || 0,
+        credencialesEstudiantes,
+        credencialDocentes,
+        capacidadPorCredencial,
+      );
+
+      const reservaGuardada = await this.saveReservation(
+        queryRunner,
+        {
+          codigo: `RES-${Math.floor(Date.now() / 1000)}`,
+          mantenimiento: 1,
+          inicio: new Date(inicio),
+          fin: new Date(fin),
+          cantidad_accesos:
+            (credencialesEstudiantesAsignar.length +
+              credencialesDocentesAsignar.length) *
+            capacidadPorCredencial,
+          cantidad_credenciales:
+            credencialesEstudiantesAsignar.length +
+            credencialesDocentesAsignar.length,
+          recurso,
+          autor,
+        },
+        credencialesEstudiantesAsignar,
         credencialesDocentesAsignar,
       );
 
@@ -383,7 +516,7 @@ export class ReservaService {
         credenciales.some((credencial) => credencial.rol.nombre !== 'GENERAL')
       ) {
         throw new ConflictException(
-          'Las credenciales deben ser de tipo GENERAL',
+          'El recurso no tiene credenciales de tipo GENERAL',
         );
       }
 
@@ -436,9 +569,7 @@ export class ReservaService {
     }
   }
 
-  async createReservaDocenteEstudiante(
-    createReservaMixtoDto: CreateReservaMixtoDto,
-  ) {
+  async createReservaMixto(createReservaMixtoDto: CreateReservaMixtoDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();

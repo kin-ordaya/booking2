@@ -7,9 +7,19 @@ import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.ent
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import { Responsable } from 'src/responsable/entities/responsable.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Recurso, Reserva, DetalleReserva, Credencial,RolUsuario ])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Recurso,
+      Reserva,
+      DetalleReserva,
+      Credencial,
+      RolUsuario,
+      Responsable,
+    ]),
+  ],
   controllers: [EmailController],
   providers: [EmailService],
 })

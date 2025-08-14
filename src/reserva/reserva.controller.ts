@@ -9,31 +9,46 @@ import {
   Query,
 } from '@nestjs/common';
 import { ReservaService } from './reserva.service';
-import { CreateReservaMantenimientoDto } from './dto/create-reserva.dto';
+import { CreateReservaMantenimientoGeneralDto } from './dto/create-reserva-mantenimiento-general.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 import { ApiBody } from '@nestjs/swagger';
 import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
+import { CreateReservaMantenimientoMixtoDto } from './dto/create-reserva-mantenimiento-mixto.dto';
 
 @Controller('reserva')
 export class ReservaController {
   constructor(private readonly reservaService: ReservaService) {}
 
-  @Post('mantenimiento')
-  @ApiBody({ type: CreateReservaMantenimientoDto })
-  createReservaMantenimiento(@Body() createReservaMantenimientoDto: CreateReservaMantenimientoDto) {
-    return this.reservaService.createReservaMantenimiento(
-      createReservaMantenimientoDto,
+  @Post('mantenimiento-general')
+  @ApiBody({ type: CreateReservaMantenimientoGeneralDto })
+  createReservaMantenimiento(
+    @Body()
+    createReservaMantenimientoGeneralDto: CreateReservaMantenimientoGeneralDto,
+  ) {
+    return this.reservaService.createReservaMantenimientoGeneral(
+      createReservaMantenimientoGeneralDto,
+    );
+  }
+
+  @Post('mantenimiento-mixto')
+  @ApiBody({ type: CreateReservaMantenimientoMixtoDto })
+  createReservaMantenimientoMixto(
+    @Body()
+    createReservaMantenimientoMixtoDto: CreateReservaMantenimientoMixtoDto,
+  ) {
+    return this.reservaService.createReservaMantenimientoMixto(
+      createReservaMantenimientoMixtoDto,
     );
   }
 
   @Post('general')
   @ApiBody({ type: CreateReservaGeneralDto })
-  CreateReservaGeneral(@Body() createReservaGeneralDto: CreateReservaGeneralDto) {
-    return this.reservaService.createReservaGeneral(
-      createReservaGeneralDto,
-    );
+  CreateReservaGeneral(
+    @Body() createReservaGeneralDto: CreateReservaGeneralDto,
+  ) {
+    return this.reservaService.createReservaGeneral(createReservaGeneralDto);
   }
 
   @Post('mixto')
@@ -41,9 +56,7 @@ export class ReservaController {
   CreateReservaDocenteEstudiante(
     @Body() createReservaMixtoDto: CreateReservaMixtoDto,
   ) {
-    return this.reservaService.createReservaDocenteEstudiante(
-      createReservaMixtoDto,
-    );
+    return this.reservaService.createReservaMixto(createReservaMixtoDto);
   }
 
   @Get('credenciales-disponibles')

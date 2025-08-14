@@ -10,6 +10,7 @@ import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import { Responsable } from 'src/responsable/entities/responsable.entity';
 @Injectable()
 export class EmailService {
   constructor(
@@ -22,8 +23,8 @@ export class EmailService {
     private readonly detalleReservaRepository: Repository<DetalleReserva>,
     @InjectRepository(Reserva)
     private readonly reservaRepository: Repository<Reserva>,
-    @InjectRepository(RolUsuario)
-    private readonly rolUsuarioRepository: Repository<RolUsuario>,
+    @InjectRepository(Responsable)
+    private readonly responsableRepository: Repository<Responsable>,
   ) {}
 
   emailTransport() {
@@ -50,12 +51,23 @@ export class EmailService {
       // 1. Obtener la reserva con sus relaciones básicas
       const reserva = await this.reservaRepository.findOne({
         where: { id },
-        relations: ['recurso', 'docente', 'docente.usuario', 'docente.rol'],
+        relations: [
+          'recurso',
+          'docente',
+          'docente.usuario',
+          'docente.rol',
+          'clase'
+        ],
       });
 
       if (!reserva) {
         throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
       }
+
+      // const responsable = await this.responsableRepository.findOne({
+      //   where: { id: reserva.docente.usuario.id },
+      //   relations: ['rol'],
+      // });
 
       // 2. Obtener todos los detalles de reserva con sus credenciales
       const detallesReserva = await this.detalleReservaRepository.find({
@@ -64,13 +76,21 @@ export class EmailService {
       });
 
       // 3. Separar credenciales generales
-      const credencialesGenerales = detallesReserva
+      const credenciales = detallesReserva
         .filter((detalle) => detalle.credencial)
         .map((detalle) => ({
           usuario: detalle.credencial.usuario,
           clave: detalle.credencial.clave,
-          tipo: 'general',
+          tipo: detalle.credencial.rol?.nombre.toLowerCase() || 'general', // Usa el tipo real
         }));
+
+      // 4. Filtrar por tipos específicos si es necesario
+      const credencialesEstudiantes = credenciales.filter(
+        (c) => c.tipo === 'estudiante',
+      );
+      const credencialesGenerales = credenciales.filter(
+        (c) => c.tipo === 'general',
+      );
 
       // 4. Obtener credenciales docentes (con tipo explícito)
       let credencialesDocentes: Array<{
@@ -99,6 +119,7 @@ export class EmailService {
 
       return {
         reserva: {
+          nrc: reserva.clase?.nrc,
           id: reserva.id,
           codigo: reserva.codigo,
           recurso: reserva.recurso.nombre,
@@ -106,6 +127,7 @@ export class EmailService {
           fechaFin: reserva.fin,
         },
         credenciales: {
+          estudiantes: credencialesEstudiantes,
           generales: credencialesGenerales,
           docentes: credencialesDocentes,
         },
@@ -117,56 +139,49 @@ export class EmailService {
   }
 
   async sendEmail(dto: sendEmailDto) {
-    const { reserva_id, correo } = dto;
-    const transport = this.emailTransport();
+  const { reserva_id, correo } = dto;
+  const transport = this.emailTransport();
 
-    try {
-      // Obtener los datos reales de la reserva y credenciales
-      const reservaData = await this.getCredencialesReserva(reserva_id);
+  try {
+    const reservaData = await this.getCredencialesReserva(reserva_id);
 
-      // Formatear la fecha para el email
-      const fechaInicio = new Date(reservaData.reserva.fechaInicio);
-      const fechaFin = new Date(reservaData.reserva.fechaFin);
+    // Formatear fecha
+    const fechaInicio = new Date(reservaData.reserva.fechaInicio);
+    const fechaFin = new Date(reservaData.reserva.fechaFin);
 
-      const fechaHtml = `
+    const fechaHtml = `
       <p>
         - Fecha: ${fechaInicio.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}<br>
-        - Horario: ${fechaInicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${fechaFin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+        - Horario: ${fechaInicio.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} - ${fechaFin.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
       </p>
     `;
 
-      // Combinar todas las credenciales (generales + docentes)
-      const todasLasCredenciales = [
-        ...reservaData.credenciales.generales,
-        ...reservaData.credenciales.docentes,
-      ];
+    // Combinar todas las credenciales (estudiantes, generales y docentes)
+    const todasLasCredenciales = [
+      ...reservaData.credenciales.estudiantes,
+      ...reservaData.credenciales.generales,
+      ...reservaData.credenciales.docentes,
+    ];
 
-      const emailData = {
-        recurso_nombre: reservaData.reserva.recurso,
-        fecha_html: fechaHtml,
-        credenciales: todasLasCredenciales.map((c) => ({
-          usuario: c.usuario,
-          clave: c.clave,
-          tipo: c.tipo, // Puedes usar este campo en el template si necesitas diferenciar
-        })),
-      };
+    const emailData = {
+      recurso_nombre: reservaData.reserva.recurso,
+      fecha_html: fechaHtml,
+      credenciales: todasLasCredenciales
+    };
 
-      const options: nodemailer.SendMailOptions = {
-        from: this.configService.get<string>('EMAIL_USER'),
-        to: correo,
-        subject: `Credenciales de acceso - ${reservaData.reserva.recurso}`,
-        text: 'Credenciales de acceso',
-        html: getReservaTemplate(emailData), // Asegúrate que tu template pueda manejar estos datos
-      };
+    const options: nodemailer.SendMailOptions = {
+      from: this.configService.get<string>('EMAIL_USER'),
+      to: correo,
+      subject: `Credenciales de acceso - ${reservaData.reserva.recurso} - ${reservaData.reserva.nrc}`,
+      text: 'Credenciales de acceso',
+      html: getReservaTemplate(emailData),
+    };
 
-      // Enviar el email (descomenta esta línea cuando estés listo para enviar emails reales)
-      await transport.sendMail(options);
-      console.log('Email sent successfully');
-
-      return { message: 'Email enviado correctamente', data: reservaData };
-    } catch (error) {
-      console.log('Error al enviar mail: ', error);
-      throw error;
-    }
+    await transport.sendMail(options);
+    return { message: 'Email enviado correctamente' };
+  } catch (error) {
+    console.error('Error al enviar mail:', error);
+    throw error;
   }
+}
 }

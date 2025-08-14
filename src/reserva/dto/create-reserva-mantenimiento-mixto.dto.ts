@@ -1,14 +1,9 @@
+import { IsInt, IsNotEmpty, Min } from 'class-validator';
+import { CreateReservaMantenimientoGeneralDto } from './create-reserva-mantenimiento-general.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsInt,
-  IsNotEmpty,
-  Min,
-} from 'class-validator';
-import { CreateReservaGeneralDto } from './create-reserva-general.dto';
 
-export class CreateReservaMixtoDto extends CreateReservaGeneralDto {
-
+export class CreateReservaMantenimientoMixtoDto extends CreateReservaMantenimientoGeneralDto {
   @IsNotEmpty()
   @ApiPropertyOptional({
     description:
