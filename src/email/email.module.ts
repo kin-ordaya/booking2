@@ -7,6 +7,7 @@ import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.ent
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
       Reserva,
       Recurso,
       DetalleReserva,
-      Credencial,
+      RolUsuario,
       SeccionEmail
     ]),
   ],

@@ -14,12 +14,13 @@ import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 @Injectable()
 export class EmailService {
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(Credencial)
-    private readonly credencialRepository: Repository<Credencial>,
+    @InjectRepository(RolUsuario)
+    private readonly rolUsuarioRepository: Repository<RolUsuario>,
     @InjectRepository(DetalleReserva)
     private readonly detalleReservaRepository: Repository<DetalleReserva>,
     @InjectRepository(Reserva)
@@ -108,7 +109,7 @@ export class EmailService {
   }
 
   async sendEmail(dto: sendEmailDto) {
-    const { reserva_id, correo } = dto;
+    const { reserva_id, docente_id } = dto;
     const transport = this.emailTransport();
 
     try {
@@ -122,6 +123,23 @@ export class EmailService {
       if (!recurso) {
         throw new NotFoundException(
           `Recurso con ID ${reservaData.recurso.id} no encontrado`,
+        );
+      }
+
+      const docente = await this.rolUsuarioRepository.findOne({
+        where: { id: docente_id, rol: { nombre: 'DOCENTE' } },
+        relations: ['usuario', 'rol'],
+      });
+
+      if (!docente) {
+        throw new NotFoundException(
+          `Docente con ID ${docente_id} no encontrado`,
+        );
+      }
+
+      if (!docente.usuario.correo_institucional) {
+        throw new NotFoundException(
+          `Correo no configurado para el docente con ID ${docente_id}`,
         );
       }
 
@@ -161,7 +179,7 @@ export class EmailService {
       // 6. Enviar email
       const options: nodemailer.SendMailOptions = {
         from: this.configService.get<string>('EMAIL_USER'),
-        to: correo,
+        to: docente.usuario.correo_institucional,
         subject: `Credenciales de acceso - ${recurso.nombre} - ${reservaData.reserva.nrc}`,
         html: getReservaTemplate(emailData),
       };

@@ -467,7 +467,7 @@ export class ReservaService {
           fin: new Date(fin),
           cantidad_accesos:
             credencialesEstudiantesAsignar.length +
-              credencialesDocentesAsignar.length ,
+            credencialesDocentesAsignar.length,
           cantidad_credenciales:
             credencialesEstudiantesAsignar.length +
             credencialesDocentesAsignar.length,
@@ -572,8 +572,7 @@ export class ReservaService {
           mantenimiento: 0,
           inicio: new Date(inicio),
           fin: new Date(fin),
-          cantidad_accesos:
-            cantidadGeneralFinal,
+          cantidad_accesos: cantidadGeneralFinal,
           cantidad_credenciales: credencialesGeneralesAsignar.length,
           recurso,
           autor,
@@ -724,6 +723,8 @@ export class ReservaService {
         inicio,
         fin,
         sort_state = 1,
+        sort_order = 1,
+        sort_expired = 1,
         page = 1,
         limit = 10,
         search,
@@ -755,6 +756,40 @@ export class ReservaService {
       // Filtro por estado
       if (sort_state !== undefined) {
         query.andWhere('reserva.estado = :estado', { estado: sort_state });
+      }
+
+      // Ordenamiento por nombre o fecha
+      if (sort_order !== undefined) {
+        switch (sort_order) {
+          case 1: // Nombre ASC
+            query.orderBy('usuario.nombres', 'ASC');
+            break;
+          case 2: // Nombre DESC
+            query.orderBy('usuario.nombres', 'DESC');
+            break;
+          case 3: // Fecha ASC
+            query.orderBy('reserva.inicio', 'ASC');
+            break;
+          case 4: // Fecha DESC
+            query.orderBy('reserva.inicio', 'DESC');
+            break;
+          default:
+            query.orderBy('reserva.creacion', 'DESC');
+        }
+      } else {
+        query.orderBy('reserva.creacion', 'DESC');
+      }
+
+      // Filtro por reservas expiradas/no expiradas
+      if (sort_expired !== undefined) {
+        const now = new Date();
+        if (sort_expired === 1) {
+          // Expiradas
+          query.andWhere('reserva.fin < :now', { now });
+        } else if (sort_expired === 2) {
+          // No expiradas
+          query.andWhere('reserva.fin >= :now', { now });
+        }
       }
 
       // Filtro por rango de fechas
