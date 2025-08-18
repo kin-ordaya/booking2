@@ -145,7 +145,9 @@ export class ReservaService {
       `[DISPONIBILIDAD] Reservas solapadas: ${reservasSolapadas.length}`,
     );
 
-    console.log(`[CREDENCIALES SOLAPADAS] Total reservas encontradas: ${reservasSolapadas}`);
+    console.log(
+      `[CREDENCIALES SOLAPADAS] Total reservas encontradas: ${reservasSolapadas}`,
+    );
 
     const credencialesOcupadas = new Set<string>();
     reservasSolapadas.forEach((reserva) => {
@@ -342,8 +344,9 @@ export class ReservaService {
           mantenimiento: 1,
           inicio: new Date(inicio),
           fin: new Date(fin),
-          cantidad_accesos:
-            credencialesGeneralesAsignar.length * capacidadPorCredencial,
+          // cantidad_accesos:
+          //   credencialesGeneralesAsignar.length * capacidadPorCredencial,
+          cantidad_accesos: credencialesGeneralesAsignar.length,
           cantidad_credenciales: credencialesGeneralesAsignar.length,
           recurso,
           autor,
@@ -463,9 +466,8 @@ export class ReservaService {
           inicio: new Date(inicio),
           fin: new Date(fin),
           cantidad_accesos:
-            (credencialesEstudiantesAsignar.length +
-              credencialesDocentesAsignar.length) *
-            capacidadPorCredencial,
+            credencialesEstudiantesAsignar.length +
+              credencialesDocentesAsignar.length ,
           cantidad_credenciales:
             credencialesEstudiantesAsignar.length +
             credencialesDocentesAsignar.length,
@@ -571,7 +573,7 @@ export class ReservaService {
           inicio: new Date(inicio),
           fin: new Date(fin),
           cantidad_accesos:
-            credencialesGeneralesAsignar.length * capacidadPorCredencial,
+            credencialesGeneralesAsignar.length,
           cantidad_credenciales: credencialesGeneralesAsignar.length,
           recurso,
           autor,
