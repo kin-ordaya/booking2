@@ -573,7 +573,7 @@ export class ReservaService {
           inicio: new Date(inicio),
           fin: new Date(fin),
           cantidad_accesos:
-            credencialesGeneralesAsignar.length,
+            cantidadGeneralFinal,
           cantidad_credenciales: credencialesGeneralesAsignar.length,
           recurso,
           autor,
