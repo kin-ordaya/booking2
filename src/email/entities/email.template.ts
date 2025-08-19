@@ -594,21 +594,8 @@ export const getReservaTemplate = (data: {
                 </ul>
               </div>
             </div>
-            <div
-              style="
-                text-align: center;
-                margin-top: 1rem;
-                color: rgb(204, 204, 204);
-              "
-            >
-              <font face="tahoma, sans-serif" size="4"
-                >© 2025 Universidad Continental - Todos los derechos
-                reservados.</font
-              >
-            </div>
           </div>
   </div>
-
   <footer>
     &copy; Universidad Continental - Todos los derechos reservados, 2025
   </footer>
