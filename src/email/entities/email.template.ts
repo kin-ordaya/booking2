@@ -79,7 +79,7 @@ export const getReservaTemplate = (data: {
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            line-height: 1.8;
+            line-height: 1.6;
             color: #333;
             margin: 0;
             padding: 0;
@@ -89,35 +89,89 @@ export const getReservaTemplate = (data: {
         header {
             background-color: #003366;
             color: white;
-            padding: 1.5rem;
+            padding: 1rem;
             text-align: center;
             border-bottom: 4px solid #000000;
         }
 
         header h2 {
             margin: 0;
-            font-size: 2rem;
+            font-size: 1.8rem;
             letter-spacing: 1px;
         }
 
         .main {
             max-width: 900px;
-            margin: 3rem auto;
+            margin: 1.5rem auto;
             background: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
         }
 
         h3 {
             color: #003366;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             margin-bottom: 0.5rem;
+            margin-top: 1rem;
         }
 
         p {
             font-size: 1rem;
-            margin: 1rem 0;
+            margin: 0.75rem 0;
+        }
+
+        .contact-section {
+            background-image: url('https://ci3.googleusercontent.com/meips/ADKq_NYx_0gGy7T1Ql8GUhjO1lETjwTX-7G_TlgfbgzBNOUS0O4tQQiqYb0YBIRqvEUp-yB367VoZ_rVREYCa_iHOpSkN7Fou2sQreHsTuxujA0RT4leigZJeel-BG9DOXs=s0-d-e1-ft#https://img.freepik.com/vector-gratis/fondo-oscuro-grunge_1048-11745.jpg');
+            background-size: cover;
+            background-position: 50% 50%;
+            padding: 20px 15px; /* Reducido de 30px */
+            color: white;
+            box-sizing: border-box;
+            max-width: 100%;
+            margin: 0px auto;
+        }
+
+        .contact-section h3 {
+            color: white !important; /* Forzar color blanco */
+            margin-top: 0.5rem;
+        }
+
+        .contact-section a {
+            color: white !important; /* Forzar color blanco */
+            text-decoration: none;
+        }
+
+        .contact-section a:hover {
+            text-decoration: underline;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem; /* Reducido espaciado */
+        }
+
+        .contact-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 0.75rem; /* Reducido de 1rem */
+        }
+
+        .contact-details {
+            border: 1px solid white;
+            border-radius: 8px; /* Reducido de 10px */
+            padding: 8px; /* Reducido de 10px */
+            flex: 1;
+        }
+
+        footer {
+            margin-top: 1.5rem; /* Reducido de 3rem */
+            background-color: #003366;
+            color: white;
+            padding: 0.75rem; /* Reducido de 1rem */
+            text-align: center;
+            border-radius: 8px;
         }
 
         table {
@@ -272,11 +326,9 @@ export const getReservaTemplate = (data: {
   <header>
     <h2>CUENTAS RESERVADAS ${recurso_nombre}</h2>
   </header>
-  
   <div class="main">
-    <h3>Estimado docente</h3>
+    <h3 style="margin-top: 0;">Estimado docente</h3>
     <p>Es un gusto saludarlo. Agradecemos su interés en integrar los recursos de ${recurso_nombre} en su enseñanza. Esperamos que esta herramienta sea de gran apoyo en sus clases.</p>
-    
     ${
       link_guia
         ? `
@@ -295,8 +347,8 @@ export const getReservaTemplate = (data: {
     `
         : ''
     }
-    
-    <hr>
+
+    <hr style="margin: 1rem 0;">
     
     <h3>Detalles de su reserva:</h3>
     <p><strong>Recurso:</strong> ${recurso_nombre}</p>
@@ -311,22 +363,22 @@ export const getReservaTemplate = (data: {
         draggable="false"
         src="https://fonts.gstatic.com/s/e/notoemoji/16.0/1f4cc/32.png"
         loading="lazy"
-      />;<strong>Importante:</strong>;Le recordamos que, según
-      el;<strong>Reglamento Interno de LT-UC</strong>, el acceso
+      /><strong>Importante:</strong>Le recordamos que, según
+      el <strong>Reglamento Interno de LT-UC</strong>, el acceso
       de los estudiantes debe realizarse exclusivamente en el
       horario reservado.
     </p>
+
+    <hr style="margin: 1rem 0;">
     
     <!-- Sección modificada para tablas dinámicas -->
     ${tablasCredenciales}
-    
-    <hr>
+
+    <hr style="margin: 1rem 0;">
     
     ${
       secciones_email.length > 0
         ? `
-    <hr>
-    
     <!-- Secciones de email dinámicas -->
     ${secciones_email
       .map(
@@ -396,8 +448,8 @@ export const getReservaTemplate = (data: {
                   /></font>
                 </div>
               </div>
-              <div style="min-width: 250px; padding: 15px">
-                <h3 style="margin-top: 10px">
+              <div style="min-width: 250px;">
+                <h3 style="margin-top: 10px; color: white !important;">
                   <font face="tahoma, sans-serif" size="4"
                     >Reservas y Uso de Laboratorios</font
                   >
@@ -406,7 +458,7 @@ export const getReservaTemplate = (data: {
                   <li style="margin-left: 15px; margin-bottom: 10px">
                     <font face="tahoma, sans-serif" size="4"
                       >Las reservas y uso de los laboratorios de cómputo
-                      realizarlas con programación académica y;<a
+                      realizarlas con programación académica y <a
                         href="mailto:mesadeayuda@continental.edu.pe"
                         style="color: white; text-decoration-line: none"
                         target="_blank"
@@ -416,7 +468,7 @@ export const getReservaTemplate = (data: {
                   </li>
                   <li style="margin-left: 15px; margin-bottom: 10px">
                     <font face="tahoma, sans-serif" size="4"
-                      >Para el FabLab coordinar con;<a
+                      >Para el FabLab coordinar con <a
                         href="mailto:cerrons@continental.edu.pe"
                         style="color: white; text-decoration-line: none"
                         target="_blank"
@@ -425,7 +477,7 @@ export const getReservaTemplate = (data: {
                     >
                   </li>
                 </ul>
-                <h3 style="margin-bottom: 8px">
+                <h3 style="margin-bottom: 8px; color: white !important;">
                   <font face="tahoma, sans-serif" size="4"
                     >Agenda de Números de Contacto</font
                   >
@@ -529,8 +581,9 @@ export const getReservaTemplate = (data: {
                       <li style="margin-left: 15px">
                         <font face="tahoma, sans-serif" size="4"
                           >Unidad de inclusión de estudiantes con discapacidad -
-                          Lourdes Suasnabar - 943328906 -;<a
+                          Lourdes Suasnabar - 943328906 - <a
                             href="mailto:lsuasnabar@continental.edu.pe"
+                            style="color: white; text-decoration-line: none"
                             target="_blank"
                             >lsuasnabar@continental.edu.<wbr />pe</a
                           ></font
@@ -544,7 +597,7 @@ export const getReservaTemplate = (data: {
             <div
               style="
                 text-align: center;
-                margin-top: 10px;
+                margin-top: 1rem;
                 color: rgb(204, 204, 204);
               "
             >
@@ -554,16 +607,6 @@ export const getReservaTemplate = (data: {
               >
             </div>
           </div>
-    <div class="signature">
-       <img src="https://ucontinental.edu.pe/documentos/logo/firma-generador.gif" alt="Logo Universidad Continental">
-    </div>
-
-    <div class="contact-info">
-        <p>Laboratorios y Talleres de Especialidad</p>
-        <p>Recursos Académicos Virtuales</p>
-        <p>Técnica RAV Gestión de Recursos</p>
-        <p>Email: <a href="mailto:pverastegui@continental.edu.pe">pverastegui@continental.edu.pe</a></p>
-    </div>
   </div>
 
   <footer>
