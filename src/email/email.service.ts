@@ -1,4 +1,4 @@
-import { sendEmailDto } from './dto/sendEmailDto.dto';
+import { SendEmailDto } from './dto/sendEmailDto.dto';
 import {
   Injectable,
   InternalServerErrorException,
@@ -85,12 +85,21 @@ export class EmailService {
 
       // 4. Separar por tipos (todos vienen de detalle_reserva)
       return {
+        docente: {
+          id: reserva.docente?.id,
+          correo: reserva.docente?.usuario?.correo_institucional,
+        },
+        autor:{
+          id: reserva.autor?.id,
+          correo: reserva.autor?.usuario?.correo_institucional,
+        },
         recurso: {
           id: reserva.recurso.id,
         },
         reserva: {
           nrc: reserva.clase?.nrc,
           id: reserva.id,
+          mantenimiento: reserva.mantenimiento,
           codigo: reserva.codigo,
           recurso: reserva.recurso.nombre,
           fechaInicio: reserva.inicio,
@@ -108,8 +117,8 @@ export class EmailService {
     }
   }
 
-  async sendEmail(dto: sendEmailDto) {
-    const { reserva_id, docente_id } = dto;
+  async sendEmail(sendEmailDto: SendEmailDto) {
+    const { reserva_id } = sendEmailDto;
     const transport = this.emailTransport();
 
     try {
@@ -126,20 +135,30 @@ export class EmailService {
         );
       }
 
+      if(reservaData.reserva.mantenimiento == 0){
+        if(reservaData.docente){
+          console.log('Mantenimiento 0, docente: ', reservaData.docente.id);
+        } else {
+          console.log('Mantenimiento 0, no docente');
+        }
+      } else {
+        console.log('Mantenimiento 1');
+      }
+
       const docente = await this.rolUsuarioRepository.findOne({
-        where: { id: docente_id, rol: { nombre: 'DOCENTE' } },
+        where: { id: reservaData.docente.id, rol: { nombre: 'DOCENTE' } },
         relations: ['usuario', 'rol'],
       });
 
       if (!docente) {
         throw new NotFoundException(
-          `Docente con ID ${docente_id} no encontrado`,
+          `Docente con ID ${reservaData.docente.id} no encontrado`,
         );
       }
 
       if (!docente.usuario.correo_institucional) {
         throw new NotFoundException(
-          `Correo no configurado para el docente con ID ${docente_id}`,
+          `Correo no configurado para el docente con ID ${reservaData.docente.correo}`,
         );
       }
 

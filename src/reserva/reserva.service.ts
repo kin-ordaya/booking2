@@ -511,19 +511,22 @@ export class ReservaService {
         new Date(fin),
       );
 
-      const [clase, docente] = await Promise.all([
-        this.claseRepository.findOneBy({ id: clase_id }),
-        this.rolUsuarioRepository.findOne({
+      let docente;
+
+      const clase = await this.claseRepository.findOneBy({ id: clase_id });
+      if (docente_id) {
+        docente = await this.rolUsuarioRepository.findOne({
           where: { id: docente_id },
           relations: ['usuario', 'rol'],
-        }),
-      ]);
+        });
+
+        if (!docente) throw new NotFoundException('Docente no encontrado');
+        if (docente.rol.nombre !== 'DOCENTE') {
+          throw new ConflictException('El docente_id debe ser de rol DOCENTE');
+        }
+      }
 
       if (!clase) throw new NotFoundException('Clase no encontrada');
-      if (!docente) throw new NotFoundException('Docente no encontrado');
-      if (docente.rol.nombre !== 'DOCENTE') {
-        throw new ConflictException('El docente_id debe ser de rol DOCENTE');
-      }
 
       const credenciales = await this.credencialRepository.find({
         where: { recurso: { id: recurso_id } },

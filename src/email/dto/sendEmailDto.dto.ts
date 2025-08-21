@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsUUID, Matches } from 'class-validator';
 
-export class sendEmailDto {
+export class SendEmailDto {
   //El correo debe tener el dominio continental.edup.pe
   // @IsNotEmpty()
   // @Matches(/^[a-zA-Z0-9._%+-]+@continental\.edu\.pe$/, {
@@ -9,9 +9,9 @@ export class sendEmailDto {
   // @IsEmail({}, { message: 'El email no es valido' })
   // correo: string;
 
-  @IsNotEmpty()
-  @IsUUID('4', { message: 'El ID de la reserva debe ser de tipo uuid' })
-  docente_id: string;
+  // @IsNotEmpty()
+  // @IsUUID('4', { message: 'El ID de la reserva debe ser de tipo uuid' })
+  // docente_id: string;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El ID de la reserva debe ser de tipo uuid' })
