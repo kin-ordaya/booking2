@@ -88,6 +88,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     DetalleReservaModule,
     DocumentoIdentidadModule,
     EapModule,
+    EmailModule,
     EstudianteModule,
     FacultadModule,
     HorarioModule,
@@ -104,11 +105,10 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     ResponsableModule,
     RolModule,
     RolUsuarioModule,
+    SeccionEmailModule,
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
-    EmailModule,
-    SeccionEmailModule,
   ],
 })
 export class AppModule {}
