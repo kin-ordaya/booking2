@@ -9,6 +9,7 @@ export const getReservaTemplate = (data: {
     asunto: 'ADVERTENCIA' | 'INFORMACION' | 'INSTRUCCION';
     link?: string;
   }>;
+  esMantenimiento?: boolean; // Nuevo campo
 }) => {
   const {
     recurso_nombre,
@@ -17,6 +18,7 @@ export const getReservaTemplate = (data: {
     link_guia,
     link_aula_virtual,
     secciones_email = [],
+    esMantenimiento = false,
   } = data;
 
   // Verificar si hay al menos una credencial con usuario
@@ -327,7 +329,10 @@ export const getReservaTemplate = (data: {
     <h2>CUENTAS RESERVADAS ${recurso_nombre}</h2>
   </header>
   <div class="main">
-    <h3 style="margin-top: 0;">Estimado docente</h3>
+    ${
+      !esMantenimiento
+        ? `
+  <h3 style="margin-top: 0;">Estimado docente</h3>
     <p>Es un gusto saludarlo. Agradecemos su interés en integrar los recursos de ${recurso_nombre} en su enseñanza. Esperamos que esta herramienta sea de gran apoyo en sus clases.</p>
     ${
       link_guia
@@ -349,11 +354,16 @@ export const getReservaTemplate = (data: {
     }
 
     <hr style="margin: 1rem 0;">
+    `
+        : ''
+    }
     
     <h3>Detalles de su reserva:</h3>
     <p><strong>Recurso:</strong> ${recurso_nombre}</p>
     ${fecha_html}
-
+    ${
+      !esMantenimiento
+        ? `
     <p>
       <img
         data-emoji="📌"
@@ -368,6 +378,9 @@ export const getReservaTemplate = (data: {
       de los estudiantes debe realizarse exclusivamente en el
       horario reservado.
     </p>
+     `
+        : ''
+    }
 
     <hr style="margin: 1rem 0;">
     
@@ -394,8 +407,11 @@ export const getReservaTemplate = (data: {
     `
         : ''
     }
-    
+        ${
+          !esMantenimiento
+            ? `
     <h4>Quedamos atentos a sus dudas y comentarios. Saludos</h4>
+
 <div
             style="
               background-image: url('https://ci3.googleusercontent.com/meips/ADKq_NYx_0gGy7T1Ql8GUhjO1lETjwTX-7G_TlgfbgzBNOUS0O4tQQiqYb0YBIRqvEUp-yB367VoZ_rVREYCa_iHOpSkN7Fou2sQreHsTuxujA0RT4leigZJeel-BG9DOXs=s0-d-e1-ft#https://img.freepik.com/vector-gratis/fondo-oscuro-grunge_1048-11745.jpg');
@@ -595,6 +611,9 @@ export const getReservaTemplate = (data: {
               </div>
             </div>
           </div>
+          `
+            : ''
+        }
   </div>
   <footer>
     &copy; Universidad Continental - Todos los derechos reservados, 2025

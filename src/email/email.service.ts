@@ -10,7 +10,6 @@ import { getReservaTemplate } from './entities/email.template';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Repository } from 'typeorm';
-import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
@@ -60,6 +59,9 @@ export class EmailService {
           'docente',
           'docente.usuario',
           'docente.rol',
+          'autor',
+          'autor.usuario',
+          'autor.rol',
           'clase',
         ],
       });
@@ -89,7 +91,7 @@ export class EmailService {
           id: reserva.docente?.id,
           correo: reserva.docente?.usuario?.correo_institucional,
         },
-        autor:{
+        autor: {
           id: reserva.autor?.id,
           correo: reserva.autor?.usuario?.correo_institucional,
         },
@@ -123,6 +125,7 @@ export class EmailService {
 
     try {
       const reservaData = await this.getCredencialesReserva(reserva_id);
+      //console.log(reservaData);
 
       const recurso = await this.recursoRepository.findOne({
         where: { id: reservaData.recurso.id },
@@ -135,32 +138,41 @@ export class EmailService {
         );
       }
 
-      if(reservaData.reserva.mantenimiento == 0){
-        if(reservaData.docente){
-          console.log('Mantenimiento 0, docente: ', reservaData.docente.id);
+      let docente;
+      let destinatario;
+
+      if (reservaData.reserva.mantenimiento == 0) {
+        if (reservaData.docente) {
+          // console.log(' Mantenimiento 0 - Docente');
+          docente = await this.rolUsuarioRepository.findOne({
+            where: { id: reservaData.docente.id, rol: { nombre: 'DOCENTE' } },
+            relations: ['usuario', 'rol'],
+          });
+
+          //console.log('Docente:', docente);
+
+          if (!docente) {
+            throw new NotFoundException(
+              `Docente con ID ${reservaData.docente.id} no encontrado`,
+            );
+          }
+
+          if (!docente.usuario.correo_institucional) {
+            throw new NotFoundException(
+              `Correo no configurado para el docente con ID ${reservaData.docente.correo}`,
+            );
+          }
+
+          destinatario = docente.usuario.correo_institucional;
         } else {
-          console.log('Mantenimiento 0, no docente');
+          // console.log(' Mantenimiento 0 - Autor');
+          destinatario = reservaData.autor.correo;
         }
       } else {
-        console.log('Mantenimiento 1');
+        // console.log(' Mantenimiento 1 - Autor');
+        destinatario = reservaData.autor.correo;
       }
-
-      const docente = await this.rolUsuarioRepository.findOne({
-        where: { id: reservaData.docente.id, rol: { nombre: 'DOCENTE' } },
-        relations: ['usuario', 'rol'],
-      });
-
-      if (!docente) {
-        throw new NotFoundException(
-          `Docente con ID ${reservaData.docente.id} no encontrado`,
-        );
-      }
-
-      if (!docente.usuario.correo_institucional) {
-        throw new NotFoundException(
-          `Correo no configurado para el docente con ID ${reservaData.docente.correo}`,
-        );
-      }
+      console.log('Destinatario:', destinatario);
 
       // Formatear fecha
       const fechaInicio = new Date(reservaData.reserva.fechaInicio);
@@ -193,13 +205,22 @@ export class EmailService {
         link_guia: recurso.link_guia || undefined, // undefined será manejado en el template
         link_aula_virtual: recurso.link_aula_virtual || undefined,
         secciones_email: seccionesEmail.length > 0 ? seccionesEmail : undefined,
+        esMantenimiento: reservaData.reserva.mantenimiento == 1,
       };
+
+      let asunto = `Credenciales de acceso - ${recurso.nombre}`;
+      if (reservaData.reserva.mantenimiento == 0 && reservaData.reserva.nrc) {
+        asunto += ` - ${reservaData.reserva.nrc}`;
+      }
+      if (reservaData.reserva.mantenimiento == 1) {
+        asunto = `Reserva de Mantenimiento - ${recurso.nombre}`;
+      }
 
       // 6. Enviar email
       const options: nodemailer.SendMailOptions = {
         from: this.configService.get<string>('EMAIL_USER'),
-        to: docente.usuario.correo_institucional,
-        subject: `Credenciales de acceso - ${recurso.nombre} - ${reservaData.reserva.nrc}`,
+        to: destinatario,
+        subject: asunto,
         html: getReservaTemplate(emailData),
       };
 
