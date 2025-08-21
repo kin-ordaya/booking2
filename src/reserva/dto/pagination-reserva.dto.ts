@@ -15,6 +15,10 @@ export class PaginationReservaDto extends PaginationDto {
   recurso_id: string;
 
   @IsOptional()
+  @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
+  docente_id?: string;
+
+  @IsOptional()
   @IsDateString(
     {},
     {

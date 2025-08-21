@@ -723,6 +723,7 @@ export class ReservaService {
     try {
       const {
         recurso_id,
+        docente_id,
         inicio,
         fin,
         sort_state = 1,
@@ -756,7 +757,17 @@ export class ReservaService {
         .leftJoinAndSelect('autor.rol', 'rolAutor') // Asumiendo que RolUsuario tiene relación con Rol
         .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });
 
-      // Filtro por estado
+      
+      if(docente_id) {
+        const docente = await this.rolUsuarioRepository.findOne({
+          where: { id: docente_id },
+          relations: ['usuario', 'rol'],
+        });
+        if (!docente) throw new NotFoundException('Docente no encontrado');
+        
+        query.andWhere('reserva.docente_id = :docenteId', { docenteId: docente_id });
+      }
+        // Filtro por estado
       if (sort_state !== undefined) {
         query.andWhere('reserva.estado = :estado', { estado: sort_state });
       }
