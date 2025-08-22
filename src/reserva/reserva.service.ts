@@ -726,9 +726,9 @@ export class ReservaService {
         docente_id,
         inicio,
         fin,
-        sort_state = 1,
-        sort_order = 1,
-        sort_expired = 1,
+        sort_state,
+        sort_order,
+        sort_expired,
         page = 1,
         limit = 10,
         search,
@@ -750,12 +750,16 @@ export class ReservaService {
         .createQueryBuilder('reserva')
         .leftJoinAndSelect('reserva.docente', 'docente')
         .leftJoinAndSelect('docente.usuario', 'usuario')
-        .leftJoinAndSelect('reserva.clase', 'clase') // Agregado para clase
-        .leftJoinAndSelect('clase.cursoModalidad', 'cursoModalidad') // Asumiendo que Clase tiene relación con CursoModalidad
-        .leftJoinAndSelect('cursoModalidad.curso', 'curso') // Asumiendo que CursoModalidad tiene relación con Curso
-        .leftJoinAndSelect('reserva.autor', 'autor') // Agregado para autor
-        .leftJoinAndSelect('autor.rol', 'rolAutor') // Asumiendo que RolUsuario tiene relación con Rol
+        .leftJoinAndSelect('reserva.clase', 'clase')
+        .leftJoinAndSelect('clase.cursoModalidad', 'cursoModalidad')
+        .leftJoinAndSelect('cursoModalidad.curso', 'curso')
+        .leftJoinAndSelect('reserva.autor', 'autor')
+        .leftJoinAndSelect('autor.rol', 'rolAutor')
         .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });
+
+      // // Para debugging: obtener count sin paginación
+      // const totalCounts = await query.getCount();
+      // console.log('Total reservas encontradas:', totalCounts);
 
       if (docente_id) {
         const docente = await this.rolUsuarioRepository.findOne({
@@ -774,7 +778,7 @@ export class ReservaService {
       }
 
       // Ordenamiento por nombre o fecha
-      if (sort_order !== undefined) {
+      if (sort_order) {
         switch (sort_order) {
           case 1: // Nombre ASC
             query.orderBy('usuario.nombres', 'ASC');
@@ -796,7 +800,7 @@ export class ReservaService {
       }
 
       // Filtro por reservas expiradas/no expiradas
-      if (sort_expired !== undefined) {
+      if (sort_expired) {
         const now = new Date();
         if (sort_expired === 1) {
           // Expiradas
@@ -837,6 +841,18 @@ export class ReservaService {
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
+
+      // console.log('Reservas después de filtros:', totalCount);
+
+      // console.log('Filtros aplicados:', {
+      //   recurso_id,
+      //   docente_id,
+      //   inicio,
+      //   fin,
+      //   sort_state,
+      //   sort_expired,
+      //   search,
+      // });
 
       // Mapeo de resultados con los nuevos campos
       const results = reservas.map((reserva) => ({
