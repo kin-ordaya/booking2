@@ -757,17 +757,18 @@ export class ReservaService {
         .leftJoinAndSelect('autor.rol', 'rolAutor') // Asumiendo que RolUsuario tiene relación con Rol
         .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });
 
-      
-      if(docente_id) {
+      if (docente_id) {
         const docente = await this.rolUsuarioRepository.findOne({
           where: { id: docente_id },
           relations: ['usuario', 'rol'],
         });
         if (!docente) throw new NotFoundException('Docente no encontrado');
-        
-        query.andWhere('reserva.docente_id = :docenteId', { docenteId: docente_id });
+
+        query.andWhere('reserva.docente_id = :docenteId', {
+          docenteId: docente_id,
+        });
       }
-        // Filtro por estado
+      // Filtro por estado
       if (sort_state !== undefined) {
         query.andWhere('reserva.estado = :estado', { estado: sort_state });
       }
@@ -782,10 +783,10 @@ export class ReservaService {
             query.orderBy('usuario.nombres', 'DESC');
             break;
           case 3: // Fecha ASC
-            query.orderBy('reserva.inicio', 'ASC');
+            query.orderBy('reserva.creacion', 'ASC');
             break;
           case 4: // Fecha DESC
-            query.orderBy('reserva.inicio', 'DESC');
+            query.orderBy('reserva.creacion', 'DESC');
             break;
           default:
             query.orderBy('reserva.creacion', 'DESC');
