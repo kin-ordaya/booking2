@@ -266,7 +266,8 @@ export class UsuarioService {
     } catch (error) {
       if (
         error instanceof NotFoundException ||
-        error instanceof BadRequestException
+        error instanceof BadRequestException ||
+        error instanceof ConflictException 
       )
         throw error;
       throw new InternalServerErrorException('Error inesperado');
