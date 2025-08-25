@@ -198,8 +198,18 @@ export class UsuarioService {
 
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     try {
-      const { numero_documento, correo_institucional, telefono_institucional } =
-        updateUsuarioDto;
+      const {
+        nombres,
+        apellidos,
+        numero_documento,
+        correo_institucional,
+        telefono_institucional,
+        correo_personal,
+        telefono_personal,
+        sexo,
+        direccion,
+      } = updateUsuarioDto;
+      updateUsuarioDto;
 
       if (!id)
         throw new BadRequestException('El ID del usuario no puede estar vacío');
@@ -212,7 +222,7 @@ export class UsuarioService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
-      const updateData: any = {};
+      // const updateData: any = {};
 
       if (numero_documento) {
         const numero_documentoExists = await this.usuarioRepository.existsBy({
@@ -225,7 +235,7 @@ export class UsuarioService {
             'Ya existe un usuario con ese número de documento y ese documento identidad',
           );
         }
-        updateData.numero_documento = numero_documento;
+        // updateData.numero_documento = numero_documento;
       }
 
       if (correo_institucional) {
@@ -239,7 +249,7 @@ export class UsuarioService {
             'Ya existe un usuario con ese correo institucional',
           );
         }
-        updateData.correo_institucional = correo_institucional;
+        // updateData.correo_institucional = correo_institucional;
       }
 
       if (telefono_institucional) {
@@ -253,21 +263,31 @@ export class UsuarioService {
             'Ya existe un usuario con ese teléfono institucional',
           );
         }
-        updateData.telefono_institucional = telefono_institucional;
+        // updateData.telefono_institucional = telefono_institucional;
       }
 
-      if (Object.keys(updateData).length === 0) {
-        return usuario;
-      }
+      // if (Object.keys(updateData).length === 0) {
+      //   return usuario;
+      // }
 
-      await this.usuarioRepository.update(id, updateData);
+      await this.usuarioRepository.update(id, {
+        nombres,
+        apellidos,
+        numero_documento,
+        correo_institucional,
+        telefono_institucional,
+        correo_personal,
+        telefono_personal,
+        sexo,
+        direccion,
+      });
 
       return await this.usuarioRepository.findOneBy({ id });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException ||
-        error instanceof ConflictException 
+        error instanceof ConflictException
       )
         throw error;
       throw new InternalServerErrorException('Error inesperado');
