@@ -124,7 +124,10 @@ export class UsuarioService {
         },
       );
     } catch (error) {
-      if (error instanceof ConflictException || error instanceof NotFoundException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
@@ -201,14 +204,17 @@ export class UsuarioService {
       if (!id)
         throw new BadRequestException('El ID del usuario no puede estar vacío');
 
-      const usuario = await this.usuarioRepository.findOneBy({ id });
+      const usuario = await this.usuarioRepository.findOne({
+        where: { id },
+        relations: ['documento_identidad'],
+      });
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');
       }
 
       const updateData: any = {};
 
-      if (numero_documento !== undefined) {
+      if (numero_documento) {
         const numero_documentoExists = await this.usuarioRepository.existsBy({
           id: Not(id),
           numero_documento,
@@ -222,7 +228,7 @@ export class UsuarioService {
         updateData.numero_documento = numero_documento;
       }
 
-      if (correo_institucional !== undefined) {
+      if (correo_institucional) {
         const correo_institucionalExists =
           await this.usuarioRepository.existsBy({
             id: Not(id),
@@ -236,7 +242,7 @@ export class UsuarioService {
         updateData.correo_institucional = correo_institucional;
       }
 
-      if (telefono_institucional !== undefined) {
+      if (telefono_institucional) {
         const telefono_institucionalExists =
           await this.usuarioRepository.existsBy({
             id: Not(id),
@@ -264,6 +270,7 @@ export class UsuarioService {
       )
         throw error;
       throw new InternalServerErrorException('Error inesperado');
+      //throw error;
     }
   }
 
