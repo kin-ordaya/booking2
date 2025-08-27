@@ -14,6 +14,7 @@ import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.ent
 import { RecursoDocenteClaseDto } from './dto/recurso-docente-clase.dto';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
+import { Periodo } from 'src/periodo/entities/periodo.entity';
 
 @Injectable()
 export class ClaseService {
@@ -26,6 +27,8 @@ export class ClaseService {
     private readonly recursoRepository: Repository<Recurso>,
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
+    @InjectRepository(Periodo)
+    private readonly periodoRepository: Repository<Periodo>,
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
@@ -34,11 +37,11 @@ export class ClaseService {
         nrc,
         nrc_secundario,
         inscritos,
-        periodo,
         tipo,
         inicio,
         fin,
         curso_modalidad_id,
+        periodo_id,
       } = createClaseDto;
 
       const cursoModalidadExists = await this.cursoModalidadRepository.existsBy(
@@ -49,21 +52,33 @@ export class ClaseService {
         throw new NotFoundException('No existe un curso modalidad con ese id');
       }
 
-      const claseExists = await this.claseRepository.existsBy({ nrc });
+      const periodoExists = await this.periodoRepository.existsBy({
+        id: periodo_id,
+      });
+
+      if (!periodoExists)
+        throw new NotFoundException('No existe un periodo con ese id');
+      // si ya existe una clase con ese nrc y en el mismo semestre, se devuelve error
+      const claseExists = await this.claseRepository.findOne({
+        where: { nrc, periodo: { id: periodo_id } },
+        relations: ['periodo'],
+      });
 
       if (claseExists) {
-        throw new NotFoundException('Ya existe una clase con ese nrc');
+        throw new NotFoundException(
+          'Ya existe una clase con ese nrc en el mismo periodo',
+        );
       }
 
       const clase = this.claseRepository.create({
         nrc,
         nrc_secundario,
         inscritos,
-        periodo,
         tipo,
         inicio,
         fin,
         cursoModalidad: { id: curso_modalidad_id },
+        periodo: { id: periodo_id },
       });
 
       return await this.claseRepository.save(clase);
@@ -95,7 +110,7 @@ export class ClaseService {
       }
       const clase = await this.claseRepository.findOne({
         where: { id },
-        relations: ['cursoModalidad'],
+        relations: ['cursoModalidad', 'periodo'],
       });
       if (!clase) {
         throw new NotFoundException(`Clase con id ${id} no encontrado`);
@@ -168,15 +183,12 @@ export class ClaseService {
         .select([
           'clase.id',
           'clase.nrc',
-          'clase.periodo',
-          'clase.tipo',
           'clase.inicio',
           'clase.fin',
           'clase.inscritos',
           'curso.id',
           'curso.codigo',
           'curso.nombre',
-          'curso.descripcion',
           'cursoModalidad.id',
         ])
         .orderBy('clase.periodo', 'DESC')
@@ -198,16 +210,10 @@ export class ClaseService {
           id: clase.id,
           nrc: clase.nrc,
           inscritos: clase.inscritos,
-          // periodo: clase.periodo,
-          // tipo: clase.tipo,
-          // inicio: clase.inicio,
-          // fin: clase.fin,
-          //totalMatriculados: (clase as any).matriculadosCount || 0,
-
-          // id: clase.cursoModalidad.curso.id,
+          inicio: clase.inicio,
+          fin: clase.fin,
           codigo_curso: clase.cursoModalidad.curso.codigo,
           nombre_curso: clase.cursoModalidad.curso.nombre,
-          // descripcion: clase.cursoModalidad.curso.descripcion
         };
       });
     } catch (error) {
@@ -229,11 +235,11 @@ export class ClaseService {
         nrc,
         nrc_secundario,
         inscritos,
-        periodo,
         tipo,
         inicio,
         fin,
         curso_modalidad_id,
+        periodo_id,
       } = updateClaseDto;
 
       if (!id) {
@@ -250,15 +256,39 @@ export class ClaseService {
 
       const updateData: any = {};
 
-      if (nrc !== undefined) {
-        const claseExists = await this.claseRepository.existsBy({
-          id: Not(id),
-          nrc,
-        });
-        if (claseExists) {
-          throw new ConflictException('Ya existe una clase con ese nrc');
+      // Validación combinada de nrc y periodo_id
+      if (nrc !== undefined || periodo_id !== undefined) {
+        const whereConditions: any = { id: Not(id) };
+
+        if (nrc !== undefined) {
+          whereConditions.nrc = nrc;
         }
-        updateData.nrc = nrc;
+
+        if (periodo_id !== undefined) {
+          whereConditions.periodo = { id: periodo_id };
+        } else {
+          // Si no se actualiza periodo_id, usar el valor actual
+          whereConditions.periodo = { id: clase.periodo.id };
+        }
+
+        const claseExists = await this.claseRepository.findOne({
+          where: whereConditions,
+          relations: ['periodo'],
+        });
+
+        if (claseExists) {
+          throw new ConflictException(
+            'Ya existe una clase con esa combinación de NRC y periodo',
+          );
+        }
+
+        // Agregar los valores al updateData
+        if (nrc !== undefined) {
+          updateData.nrc = nrc;
+        }
+        if (periodo_id !== undefined) {
+          updateData.periodo = { id: periodo_id };
+        }
       }
 
       if (nrc_secundario !== undefined) {
@@ -267,10 +297,6 @@ export class ClaseService {
 
       if (inscritos !== undefined) {
         updateData.inscritos = inscritos;
-      }
-
-      if (periodo !== undefined) {
-        updateData.periodo = periodo;
       }
 
       if (tipo !== undefined) {

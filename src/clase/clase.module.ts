@@ -6,10 +6,11 @@ import { Clase } from './entities/clase.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import { Periodo } from 'src/periodo/entities/periodo.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Clase, CursoModalidad, Recurso, RolUsuario]),
+    TypeOrmModule.forFeature([Clase, CursoModalidad, Recurso, RolUsuario, Periodo]),
   ],
   controllers: [ClaseController],
   providers: [ClaseService],
