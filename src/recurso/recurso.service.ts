@@ -167,7 +167,8 @@ export class RecursoService {
           query
             .leftJoin('recursoCurso.curso', 'curso')
             .leftJoin('curso.curso_modalidad', 'cursoModalidad')
-            .leftJoin('cursoModalidad.responsable', 'responsable')
+            .leftJoin('cursoModalidad.clase', 'clase')
+            .leftJoin('clase.responsable', 'responsable')
             .leftJoin('responsable.rolUsuario', 'rolUsuarioResponsable')
             .andWhere('rolUsuarioResponsable.id = :rol_usuario_id', {
               rol_usuario_id,
