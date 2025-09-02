@@ -50,7 +50,7 @@ export class AuthService {
         //nombres: user.nombres,
         //apellidos: user.apellidos,
         //usuario_id: user.id,
-        rol_usuario_id: rolUsuario.id,
+        //rol_usuario_id: rolUsuario.id,
         rol_id: rolUsuario.rol.id,
       };
       const token = this.jwtService.sign(jwtPayload);
