@@ -7,14 +7,14 @@ export class CreateCursoDto {
   @MaxLength(20, { message: 'El campo codigo no puede tener mas de 20 caracteres' })
   codigo: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString({ message: 'El campo codigo_cruzado debe ser de tipo string' })
   @MaxLength(20, { message: 'El campo codigo_cruzado no puede tener mas de 20 caracteres' })
-  codigo_cruzado: string;
+  codigo_cruzado?: string;
 
   @IsNotEmpty()
   @IsString({ message: 'El campo nombre debe ser de tipo string' })
-  @MaxLength(50, { message: 'El campo nombre no puede tener mas de 50 caracteres' })
+  @MaxLength(100, { message: 'El campo nombre no puede tener mas de 50 caracteres' })
   @Transform(({ value }) => value?.toUpperCase().trim())
   nombre: string;
 

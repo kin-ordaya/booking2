@@ -16,6 +16,7 @@ async function bootstrap() {
     .setTitle('Booking 2 API')
     .setDescription('Booking 2 API description')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

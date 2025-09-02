@@ -13,9 +13,6 @@ import { Not, Repository } from 'typeorm';
 import { PaginationCursoDto } from './dto/pagination.dto';
 import { Eap } from 'src/eap/entities/eap.entity';
 import { Plan } from 'src/plan/entities/plan.entity';
-import { Recurso } from 'src/recurso/entities/recurso.entity';
-import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
-
 
 @Injectable()
 export class CursoService {

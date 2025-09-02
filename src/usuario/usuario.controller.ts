@@ -1,8 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from 'src/auth/guard/auth.guard';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
 
 @Controller('usuario')
 export class UsuarioController {

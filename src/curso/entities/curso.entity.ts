@@ -29,7 +29,7 @@ export class Curso {
   @Column({ type: 'varchar', length: 20, nullable: true })
   codigo_cruzado?: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 100 })
   nombre: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
