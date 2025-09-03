@@ -1,5 +1,4 @@
 import { SearchDto } from './../common/dtos/search.dto';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import {
   BadRequestException,
   ConflictException,

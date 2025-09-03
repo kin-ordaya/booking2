@@ -1,4 +1,3 @@
-import { PaginationReservaDto } from './../reserva/dto/pagination-reserva.dto';
 import {
   Injectable,
   InternalServerErrorException,

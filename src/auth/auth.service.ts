@@ -40,10 +40,13 @@ export class AuthService {
         throw new NotFoundException('Usuario no encontrado');
       }
       const rolUsuario = await this.rolUsuarioRepository.findOne({
-        where: { usuario: { id: user.id } },
+        where: { usuario: { id: user.id }, estado: 1 },
+        relations: ['rol'],
       });
       if (!rolUsuario) {
-        throw new NotFoundException('Rol usuario no encontrado');
+        throw new NotFoundException(
+          'Rol usuario no encontrado o rol usuario no activo',
+        );
       }
       const jwtPayload = {
         //correo_institucional: user.correo_institucional,
@@ -51,9 +54,9 @@ export class AuthService {
         //apellidos: user.apellidos,
         //usuario_id: user.id,
         rol_usuario_id: rolUsuario.id,
-        //rol_id: rolUsuario.rol.id,
+        rol_nombre: rolUsuario.rol.nombre,
       };
-      const token = this.jwtService.sign(jwtPayload);
+      const token = await this.jwtService.signAsync(jwtPayload);
       return { token };
     } catch (error) {
       //console.log(error);
