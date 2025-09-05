@@ -77,34 +77,37 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
-    console.log('[validarInicioyFinReserva] Inicio:', inicio);
-    console.log('[validarInicioyFinReserva] Fin:', fin);
-    console.log('[validarInicioyFinReserva] Rol:', autorRol);
-    console.log(
-      '[validarInicioyFinReserva] Tiempo Reserva:',
-      recursoTiempoReserva,
-    );
+    // console.log('[validarInicioyFinReserva] Inicio:', inicio);
+    // console.log('[validarInicioyFinReserva] Fin:', fin);
+    // console.log('[validarInicioyFinReserva] Rol:', autorRol);
+    // console.log(
+    //   '[validarInicioyFinReserva] Tiempo Reserva:',
+    //   recursoTiempoReserva,
+    // );
+    const ahoraUTC = new Date().toISOString();
+    const inicioUTC = new Date(inicio).toISOString();
+    // console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
+    // console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
-    const ahora = new Date();
-
-    if (inicio < ahora) {
+    if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
-        `La fecha/hora de inicio: ${inicio} debe ser posterior a la fecha/hora actual: ${fin}`,
+        `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
+
     if (autorRol === 'DOCENTE') {
-      const minimoReserva = new Date(
-        ahora.getTime() -
-          5 * 60 * 60 * 1000 +
-          recursoTiempoReserva * 60 * 60 * 1000,
-      );
+      const ahora = new Date(ahoraUTC).getTime();
+      const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
+      const minimoReservaUTC = new Date(minimoReserva).toISOString();
+      // console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
+      // console.log(
+      //   '[validarInicioyFinReserva] minimoReservaUTC:',
+      //   minimoReservaUTC,
+      // );
 
-      console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
-
-      if (ahora < minimoReserva) {
-
+      if (inicioUTC < minimoReservaUTC) {
         throw new ConflictException(
-          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio selecionada: ${inicio} debe ser posterior a: ${minimoReserva}`,
+          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio selecionada: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
         );
       }
     }
