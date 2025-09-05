@@ -60,13 +60,23 @@ export class ReservaService {
     if (!recurso) throw new NotFoundException('Recurso no encontrado');
     if (!autor) throw new NotFoundException('Autor no encontrado');
 
-    await this.validarInicioyFinReserva(inicio, fin);
+    await this.validarInicioyFinReserva(
+      inicio,
+      fin,
+      autor.rol.nombre,
+      recurso.tiempo_reserva,
+    );
     this.validateReservationDuration(autor.rol.nombre, inicio, fin);
 
     return { recurso, autor };
   }
 
-  private async validarInicioyFinReserva(inicio: Date, fin: Date) {
+  private async validarInicioyFinReserva(
+    inicio: Date,
+    fin: Date,
+    autorRol: string,
+    recursoTiempoReserva: number,
+  ) {
     const ahoraUTC = new Date().toISOString();
     const inicioUTC = new Date(inicio).toISOString();
 
@@ -74,6 +84,23 @@ export class ReservaService {
       throw new ConflictException(
         `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
+    }
+
+    if (autorRol === 'DOCENTE') {
+      const ahora = new Date(ahoraUTC).getTime();
+      const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
+      const minimoReservaUTC = new Date(minimoReserva).toISOString();
+      console.log('[AHORA]', ahora);
+      console.log('[AHORA UTC]', ahoraUTC);
+      console.log('[MINIMO]', minimoReserva);
+      console.log('[MINIMO RESERVA UTC]', minimoReservaUTC);
+    
+      if (ahoraUTC < minimoReservaUTC) {
+        throw new ConflictException(
+          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio selecionada: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        );
+      }
+
     }
 
     if (fin <= inicio) {
