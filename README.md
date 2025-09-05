@@ -58,3 +58,8 @@ $ npm i bcryptjs
 $ npm install --save @nestjs/jwt
 ```
 
+!#Importante
+⚠️ El proyecto no funciona sin el archivo .env, por lo que es necesario crearlo y ponerle los datos de conexión a la base de datos.
+
+!#Importante
+⚠️ Cuando se ejecute el despliegue es importante configurar el timezone America / Lima, por lo que es necesario modificar el archivo .env
