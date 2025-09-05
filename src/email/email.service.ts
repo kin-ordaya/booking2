@@ -31,11 +31,11 @@ export class EmailService {
   ) {}
 
   emailTransport() {
-    console.log('Config SMTP:', {
-      host: this.configService.get('EMAIL_HOST'),
-      port: this.configService.get('EMAIL_PORT'),
-      user: this.configService.get('EMAIL_USER'),
-    });
+    // console.log('Config SMTP:', {
+    //   host: this.configService.get('EMAIL_HOST'),
+    //   port: this.configService.get('EMAIL_PORT'),
+    //   user: this.configService.get('EMAIL_USER'),
+    // });
     const transporter = nodemailer.createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
       port: this.configService.get<number>('EMAIL_PORT'),
@@ -114,7 +114,7 @@ export class EmailService {
         },
       };
     } catch (error) {
-      console.log('Error al obtener credenciales: ', error);
+      console.error('Error al obtener credenciales: ', error);
       throw error;
     }
   }
@@ -172,7 +172,7 @@ export class EmailService {
         // console.log(' Mantenimiento 1 - Autor');
         destinatario = reservaData.autor.correo;
       }
-      console.log('Destinatario:', destinatario);
+      // console.log('Destinatario:', destinatario);
 
       // Formatear fecha
       const fechaInicio = new Date(reservaData.reserva.fechaInicio);
