@@ -80,9 +80,12 @@ export class ReservaService {
     console.log('[validarInicioyFinReserva] Inicio:', inicio);
     console.log('[validarInicioyFinReserva] Fin:', fin);
     console.log('[validarInicioyFinReserva] Rol:', autorRol);
-    console.log('[validarInicioyFinReserva] Tiempo Reserva:', recursoTiempoReserva);
+    console.log(
+      '[validarInicioyFinReserva] Tiempo Reserva:',
+      recursoTiempoReserva,
+    );
     const ahoraUTC = new Date();
-    const inicioUTC = new Date(inicio);
+    const inicioUTC = new Date(inicio.getTime() + 5 * 60 * 60 * 1000);
     console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
     console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
@@ -97,14 +100,16 @@ export class ReservaService {
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
       const minimoReservaUTC = new Date(minimoReserva);
       console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
-      console.log('[validarInicioyFinReserva] minimoReservaUTC:', minimoReservaUTC);
-    
+      console.log(
+        '[validarInicioyFinReserva] minimoReservaUTC:',
+        minimoReservaUTC,
+      );
+
       if (ahoraUTC < minimoReservaUTC) {
         throw new ConflictException(
           `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio selecionada: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
         );
       }
-
     }
 
     if (fin <= inicio) {
@@ -1128,12 +1133,12 @@ export class ReservaService {
       // );
 
       // reservasEnRango.forEach((reserva, i) => {
-        // console.log(
-        //   `[RESERVA ${i}] ID: ${reserva.id}, Inicio: ${reserva.inicio}, Fin: ${reserva.fin}`,
-        // );
-        // console.log(
-        //   `[DETALLES RESERVA ${i}] Total credenciales usadas: ${reserva.detalle_reserva.length}`,
-        // );
+      // console.log(
+      //   `[RESERVA ${i}] ID: ${reserva.id}, Inicio: ${reserva.inicio}, Fin: ${reserva.fin}`,
+      // );
+      // console.log(
+      //   `[DETALLES RESERVA ${i}] Total credenciales usadas: ${reserva.detalle_reserva.length}`,
+      // );
       //   reserva.detalle_reserva.forEach((detalle, j) => {
       //     console.log(
       //       `[DETALLE ${i}-${j}] Credencial ID: ${detalle.credencial?.id || 'N/A'}`,
