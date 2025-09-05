@@ -77,8 +77,14 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
+    console.log('[validarInicioyFinReserva] Inicio:', inicio);
+    console.log('[validarInicioyFinReserva] Fin:', fin);
+    console.log('[validarInicioyFinReserva] Rol:', autorRol);
+    console.log('[validarInicioyFinReserva] Tiempo Reserva:', recursoTiempoReserva);
     const ahoraUTC = new Date().toISOString();
     const inicioUTC = new Date(inicio).toISOString();
+    console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
+    console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
     if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
@@ -90,10 +96,8 @@ export class ReservaService {
       const ahora = new Date(ahoraUTC).getTime();
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
       const minimoReservaUTC = new Date(minimoReserva).toISOString();
-      // console.log('[AHORA]', ahora);
-      // console.log('[AHORA UTC]', ahoraUTC);
-      // console.log('[MINIMO]', minimoReserva);
-      // console.log('[MINIMO RESERVA UTC]', minimoReservaUTC);
+      console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
+      console.log('[validarInicioyFinReserva] minimoReservaUTC:', minimoReservaUTC);
     
       if (ahoraUTC < minimoReservaUTC) {
         throw new ConflictException(
