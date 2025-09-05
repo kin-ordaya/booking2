@@ -17,13 +17,14 @@ export class SeccionEmailService {
 
   async create(createSeccionEmailDto: CreateSeccionEmailDto) {
     try {
-      const { asunto, link, recurso_id } = createSeccionEmailDto;
+      const { asunto, link, tipo, recurso_id } = createSeccionEmailDto;
 
       const recurso = await this.recursoRepository.findOneBy({ id: recurso_id });
       if (!recurso) throw new NotFoundException('Recurso no encontrado');
 
       const seccionEmail = this.seccionEmailRepository.create({
         asunto,
+        tipo,
         link,
         recurso,
       });

@@ -11,10 +11,13 @@ export class SeccionEmail {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: false })
   asunto: 'ADVERTENCIA' | 'INFORMACION' | 'INSTRUCCION'; 
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
+  tipo: 'LINK' | 'IMAGEN';
+
+  @Column({ nullable: false })
   link: string;
 
   @ManyToOne(() => Recurso, (recurso) => recurso.seccion_email, {

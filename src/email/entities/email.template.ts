@@ -8,6 +8,7 @@ export const getReservaTemplate = (data: {
     // Nuevo campo para las secciones
     asunto: 'ADVERTENCIA' | 'INFORMACION' | 'INSTRUCCION';
     link?: string;
+    tipo: 'LINK' | 'IMAGEN';
   }>;
   esMantenimiento?: boolean; // Nuevo campo
 }) => {
@@ -398,8 +399,12 @@ export const getReservaTemplate = (data: {
         (seccion) => `
       <div class="seccion-email ${seccion.asunto.toLowerCase()}">
         <h3>${seccion.asunto}:</h3>
-        ${seccion.link ? `<img src="${seccion.link}" alt="${seccion.asunto}" class="seccion-image">` : ''}
-        <!-- Aquí podrías agregar más contenido si expandes la entidad SeccionEmail -->
+        ${seccion.tipo === 'LINK' && seccion.link 
+          ? `<a href="${seccion.link}" target="_blank">${seccion.link}</a>` 
+          : ''}
+        ${seccion.tipo === 'IMAGEN' && seccion.link 
+          ? `<img src="${seccion.link}" alt="${seccion.asunto}" class="seccion-image">` 
+          : ''}
       </div>
     `,
       )

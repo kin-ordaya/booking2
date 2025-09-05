@@ -130,6 +130,7 @@ export class DeclaracionJuradaService {
 
       const query = this.declaracionJuradaRepository
         .createQueryBuilder('declaracionJurada')
+        .where('declaracionJurada.estado = :estado', { estado: 1 })
         .leftJoin('declaracionJurada.rolUsuario', 'rolUsuario') // Agregar JOIN para rolUsuario
         .leftJoin('declaracionJurada.recurso', 'recurso'); // Agregar JOIN para recurso
 
