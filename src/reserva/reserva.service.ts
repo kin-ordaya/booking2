@@ -81,8 +81,8 @@ export class ReservaService {
     console.log('[validarInicioyFinReserva] Fin:', fin);
     console.log('[validarInicioyFinReserva] Rol:', autorRol);
     console.log('[validarInicioyFinReserva] Tiempo Reserva:', recursoTiempoReserva);
-    const ahoraUTC = new Date().toISOString();
-    const inicioUTC = new Date(inicio).toISOString();
+    const ahoraUTC = new Date();
+    const inicioUTC = new Date(inicio);
     console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
     console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
@@ -95,7 +95,7 @@ export class ReservaService {
     if (autorRol === 'DOCENTE') {
       const ahora = new Date(ahoraUTC).getTime();
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
-      const minimoReservaUTC = new Date(minimoReserva).toISOString();
+      const minimoReservaUTC = new Date(minimoReserva);
       console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
       console.log('[validarInicioyFinReserva] minimoReservaUTC:', minimoReservaUTC);
     
