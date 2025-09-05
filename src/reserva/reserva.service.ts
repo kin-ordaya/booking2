@@ -77,88 +77,41 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
-    // Normalizar todas las fechas a UTC para consistencia entre entornos
-    const ahoraUTC = new Date();
-    const inicioUTC = new Date(inicio);
-    const finUTC = new Date(fin);
-
-    // Para debugging - mostrar fechas en formato ISO (UTC)
-    console.log(
-      '[validarInicioyFinReserva] Inicio (UTC):',
-      inicioUTC.toISOString(),
-    );
-    console.log('[validarInicioyFinReserva] Fin (UTC):', finUTC.toISOString());
+    console.log('[validarInicioyFinReserva] Inicio:', inicio);
+    console.log('[validarInicioyFinReserva] Fin:', fin);
     console.log('[validarInicioyFinReserva] Rol:', autorRol);
-    console.log(
-      '[validarInicioyFinReserva] Tiempo Reserva:',
-      recursoTiempoReserva,
-    );
-    console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC.toISOString());
-    console.log(
-      '[validarInicioyFinReserva] inicioUTC:',
-      inicioUTC.toISOString(),
-    );
+    console.log('[validarInicioyFinReserva] Tiempo Reserva:', recursoTiempoReserva);
+    const ahoraUTC = new Date().toISOString();
+    const inicioUTC = new Date(inicio).toISOString();
+    console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
+    console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
-    // Validación 1: La fecha de inicio debe ser posterior a la fecha actual
     if (inicioUTC < ahoraUTC) {
-      // Convertir a hora de Perú para el mensaje de error
-      const inicioLima = this.convertirUTCaPeru(inicioUTC);
-      const ahoraLima = this.convertirUTCaPeru(ahoraUTC);
-
       throw new ConflictException(
-        `La fecha/hora de inicio: ${inicioLima} debe ser posterior a la fecha/hora actual: ${ahoraLima}`,
+        `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
 
-    // Validación específica para DOCENTES
     if (autorRol === 'DOCENTE') {
-      // Convertir tiempo de reserva de horas a milisegundos
-      const tiempoReservaMs = recursoTiempoReserva * 60 * 60 * 1000;
-      const tiempoMinimoReservaUTC = new Date(
-        ahoraUTC.getTime() + tiempoReservaMs,
-      );
-
-      console.log(
-        '[validarInicioyFinReserva] Tiempo mínimo reserva (UTC):',
-        tiempoMinimoReservaUTC.toISOString(),
-      );
-
-      if (inicioUTC < tiempoMinimoReservaUTC) {
-        // Convertir a hora de Perú para el mensaje de error
-        const inicioLima = this.convertirUTCaPeru(inicioUTC);
-        const tiempoMinimoLima = this.convertirUTCaPeru(tiempoMinimoReservaUTC);
-
+      const ahora = new Date(ahoraUTC).getTime();
+      const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
+      const minimoReservaUTC = new Date(minimoReserva).toISOString();
+      console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
+      console.log('[validarInicioyFinReserva] minimoReservaUTC:', minimoReservaUTC);
+    
+      if (ahoraUTC < minimoReservaUTC) {
         throw new ConflictException(
-          `Como DOCENTE, la reserva debe hacerse con al menos ${recursoTiempoReserva} horas de anticipación. ` +
-            `La fecha/hora de inicio: ${inicioLima} debe ser posterior a: ${tiempoMinimoLima}`,
+          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio selecionada: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
         );
       }
+
     }
 
-    // Validación 3: La fecha de fin debe ser posterior a la fecha de inicio
-    if (finUTC <= inicioUTC) {
+    if (fin <= inicio) {
       throw new ConflictException(
         'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
       );
     }
-  }
-
-  // Función auxiliar para convertir UTC a hora de Perú (UTC-5)
-  private convertirUTCaPeru(fechaUTC: Date): string {
-    // Ajustar a la zona horaria de Perú (UTC-5)
-    const offsetPeru = -5 * 60; // 5 horas en minutos
-    const fechaPeru = new Date(fechaUTC.getTime() + offsetPeru * 60 * 1000);
-
-    return fechaPeru.toLocaleString('es-PE', {
-      timeZone: 'America/Lima',
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
   }
 
   private validateReservationDuration(rol: string, inicio: Date, fin: Date) {
@@ -1175,12 +1128,12 @@ export class ReservaService {
       // );
 
       // reservasEnRango.forEach((reserva, i) => {
-      // console.log(
-      //   `[RESERVA ${i}] ID: ${reserva.id}, Inicio: ${reserva.inicio}, Fin: ${reserva.fin}`,
-      // );
-      // console.log(
-      //   `[DETALLES RESERVA ${i}] Total credenciales usadas: ${reserva.detalle_reserva.length}`,
-      // );
+        // console.log(
+        //   `[RESERVA ${i}] ID: ${reserva.id}, Inicio: ${reserva.inicio}, Fin: ${reserva.fin}`,
+        // );
+        // console.log(
+        //   `[DETALLES RESERVA ${i}] Total credenciales usadas: ${reserva.detalle_reserva.length}`,
+        // );
       //   reserva.detalle_reserva.forEach((detalle, j) => {
       //     console.log(
       //       `[DETALLE ${i}-${j}] Credencial ID: ${detalle.credencial?.id || 'N/A'}`,
