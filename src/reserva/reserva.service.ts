@@ -85,13 +85,11 @@ export class ReservaService {
       recursoTiempoReserva,
     );
     const ahoraUTC = new Date();
-    const inicioUTC = new Date(inicio.getTime() + 5 * 60 * 60 * 1000);
     console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
-    console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
-    if (inicioUTC < ahoraUTC) {
+    if (inicio < ahoraUTC) {
       throw new ConflictException(
-        `La fecha/hora de inicio: ${new Date(inicioUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
 
