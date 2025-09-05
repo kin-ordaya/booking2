@@ -91,7 +91,7 @@ export class ReservaService {
 
     if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
-        `La fecha/hora de inicio: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        `La fecha/hora de inicio: ${new Date(inicioUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
 
