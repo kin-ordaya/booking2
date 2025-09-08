@@ -1,9 +1,13 @@
-# 🎓 Booking2 - Sistema de Gestión de Reservas Académicas
-
-[![NestJS](https://img.shields.io/badge/NestJS-11.0.1-red.svg)](https://nestjs.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3-blue.svg)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-8.16.0-blue.svg)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Support-2496ED.svg)](https://www.docker.com/)
+<div align="center">
+  <img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" />
+  <h1>🎓 Booking2</h1>
+  <h3>Sistema de Gestión de Reservas Académicas</h3>
+  
+  [![NestJS](https://img.shields.io/badge/NestJS-11.0.1-red.svg)](https://nestjs.com/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3-blue.svg)](https://www.typescriptlang.org/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-8.16.0-blue.svg)](https://www.postgresql.org/)
+  [![Docker](https://img.shields.io/badge/Docker-Support-2496ED.svg)](https://www.docker.com/)
+</div>
 
 ## 📋 Descripción del Proyecto
 
