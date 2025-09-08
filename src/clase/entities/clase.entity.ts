@@ -1,12 +1,9 @@
-import { truncate } from 'fs';
-import { Aula } from 'src/aula/entities/aula.entity';
 import { ClaseAula } from 'src/clase_aula/entities/clase_aula.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { MatriculaClase } from 'src/matricula_clase/entities/matricula_clase.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
-import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
   CreateDateColumn,
@@ -48,6 +45,9 @@ export class Clase {
 
   @Column({ type: 'varchar', length: 50 })
   tipo: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  codigo_cruzado?: string;
 
   @Column({ type: 'date' })
   inicio: Date;

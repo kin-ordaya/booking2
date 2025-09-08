@@ -56,8 +56,12 @@ export class CreateClaseDto {
 
   @IsNotEmpty()
   @IsString()
-  @IsIn(['ESPECIALIDAD', 'TRANSVERSAL', 'GENERAL', 'CRUZADA'])
+  @IsIn(['ESPECIALIDAD', 'TRANSVERSAL', 'GENERAL'])
   tipo: string;
+
+  @IsOptional()
+  @IsString()
+  codigo_cruzado: string;
 
   @IsNotEmpty()
   @IsDateString()

@@ -38,6 +38,7 @@ export class ClaseService {
         nrc_secundario,
         inscritos,
         tipo,
+        codigo_cruzado,
         inicio,
         fin,
         curso_modalidad_id,
@@ -75,6 +76,7 @@ export class ClaseService {
         nrc_secundario,
         inscritos,
         tipo,
+        codigo_cruzado,
         inicio,
         fin,
         cursoModalidad: { id: curso_modalidad_id },
@@ -236,6 +238,7 @@ export class ClaseService {
         nrc_secundario,
         inscritos,
         tipo,
+        codigo_cruzado,
         inicio,
         fin,
         curso_modalidad_id,
@@ -301,6 +304,10 @@ export class ClaseService {
 
       if (tipo !== undefined) {
         updateData.tipo = tipo;
+      }
+
+      if (codigo_cruzado !== undefined) {
+        updateData.codigo_cruzado = codigo_cruzado;
       }
 
       // Validación de fechas
