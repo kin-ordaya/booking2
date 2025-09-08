@@ -67,6 +67,7 @@ export class DeclaracionJuradaService {
       const declaracionJuradaExists =
         await this.declaracionJuradaRepository.findOne({
           where: {
+            estado: '1',
             rolUsuario: { id: rol_usuario_id },
             recurso: { id: recurso_id },
           },
