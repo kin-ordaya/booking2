@@ -45,7 +45,7 @@ export class Usuario {
   @Column({ type: 'varchar', length: 50, nullable: true })
   sexo?: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 200, nullable: true })
   direccion?: string;
 
   // @Column({ type: 'varchar', length: 50, nullable: true })
