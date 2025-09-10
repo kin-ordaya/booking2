@@ -177,11 +177,11 @@ export class EmailService {
       // Formatear fecha
       const fechaInicio = new Date(reservaData.reserva.fechaInicio);
       const fechaFin = new Date(reservaData.reserva.fechaFin);
-
+      //TODO: Cambiar o configurar ya que resta 5 horas
       const fechaHtml = `
       <p>
-        - Fecha: ${fechaInicio.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}<br>
-        - Horario: ${fechaInicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${fechaFin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+        - Fecha: ${reservaData.reserva.fechaInicio.toDateString()}<br>
+        - Horario: ${reservaData.reserva.fechaInicio.toDateString()} - ${reservaData.reserva.fechaFin.toDateString()}
       </p>
     `;
 
