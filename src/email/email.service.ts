@@ -180,8 +180,8 @@ export class EmailService {
       //TODO: Cambiar o configurar ya que resta 5 horas
       const fechaHtml = `
       <p>
-        - Fecha: ${reservaData.reserva.fechaInicio.toDateString()}<br>
-        - Horario: ${reservaData.reserva.fechaInicio.toDateString()} - ${reservaData.reserva.fechaFin.toDateString()}
+        - Fecha: ${reservaData.reserva.fechaInicio}<br>
+        - Horario: ${reservaData.reserva.fechaInicio} - ${reservaData.reserva.fechaFin}
       </p>
     `;
 
