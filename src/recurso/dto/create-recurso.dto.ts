@@ -1,6 +1,5 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,

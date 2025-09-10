@@ -30,7 +30,7 @@ export class Recurso {
   @Column({ type: 'varchar', length: 100 })
   nombre: string;
 
-  @Column({ type: 'varchar', length: 150, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   descripcion?: string;
 
   // @Column({ type: 'int', nullable: true })
