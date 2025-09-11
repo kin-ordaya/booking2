@@ -174,16 +174,20 @@ export class EmailService {
       }
       // console.log('Destinatario:', destinatario);
 
-      // Formatear fecha
       const fechaInicio = new Date(reservaData.reserva.fechaInicio);
       const fechaFin = new Date(reservaData.reserva.fechaFin);
 
+      const opcionesFecha: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
+      const opcionesHora: Intl.DateTimeFormatOptions  = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' };
+
       const fechaHtml = `
-      <p>
-        - Fecha: ${fechaInicio.toDateString()}<br>
-        - Horario: ${fechaInicio.toTimeString()} - ${fechaFin.toTimeString()}
-      </p>
-    `;
+        <p>
+          - Fecha: ${fechaInicio.toLocaleDateString('es-ES', opcionesFecha)}<br>
+          - Horario: ${fechaInicio.toLocaleTimeString('es-ES', opcionesHora)} - ${fechaFin.toLocaleTimeString('es-ES', opcionesHora)}
+        </p>
+      `;
+
+
 
       // 3. Combinar todas las credenciales
       const todasLasCredenciales = [
