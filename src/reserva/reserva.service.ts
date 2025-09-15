@@ -48,6 +48,7 @@ export class ReservaService {
     autorId: string,
     inicio: Date,
     fin: Date,
+    claseId?: string,
   ) {
     const [recurso, autor] = await Promise.all([
       this.recursoRepository.findOneBy({ id: recursoId }),
@@ -68,7 +69,42 @@ export class ReservaService {
     );
     this.validateReservationDuration(autor.rol.nombre, inicio, fin);
 
+    if (claseId) {
+      await this.validarClaseSinReservaDuplicada(
+        claseId,
+        inicio,
+        fin,
+        recursoId,
+      );
+    }
+
     return { recurso, autor };
+  }
+
+  private async validarClaseSinReservaDuplicada(
+    claseId: string,
+    inicio: Date,
+    fin: Date,
+    recursoId: string,
+  ) {
+    const reservaExistente = await this.reservaRepository
+      .createQueryBuilder('reserva')
+      .where('reserva.clase_id = :claseId', { claseId })
+      .andWhere('reserva.recurso_id = :recursoId', { recursoId })
+      .andWhere('reserva.estado = :estado', { estado: 1 })
+      .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
+        inicio,
+        fin,
+      })
+      .getOne();
+
+    if (reservaExistente) {
+      throw new ConflictException(
+        `La clase ya tiene una reserva activa en este recurso para el horario seleccionado. ` +
+          `Reserva existente: ${new Date(reservaExistente.inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} - ` +
+          `${new Date(reservaExistente.fin).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+      );
+    }
   }
 
   private async validarInicioyFinReserva(
@@ -545,6 +581,7 @@ export class ReservaService {
         autor_id,
         new Date(inicio),
         new Date(fin),
+        clase_id
       );
 
       let docente;
@@ -653,6 +690,7 @@ export class ReservaService {
         autor_id,
         new Date(inicio),
         new Date(fin),
+        clase_id
       );
 
       const [clase, docente] = await Promise.all([
