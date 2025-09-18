@@ -198,6 +198,33 @@ export class UsuarioService {
     }
   }
 
+  async findOneByNumeroDocumento(numero_documento: string, tipo_documento: string) {
+    try {
+
+      console.log(`tipo_documento: ${tipo_documento}`);
+      console.log(`numero_documento: `+numero_documento);
+
+      const tipoDocumento = await this.documentoIdentidadRepository.findOne({ where: { nombre: tipo_documento } });
+
+      if(!tipoDocumento) throw new NotFoundException('Tipo de documento no encontrado');
+
+      return await this.usuarioRepository.findOne({
+        where: {
+          numero_documento,
+          documento_identidad: { id: tipoDocumento.id },
+        },
+      })
+
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     try {
       const {
@@ -323,36 +350,37 @@ export class UsuarioService {
   }
 
   async uploadExcel(
-  usuarios: any[], // Recibes datos crudos
-): Promise<{ exitos: number; errores: any[] }> {
-  const errores: any[] = [];
-  let exitos = 0;
+    usuarios: any[], // Recibes datos crudos
+  ): Promise<{ exitos: number; errores: any[] }> {
+    const errores: any[] = [];
+    let exitos = 0;
 
-  for (const [index, usuarioData] of usuarios.entries()) {
-    try {
-      // 1. Transformar a instancia de CreateUsuarioDto
-      const usuarioDto = plainToInstance(CreateUsuarioDto, usuarioData);
-      
-      // 2. Validar con class-validator
-      const validationErrors = await validate(usuarioDto);
-      
-      if (validationErrors.length > 0) {
-        throw new Error(`Validación fallida: ${JSON.stringify(validationErrors.map(e => e.property))}`);
+    for (const [index, usuarioData] of usuarios.entries()) {
+      try {
+        // 1. Transformar a instancia de CreateUsuarioDto
+        const usuarioDto = plainToInstance(CreateUsuarioDto, usuarioData);
+
+        // 2. Validar con class-validator
+        const validationErrors = await validate(usuarioDto);
+
+        if (validationErrors.length > 0) {
+          throw new Error(
+            `Validación fallida: ${JSON.stringify(validationErrors.map((e) => e.property))}`,
+          );
+        }
+
+        // 3. Si pasa validación, crear el usuario
+        await this.create(usuarioDto);
+        exitos++;
+      } catch (error) {
+        errores.push({
+          indice: index + 1,
+          datos: usuarioData,
+          error: error.message || error,
+        });
       }
-
-      // 3. Si pasa validación, crear el usuario
-      await this.create(usuarioDto);
-      exitos++;
-      
-    } catch (error) {
-      errores.push({
-        indice: index + 1,
-        datos: usuarioData,
-        error: error.message || error
-      });
     }
+
+    return { exitos, errores };
   }
-  
-  return { exitos, errores };
-}
 }

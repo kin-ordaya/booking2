@@ -1,13 +1,16 @@
-import { Type } from 'class-transformer';
 import { Module } from '@nestjs/common';
 import { ImportService } from './import.service';
 import { ImportController } from './import.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { UsuarioModule } from 'src/usuario/usuario.module';
+import { RolModule } from 'src/rol/rol.module';
+import { DocumentoIdentidadModule } from 'src/documento_identidad/documento_identidad.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([]), UsuarioModule],
+  imports: [
+    UsuarioModule,
+    RolModule,
+    DocumentoIdentidadModule,
+  ],
   controllers: [ImportController],
   providers: [ImportService],
 })

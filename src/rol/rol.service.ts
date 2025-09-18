@@ -64,6 +64,26 @@ export class RolService {
     }
   }
 
+  async findOneByNombre(nombre: string) {
+    try {
+      console.log(nombre);
+      if (!nombre)
+        throw new BadRequestException(
+          'El nombre del rol no puede estar vacío',
+        );
+      const rol = await this.rolRepository.findOne({ where: { nombre } });
+      if (!rol) throw new NotFoundException('Rol no encontrado');
+      return rol;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(id: string, updateRolDto: UpdateRolDto) {
     try {
       const { nombre } = updateRolDto;

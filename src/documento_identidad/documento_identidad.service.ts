@@ -78,6 +78,32 @@ export class DocumentoIdentidadService {
     }
   }
 
+  async findOneByNombre(nombre: string) {
+    try {
+      console.log(nombre);
+      if (!nombre)
+        throw new BadRequestException(
+          'El nombre del documento identidad no puede estar vacío',
+        );
+      const documentoIdentidad =
+        await this.documentoIdentidadRepository.findOne({
+          where: {
+            nombre,
+          },
+        });
+      if (!documentoIdentidad)
+        throw new NotFoundException('Documento identidad no encontrado');
+      return documentoIdentidad;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(
     id: string,
     updateDocumentoIdentidadDto: UpdateDocumentoIdentidadDto,
@@ -142,10 +168,13 @@ export class DocumentoIdentidadService {
 
       if (result.affected === 0)
         throw new NotFoundException('Documento identidad no encontrado');
-      
+
       return this.documentoIdentidadRepository.findOneBy({ id });
     } catch (error) {
-      if(error instanceof BadRequestException || error instanceof NotFoundException)
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      )
         throw error;
       throw new InternalServerErrorException('Error inesperado');
     }
