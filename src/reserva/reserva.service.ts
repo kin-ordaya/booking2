@@ -162,11 +162,15 @@ export class ReservaService {
       })
       .getOne();
 
+      // console.log(`[RESERVA EXISTENTE] Rango: ${inicio} - ${fin}`);
+      // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio}, Fin: ${reservaExistente?.fin}`);
+      // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio.toISOString()}, Fin: ${reservaExistente?.fin.toISOString()}`);
+
     if (reservaExistente) {
       throw new ConflictException(
         `La clase ya tiene una reserva activa en este recurso para el horario seleccionado. ` +
-          `Reserva existente: ${new Date(reservaExistente.inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} - ` +
-          `${new Date(reservaExistente.fin).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+          `Reserva existente: ${new Date(inicio.toISOString()).toLocaleString('es-PE', { timeZone: 'America/Lima' })} - ` +
+          `${new Date(fin.toISOString()).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
   }
