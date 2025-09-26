@@ -139,13 +139,20 @@ export class EmailService {
       }
 
       let docente;
-      let destinatario;
+      let autor;
+      let destinatarioPrincipal;
+      let destinatariosSecundarios: string[] = [];
 
       if (reservaData.reserva.mantenimiento == 0) {
         if (reservaData.docente) {
           // console.log(' Mantenimiento 0 - Docente');
           docente = await this.rolUsuarioRepository.findOne({
             where: { id: reservaData.docente.id, rol: { nombre: 'DOCENTE' } },
+            relations: ['usuario', 'rol'],
+          });
+
+          autor = await this.rolUsuarioRepository.findOne({
+            where: { id: reservaData.autor.id, rol: { nombre: 'ADMINISTRADOR' } },
             relations: ['usuario', 'rol'],
           });
 
@@ -163,15 +170,29 @@ export class EmailService {
             );
           }
 
-          destinatario = docente.usuario.correo_institucional;
+          if (!autor) {
+            throw new NotFoundException(
+              `Autor con ID ${reservaData.autor.id} no encontrado`,
+            );
+          }
+          if (!autor.usuario.correo_institucional) {
+            throw new NotFoundException(
+              `Correo no configurado para el autor con ID ${reservaData.autor.correo}`,
+            );
+          }
+
+          destinatarioPrincipal = docente.usuario.correo_institucional;
+          destinatariosSecundarios.push(autor.usuario.correo_institucional);
         } else {
           // console.log(' Mantenimiento 0 - Autor');
-          destinatario = reservaData.autor.correo;
+          destinatarioPrincipal=reservaData.autor.correo;
+          
         }
       } else {
         // console.log(' Mantenimiento 1 - Autor');
-        destinatario = reservaData.autor.correo;
+        destinatarioPrincipal=reservaData.autor.correo;
       }
+      destinatariosSecundarios.push('nespinoza@continental.edu.pe');
       // console.log('Destinatario:', destinatario);
 
       const fechaInicio = new Date(reservaData.reserva.fechaInicio);
@@ -223,7 +244,8 @@ export class EmailService {
       // 6. Enviar email
       const options: nodemailer.SendMailOptions = {
         from: this.configService.get<string>('EMAIL_USER'),
-        to: destinatario,
+        to: destinatarioPrincipal,
+        cc: destinatariosSecundarios?.join(', '),
         subject: asunto,
         html: getReservaTemplate(emailData),
       };

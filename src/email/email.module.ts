@@ -4,10 +4,10 @@ import { EmailController } from './email.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
-import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import { Curso } from 'src/curso/entities/curso.entity';
 
 @Module({
   imports: [
@@ -16,7 +16,8 @@ import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
       Recurso,
       DetalleReserva,
       RolUsuario,
-      SeccionEmail
+      SeccionEmail,
+      Curso
     ]),
   ],
   controllers: [EmailController],
