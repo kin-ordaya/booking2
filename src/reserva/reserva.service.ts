@@ -1090,6 +1090,8 @@ export class ReservaService {
       // Filtro por reservas expiradas/no expiradas
       if (sort_expired) {
         const now = new Date();
+        console.log(`FECHA ACTUAL: ${now}`);
+        console.log(`FECHA ACTUAL ISO: ${now.toISOString()}`);
         if (sort_expired === 1) {
           // Expiradas
           query.andWhere('reserva.fin < :now', { now });

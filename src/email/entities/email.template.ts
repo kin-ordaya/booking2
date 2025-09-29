@@ -11,6 +11,9 @@ export const getReservaTemplate = (data: {
     tipo: 'LINK' | 'IMAGEN';
   }>;
   esMantenimiento?: boolean; // Nuevo campo
+  responsable_nombres?: string; // Nuevo campo
+  responsable_correo?: string; // Nuevo campo
+  responsable_telefono?: string;
 }) => {
   const {
     recurso_nombre,
@@ -20,6 +23,9 @@ export const getReservaTemplate = (data: {
     link_aula_virtual,
     secciones_email = [],
     esMantenimiento = false,
+    responsable_nombres,
+    responsable_correo,
+    responsable_telefono,
   } = data;
 
   // Verificar si hay al menos una credencial con usuario
@@ -399,12 +405,16 @@ export const getReservaTemplate = (data: {
         (seccion) => `
       <div class="seccion-email ${seccion.asunto.toLowerCase()}">
         <h3>${seccion.asunto}:</h3>
-        ${seccion.tipo === 'LINK' && seccion.link 
-          ? `<a href="${seccion.link}" target="_blank">${seccion.link}</a>` 
-          : ''}
-        ${seccion.tipo === 'IMAGEN' && seccion.link 
-          ? `<img src="${seccion.link}" alt="${seccion.asunto}" class="seccion-image">` 
-          : ''}
+        ${
+          seccion.tipo === 'LINK' && seccion.link
+            ? `<a href="${seccion.link}" target="_blank">${seccion.link}</a>`
+            : ''
+        }
+        ${
+          seccion.tipo === 'IMAGEN' && seccion.link
+            ? `<img src="${seccion.link}" alt="${seccion.asunto}" class="seccion-image">`
+            : ''
+        }
       </div>
     `,
       )
@@ -412,6 +422,33 @@ export const getReservaTemplate = (data: {
     `
         : ''
     }
+
+    <!-- NUEVA SECCIÓN: Tabla de contactos -->
+    <div style="margin: 2rem 0;">
+      <h3>Contacto de Recursos Académicos Virtuales</h3>
+      <p>El supervisor de Recursos Académicos Virtuales y Asistente de Recursos Académicos Virtuales siempre están atentos para recibir cualquier consulta y/o sugerencias de acuerdo a las normativas institucionales:</p>
+      
+      <table class="contactos-table">
+        <tr>
+          <th>CARGO</th>
+          <th>NOMBRE</th>
+          <th>CORREO</th>
+          <th>NÚMERO</th>
+        </tr>
+        <tr>
+          <td><strong>Asistente de Recursos Académicos Virtuales</strong></td>
+          <td>${responsable_nombres || '--'}</td>
+          <td>${responsable_correo || '--'}</td>
+          <td>${responsable_telefono || '--'}</td>
+        </tr>
+        <tr>
+          <td><strong>Supervisor de Recursos Académicos Virtuales</strong></td>
+          <td>NICOLÁS ESPINOZA</td>
+          <td>nespinoza@continental.edu.pe</td>
+          <td>945605752</td>
+        </tr>
+      </table>
+    </div>
         ${
           !esMantenimiento
             ? `
