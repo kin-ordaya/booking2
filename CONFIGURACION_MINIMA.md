@@ -69,6 +69,15 @@ git push origin master
 - Si sale verde ✅ → ¡Listo!
 - La imagen estará en: `https://hub.docker.com/r/ravlabos2025/booking2-backend`
 
+### **6. Desplegar en tu servidor:**
+```bash
+# En tu servidor
+docker pull ravlabos2025/booking2-backend:latest
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Ver guía completa: `DEPLOY_MANUAL.md`
+
 ## 🎯 **¿Qué hace cada secreto?**
 
 - **DOCKER_USERNAME/PASSWORD** → Para subir imagen a Docker Hub
