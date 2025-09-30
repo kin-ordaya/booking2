@@ -426,7 +426,7 @@ export const getReservaTemplate = (data: {
     <!-- NUEVA SECCIÓN: Tabla de contactos -->
     <div style="margin: 2rem 0;">
       <h3>Contacto de Recursos Académicos Virtuales</h3>
-      <p>El supervisor de Recursos Académicos Virtuales y Asistente de Recursos Académicos Virtuales siempre están atentos para recibir cualquier consulta y/o sugerencias de acuerdo a las normativas institucionales:</p>
+      <p>El supervisor y Asistente de Recursos Académicos Virtuales siempre están atentos para recibir cualquier consulta y/o sugerencias de acuerdo a las normativas institucionales:</p>
       
       <table class="contactos-table">
         <tr>
