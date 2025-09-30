@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: booking2-db-prod
+    environment:
+      POSTGRES_DB: ${DB_NAME:-booking2}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-booking123456}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+      - ./init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - booking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-booking2}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+
+  # Aplicación NestJS
+  app:
+    image: ravlabos2025/booking2-backend:latest
+    container_name: booking2-app-prod
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=${DB_PASS:-booking123456}
+      - DB_NAME=booking2
+      - JWT_SECRET=${JWT_SECRET:-jwt-secret-por-defecto-desarrollo-1234567890}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - PORT=3000
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587 
+      - EMAIL_USER=lab.recursosvirt@continental.edu.pe
+      - EMAIL_PASS=${EMAIL_PASS}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - booking-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Servicio de backups automáticos
+  backup:
+    image: postgres:15-alpine
+    container_name: booking2-backup
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-booking123456}
+      POSTGRES_DB: ${DB_NAME:-booking2}
+      BACKUP_SCHEDULE: "0 2 * * *"  # Backup diario a las 2 AM
+      BACKUP_RETENTION_DAYS: 7      # Mantener backups por 7 días
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - booking-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      echo '#!/bin/sh' > /scripts/backup.sh &&
+      echo 'cd /backups' >> /scripts/backup.sh &&
+      echo 'TIMESTAMP=$$(date +\"%Y%m%d_%H%M%S\")' >> /scripts/backup.sh &&
+      echo 'BACKUP_FILE=\"booking2_backup_$$TIMESTAMP.sql\"' >> /scripts/backup.sh &&
+      echo 'pg_dump -h db -U $$POSTGRES_USER -d $$POSTGRES_DB > $$BACKUP_FILE' >> /scripts/backup.sh &&
+      echo 'gzip $$BACKUP_FILE' >> /scripts/backup.sh &&
+      echo 'find /backups -name \"*.gz\" -mtime +$$BACKUP_RETENTION_DAYS -delete' >> /scripts/backup.sh &&
+      echo 'echo \"Backup completed: $$BACKUP_FILE.gz\"' >> /scripts/backup.sh &&
+      chmod +x /scripts/backup.sh &&
+      while true; do
+        sleep 86400;
+        /scripts/backup.sh;
+      done
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  booking-network:
+    driver: bridge
