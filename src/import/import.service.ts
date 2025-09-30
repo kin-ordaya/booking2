@@ -2,7 +2,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { UsuarioService } from 'src/usuario/usuario.service';
 import { CreateUsuarioDto } from 'src/usuario/dto/create-usuario.dto';
 import { ImportResultDto } from './dto/result-import.dto';
-import * as xlsx from 'xlsx-community';
+import * as XLSX from 'xlsx';
 import { DocumentoIdentidadService } from 'src/documento_identidad/documento_identidad.service';
 import { RolService } from 'src/rol/rol.service';
 
@@ -15,9 +15,9 @@ export class ImportService {
   ) {}
 
   async procesarExcel(fileBuffer: Buffer) {
-    const workbook = xlsx.read(fileBuffer);
+    const workbook = XLSX.read(fileBuffer);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    const data = XLSX.utils.sheet_to_json(worksheet);
 
     const resultados: ImportResultDto = {
       exitosos: 0,

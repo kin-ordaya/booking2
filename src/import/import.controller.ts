@@ -8,7 +8,7 @@ export class ImportController {
 
   @Post('excel')
   @UseInterceptors(FileInterceptor('file'))
-  async create(@UploadedFile() file: Express.Multer.File) {
+  async create(@UploadedFile() file: any) {
     try {
       const resultado = await this.importService.procesarExcel(file.buffer);
       return {

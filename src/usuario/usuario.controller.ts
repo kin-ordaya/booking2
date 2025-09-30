@@ -22,7 +22,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as XLSX from 'xlsx-community';
+import * as XLSX from 'xlsx';
 @Controller('usuario')
 @ApiBearerAuth()
 @UseGuards(AuthGuard, RolesGuard)
@@ -38,7 +38,7 @@ export class UsuarioController {
   @Post('upload_excel')
   @Roles('ADMINISTRADOR')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadExcel(@UploadedFile() file: Express.Multer.File) {
+  async uploadExcel(@UploadedFile() file: any) {
     if (!file) throw new Error('No se pudo subir el archivo');
     try {
       // Leer el archivo Excel
