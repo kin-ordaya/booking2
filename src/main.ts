@@ -14,7 +14,7 @@ async function bootstrap() {
   );
   const config = new DocumentBuilder()
     .setTitle('Booking 2 API')
-    .setDescription('Booking 2 API description')
+    .setDescription('Booking 2 API description Despliegue')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
