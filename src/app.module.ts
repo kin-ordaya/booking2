@@ -38,6 +38,7 @@ import { types } from 'pg';
 import { EmailModule } from './email/email.module';
 import { SeccionEmailModule } from './seccion_email/seccion_email.module';
 import { PeriodoModule } from './periodo/periodo.module';
+import { ImportModule } from './import/import.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -111,6 +112,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     TipoRecursoModule,
     UsuarioModule,
     PeriodoModule,
+    ImportModule,
   ],
 })
 export class AppModule {}

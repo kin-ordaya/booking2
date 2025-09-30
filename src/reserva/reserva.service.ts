@@ -27,6 +27,9 @@ export class ReservaService {
     @InjectRepository(Reserva)
     private readonly reservaRepository: Repository<Reserva>,
 
+    @InjectRepository(DetalleReserva)
+    private readonly detalleReservaRepository: Repository<DetalleReserva>,
+
     @InjectRepository(Recurso)
     private readonly recursoRepository: Repository<Recurso>,
 
@@ -42,12 +45,74 @@ export class ReservaService {
     private readonly dataSource: DataSource,
   ) {}
 
+  async obtenerCredencialesPreferidasDocente(
+    docenteId: string,
+    credencialesDisponibles: Credencial[],
+  ): Promise<Credencial[]> {
+    // Obtener todas las reservas previas del docente
+    const reservasDocente = await this.reservaRepository.find({
+      where: {
+        docente: { id: docenteId },
+        estado: 1, // Solo reservas activas
+      },
+      relations: ['detalle_reserva', 'detalle_reserva.credencial'],
+    });
+
+    // Contar frecuencia de uso de cada credencial
+    const frecuenciaUso = new Map<string, number>();
+
+    reservasDocente.forEach((reserva) => {
+      reserva.detalle_reserva.forEach((detalle) => {
+        if (
+          detalle.credencial &&
+          detalle.credencial.rol?.nombre === 'DOCENTE'
+        ) {
+          const credencialId = detalle.credencial.id;
+          frecuenciaUso.set(
+            credencialId,
+            (frecuenciaUso.get(credencialId) || 0) + 1,
+          );
+        }
+      });
+    });
+
+    // Ordenar credenciales disponibles por frecuencia de uso
+    return credencialesDisponibles
+      .filter((credencial) => credencial.rol?.nombre === 'DOCENTE')
+      .sort((a, b) => {
+        const freqA = frecuenciaUso.get(a.id) || 0;
+        const freqB = frecuenciaUso.get(b.id) || 0;
+        return freqB - freqA; // Orden descendente (más usadas primero)
+      });
+  }
+
+  async obtenerCredencialMasUsadaPorDocente(
+    docenteId: string,
+  ): Promise<string | null> {
+    const detalles = await this.detalleReservaRepository
+      .createQueryBuilder('detalle')
+      .innerJoin('detalle.reserva', 'reserva')
+      .innerJoin('detalle.credencial', 'credencial')
+      .innerJoin('credencial.rol', 'rol')
+      .where('reserva.docente_id = :docenteId', { docenteId })
+      .andWhere('reserva.estado = 1')
+      .andWhere('rol.nombre = :rol', { rol: 'DOCENTE' })
+      .select('credencial.id', 'credencial_id')
+      .addSelect('COUNT(*)', 'veces_usada')
+      .groupBy('credencial.id')
+      .orderBy('veces_usada', 'DESC')
+      .limit(1)
+      .getRawOne();
+
+    return detalles ? detalles.credencial_id : null;
+  }
   // Métodos comunes
   private async validateBasicReservationData(
     recursoId: string,
     autorId: string,
     inicio: Date,
     fin: Date,
+    claseId?: string,
   ) {
     const [recurso, autor] = await Promise.all([
       this.recursoRepository.findOneBy({ id: recursoId }),
@@ -68,7 +133,46 @@ export class ReservaService {
     );
     this.validateReservationDuration(autor.rol.nombre, inicio, fin);
 
+    if (claseId) {
+      await this.validarClaseSinReservaDuplicada(
+        claseId,
+        inicio,
+        fin,
+        recursoId,
+      );
+    }
+
     return { recurso, autor };
+  }
+
+  private async validarClaseSinReservaDuplicada(
+    claseId: string,
+    inicio: Date,
+    fin: Date,
+    recursoId: string,
+  ) {
+    const reservaExistente = await this.reservaRepository
+      .createQueryBuilder('reserva')
+      .where('reserva.clase_id = :claseId', { claseId })
+      .andWhere('reserva.recurso_id = :recursoId', { recursoId })
+      .andWhere('reserva.estado = :estado', { estado: 1 })
+      .andWhere('NOT (reserva.fin <= :inicio OR reserva.inicio >= :fin)', {
+        inicio,
+        fin,
+      })
+      .getOne();
+
+      // console.log(`[RESERVA EXISTENTE] Rango: ${inicio} - ${fin}`);
+      // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio}, Fin: ${reservaExistente?.fin}`);
+      // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio.toISOString()}, Fin: ${reservaExistente?.fin.toISOString()}`);
+
+    if (reservaExistente) {
+      throw new ConflictException(
+        `La clase ya tiene una reserva activa en este recurso para el horario seleccionado. ` +
+          `Reserva existente: ${new Date(inicio.toISOString()).toLocaleString('es-PE', { timeZone: 'America/Lima' })} - ` +
+          `${new Date(fin.toISOString()).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+      );
+    }
   }
 
   private async validarInicioyFinReserva(
@@ -160,6 +264,8 @@ export class ReservaService {
     credencialesGenerales: Credencial[],
     credencialesDocentes: Credencial[],
     capacidadPorCredencial: number,
+    docenteId?: string,
+    recurso?: Recurso,
   ) {
     // console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
 
@@ -204,6 +310,55 @@ export class ReservaService {
     const docentesDisponibles = credencialesDocentes.filter(
       (c) => !credencialesOcupadas.has(c.id),
     );
+
+    // ORDENAR POR PREFERENCIA SI HAY DOCENTE
+    let docentesOrdenados = docentesDisponibles;
+    let estudiantesOrdenados = generalesDisponibles;
+
+    // Validar si aplica asignación preferencial
+    const aplicaPreferencial =
+      recurso?.asignacion_preferencial === 1 &&
+      docenteId &&
+      credencialesDocentes.length > 0 &&
+      generalesDisponibles.length > 0;
+
+    if (aplicaPreferencial) {
+      try {
+        console.log(
+          '[PREFERENCIAL] Aplicando lógica de preferencia para docente:',
+          docenteId,
+        );
+
+        // Obtener preferencias para DOCENTES
+        const credencialesDocentesPreferidas =
+          await this.obtenerCredencialesPreferidasPorTipo(
+            docenteId,
+            docentesDisponibles,
+            'DOCENTE',
+          );
+        docentesOrdenados = credencialesDocentesPreferidas;
+
+        // Obtener preferencias para ESTUDIANTES (mismo docente)
+        const credencialesEstudiantesPreferidas =
+          await this.obtenerCredencialesPreferidasPorTipo(
+            docenteId,
+            generalesDisponibles,
+            'ESTUDIANTE',
+          );
+        estudiantesOrdenados = credencialesEstudiantesPreferidas;
+
+        console.log(
+          `[PREFERENCIAL] Docentes ordenados: ${docentesOrdenados.length}, Estudiantes ordenados: ${estudiantesOrdenados.length}`,
+        );
+      } catch (error) {
+        console.warn(
+          'Error al obtener preferencias, usando orden normal:',
+          error,
+        );
+      }
+    } else {
+      console.log('[PREFERENCIAL] No aplica asignación preferencial');
+    }
 
     // console.log(
     //   `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
@@ -254,6 +409,99 @@ export class ReservaService {
         necesariasDocentes,
       ),
     };
+  }
+
+  async obtenerCredencialesPreferidasPorTipo(
+    docenteId: string,
+    credencialesDisponibles: Credencial[],
+    tipo: 'DOCENTE' | 'ESTUDIANTE',
+  ): Promise<Credencial[]> {
+    // Obtener todas las reservas previas del docente
+    const reservasDocente = await this.reservaRepository.find({
+      where: {
+        docente: { id: docenteId },
+        estado: 1,
+      },
+      relations: [
+        'detalle_reserva',
+        'detalle_reserva.credencial',
+        'detalle_reserva.credencial.rol',
+      ],
+    });
+
+    // Contar frecuencia de uso de cada credencial por tipo
+    const frecuenciaUso = new Map<string, number>();
+
+    reservasDocente.forEach((reserva) => {
+      reserva.detalle_reserva.forEach((detalle) => {
+        if (detalle.credencial && detalle.credencial.rol?.nombre === tipo) {
+          const credencialId = detalle.credencial.id;
+          frecuenciaUso.set(
+            credencialId,
+            (frecuenciaUso.get(credencialId) || 0) + 1,
+          );
+        }
+      });
+    });
+
+    // Ordenar credenciales disponibles por frecuencia de uso
+    return credencialesDisponibles
+      .filter((credencial) => credencial.rol?.nombre === tipo)
+      .sort((a, b) => {
+        const freqA = frecuenciaUso.get(a.id) || 0;
+        const freqB = frecuenciaUso.get(b.id) || 0;
+
+        // Si tienen misma frecuencia, mantener orden original
+        if (freqA === freqB) {
+          return 0;
+        }
+
+        return freqB - freqA; // Orden descendente (más usadas primero)
+      });
+  }
+
+  // ===== MÉTODO OPTIMIZADO CON CONSULTA DIRECTA =====
+  async obtenerCredencialesPreferidasOptimizado(
+    docenteId: string,
+    credencialesDisponibles: Credencial[],
+    tipo: 'DOCENTE' | 'ESTUDIANTE',
+  ): Promise<Credencial[]> {
+    const credencialIds = credencialesDisponibles.map((c) => c.id);
+
+    if (credencialIds.length === 0) {
+      return [];
+    }
+
+    const credencialesConUso = await this.detalleReservaRepository
+      .createQueryBuilder('detalle')
+      .innerJoin('detalle.reserva', 'reserva')
+      .innerJoin('detalle.credencial', 'credencial')
+      .innerJoin('credencial.rol', 'rol')
+      .where('reserva.docente_id = :docenteId', { docenteId })
+      .andWhere('reserva.estado = 1')
+      .andWhere('rol.nombre = :tipo', { tipo })
+      .andWhere('credencial.id IN (:...credencialIds)', { credencialIds })
+      .select('credencial.id', 'id')
+      .addSelect('COUNT(*)', 'veces_usada')
+      .groupBy('credencial.id')
+      .orderBy('veces_usada', 'DESC')
+      .getRawMany();
+
+    // Crear mapa de frecuencia
+    const frecuenciaMap = new Map(
+      credencialesConUso.map((item) => [item.id, parseInt(item.veces_usada)]),
+    );
+
+    // Ordenar credenciales disponibles por frecuencia
+    return credencialesDisponibles
+      .filter((credencial) => credencial.rol?.nombre === tipo)
+      .sort((a, b) => {
+        const freqA = frecuenciaMap.get(a.id) || 0;
+        const freqB = frecuenciaMap.get(b.id) || 0;
+
+        if (freqA === freqB) return 0;
+        return freqB - freqA;
+      });
   }
 
   private async saveReservation(
@@ -370,7 +618,7 @@ export class ReservaService {
           0,
           credencialesGenerales,
           [],
-          capacidadPorCredencial,
+          capacidadPorCredencial
         );
 
       const reservaGuardada = await this.saveReservation(
@@ -491,7 +739,7 @@ export class ReservaService {
         cantidad_accesos_docente || 0,
         credencialesEstudiantes,
         credencialDocentes,
-        capacidadPorCredencial,
+        capacidadPorCredencial
       );
 
       const reservaGuardada = await this.saveReservation(
@@ -545,6 +793,7 @@ export class ReservaService {
         autor_id,
         new Date(inicio),
         new Date(fin),
+        clase_id,
       );
 
       let docente;
@@ -653,6 +902,7 @@ export class ReservaService {
         autor_id,
         new Date(inicio),
         new Date(fin),
+        clase_id,
       );
 
       const [clase, docente] = await Promise.all([
@@ -720,6 +970,8 @@ export class ReservaService {
         credencialesEstudiantes,
         credencialesDocentes,
         capacidadPorCredencial,
+        docente_id,
+        recurso,
       );
 
       const reservaGuardada = await this.saveReservation(
@@ -838,6 +1090,8 @@ export class ReservaService {
       // Filtro por reservas expiradas/no expiradas
       if (sort_expired) {
         const now = new Date();
+        console.log(`FECHA ACTUAL: ${now}`);
+        console.log(`FECHA ACTUAL ISO: ${now.toISOString()}`);
         if (sort_expired === 1) {
           // Expiradas
           query.andWhere('reserva.fin < :now', { now });

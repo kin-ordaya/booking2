@@ -13,5 +13,6 @@ import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
   ],
   controllers: [UsuarioController],
   providers: [UsuarioService],
+  exports: [UsuarioService],
 })
 export class UsuarioModule {}

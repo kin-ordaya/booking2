@@ -30,7 +30,7 @@ export class Recurso {
   @Column({ type: 'varchar', length: 100 })
   nombre: string;
 
-  @Column({ type: 'varchar', length: 150, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   descripcion?: string;
 
   // @Column({ type: 'int', nullable: true })
@@ -48,10 +48,13 @@ export class Recurso {
   @Column({ type: 'int' })
   tiempo_reserva: number;
 
+  @Column({ type: 'int' })
+  asignacion_preferencial: number;
+
   // @Column({ type: 'varchar', length: 50, nullable: true })
   // credencial_tipo?:string
 
-  @Column({ type: 'int'})
+  @Column({ type: 'int' })
   capacidad: number;
 
   @ManyToOne(() => TipoRecurso, (tipoRecurso) => tipoRecurso.recursos, {
@@ -81,7 +84,10 @@ export class Recurso {
   @OneToMany(() => Credencial, (credencial) => credencial.recurso)
   credencial: Credencial[];
 
-  @OneToMany(()=> DeclaracionJurada, (declaracionJurada) => declaracionJurada.recurso)
+  @OneToMany(
+    () => DeclaracionJurada,
+    (declaracionJurada) => declaracionJurada.recurso,
+  )
   declaracionJurada: DeclaracionJurada[];
 
   @ManyToOne(() => TipoAcceso, (tipoAcceso) => tipoAcceso.recursos, {

@@ -56,6 +56,9 @@ export class EmailService {
         where: { id },
         relations: [
           'recurso',
+          'recurso.responsable',
+          'recurso.responsable.rolUsuario',
+          'recurso.responsable.rolUsuario.usuario',
           'docente',
           'docente.usuario',
           'docente.rol',
@@ -63,6 +66,8 @@ export class EmailService {
           'autor.usuario',
           'autor.rol',
           'clase',
+          'clase.cursoModalidad',
+          'clase.cursoModalidad.curso',
         ],
       });
 
@@ -85,6 +90,13 @@ export class EmailService {
           tipo: detalle.credencial.rol?.nombre.toLowerCase() || 'general',
         }));
 
+      // 4. Obtener responsable del recurso (si existe)
+      const responsableRecurso =
+        reserva.recurso.responsable?.[0]?.rolUsuario?.usuario;
+
+      // 5. Obtener nombre del curso
+      const nombreCurso = reserva.clase?.cursoModalidad?.curso?.nombre;
+
       // 4. Separar por tipos (todos vienen de detalle_reserva)
       return {
         docente: {
@@ -98,6 +110,20 @@ export class EmailService {
         recurso: {
           id: reserva.recurso.id,
         },
+        responsable: responsableRecurso
+          ? {
+              id: responsableRecurso.id,
+              nombres: responsableRecurso.nombres,
+              apellidos: responsableRecurso.apellidos,
+              correo: responsableRecurso.correo_institucional,
+              telefono_institucional: responsableRecurso.telefono_institucional,
+            }
+          : null,
+        curso: nombreCurso
+          ? {
+              nombre: nombreCurso,
+            }
+          : null,
         reserva: {
           nrc: reserva.clase?.nrc,
           id: reserva.id,
@@ -139,13 +165,23 @@ export class EmailService {
       }
 
       let docente;
-      let destinatario;
+      let autor;
+      let destinatarioPrincipal;
+      let destinatariosSecundarios: string[] = [];
 
       if (reservaData.reserva.mantenimiento == 0) {
         if (reservaData.docente) {
           // console.log(' Mantenimiento 0 - Docente');
           docente = await this.rolUsuarioRepository.findOne({
             where: { id: reservaData.docente.id, rol: { nombre: 'DOCENTE' } },
+            relations: ['usuario', 'rol'],
+          });
+
+          autor = await this.rolUsuarioRepository.findOne({
+            where: {
+              id: reservaData.autor.id,
+              rol: { nombre: 'ADMINISTRADOR' },
+            },
             relations: ['usuario', 'rol'],
           });
 
@@ -163,27 +199,53 @@ export class EmailService {
             );
           }
 
-          destinatario = docente.usuario.correo_institucional;
+          if (!autor) {
+            throw new NotFoundException(
+              `Autor con ID ${reservaData.autor.id} no encontrado`,
+            );
+          }
+          if (!autor.usuario.correo_institucional) {
+            throw new NotFoundException(
+              `Correo no configurado para el autor con ID ${reservaData.autor.correo}`,
+            );
+          }
+
+          destinatarioPrincipal = docente.usuario.correo_institucional;
+          destinatariosSecundarios.push(autor.usuario.correo_institucional);
         } else {
           // console.log(' Mantenimiento 0 - Autor');
-          destinatario = reservaData.autor.correo;
+          destinatarioPrincipal = reservaData.autor.correo;
         }
       } else {
         // console.log(' Mantenimiento 1 - Autor');
-        destinatario = reservaData.autor.correo;
+        destinatarioPrincipal = reservaData.autor.correo;
       }
+      destinatariosSecundarios.push('nespinoza@continental.edu.pe');
       // console.log('Destinatario:', destinatario);
 
-      // Formatear fecha
+      destinatariosSecundarios.push(reservaData.responsable?.correo || '');
+
       const fechaInicio = new Date(reservaData.reserva.fechaInicio);
       const fechaFin = new Date(reservaData.reserva.fechaFin);
 
+      const opcionesFecha: Intl.DateTimeFormatOptions = {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      };
+      const opcionesHora: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC',
+      };
+
       const fechaHtml = `
-      <p>
-        - Fecha: ${fechaInicio.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}<br>
-        - Horario: ${fechaInicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${fechaFin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-      </p>
-    `;
+        <p>
+          - Fecha: ${fechaInicio.toLocaleDateString('es-ES', opcionesFecha)}<br>
+          - Horario: ${fechaInicio.toLocaleTimeString('es-ES', opcionesHora)} - ${fechaFin.toLocaleTimeString('es-ES', opcionesHora)}
+        </p>
+      `;
 
       // 3. Combinar todas las credenciales
       const todasLasCredenciales = [
@@ -206,11 +268,22 @@ export class EmailService {
         link_aula_virtual: recurso.link_aula_virtual || undefined,
         secciones_email: seccionesEmail.length > 0 ? seccionesEmail : undefined,
         esMantenimiento: reservaData.reserva.mantenimiento == 1,
+        responsable_nombres: reservaData.responsable
+          ? reservaData.responsable?.apellidos +
+            ' ' +
+            reservaData.responsable?.nombres
+          : undefined,
+        responsable_correo: reservaData.responsable
+          ? reservaData.responsable?.correo
+          : undefined,
+        responsable_telefono: reservaData.responsable
+          ? reservaData.responsable?.telefono_institucional
+          : undefined,
       };
 
       let asunto = `Credenciales de acceso - ${recurso.nombre}`;
       if (reservaData.reserva.mantenimiento == 0 && reservaData.reserva.nrc) {
-        asunto += ` - ${reservaData.reserva.nrc}`;
+        asunto += ` - ${reservaData.reserva.nrc} - ${reservaData.curso?.nombre}`;
       }
       if (reservaData.reserva.mantenimiento == 1) {
         asunto = `Reserva de Mantenimiento - ${recurso.nombre}`;
@@ -219,7 +292,8 @@ export class EmailService {
       // 6. Enviar email
       const options: nodemailer.SendMailOptions = {
         from: this.configService.get<string>('EMAIL_USER'),
-        to: destinatario,
+        to: destinatarioPrincipal,
+        cc: destinatariosSecundarios?.join(', '),
         subject: asunto,
         html: getReservaTemplate(emailData),
       };

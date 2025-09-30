@@ -33,7 +33,7 @@ export class CursoModalidadService {
 
       const [cursoModalidadExist, cursoExiste, modalidadExiste] =
         await Promise.all([
-          this.cursoModalidadRepository.existsBy({ curso: { id: curso_id } }),
+          this.cursoModalidadRepository.existsBy({ curso: { id: curso_id, }, modalidad: { id: modalidad_id, } }),
           this.cursoRepository.existsBy({ id: curso_id }),
           this.modalidadRepository.existsBy({ id: modalidad_id }),
         ]);

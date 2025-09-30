@@ -13,7 +13,7 @@ import { CampusService } from './campus.service';
 import { CreateCampusDto } from './dto/create-campus.dto';
 import { UpdateCampusDto } from './dto/update-campus.dto';
 import { AtLeastOneFieldPipe } from 'src/common/pipe/at-least-one-field.pipe';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -26,12 +26,20 @@ export class CampusController {
 
   @Post()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Crear campus',
+    description: 'Crea un nuevo registro de campus en el sistema.',
+  })
   create(@Body() createCampusDto: CreateCampusDto) {
     return this.campusService.create(createCampusDto);
   }
 
   @Get()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Obtener todos los campus',
+    description: 'Obtener todos los campus del sistema.',
+  })
   findAll() {
     return this.campusService.findAll();
   }

@@ -8,5 +8,6 @@ import { DocumentoIdentidad } from './entities/documento_identidad.entity';
   imports: [TypeOrmModule.forFeature([DocumentoIdentidad])],
   controllers: [DocumentoIdentidadController],
   providers: [DocumentoIdentidadService],
+  exports: [DocumentoIdentidadService],
 })
 export class DocumentoIdentidadModule {}
