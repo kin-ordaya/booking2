@@ -80,7 +80,7 @@ export class DocumentoIdentidadService {
 
   async findOneByNombre(nombre: string) {
     try {
-      console.log(nombre);
+      //console.log(nombre);
       if (!nombre)
         throw new BadRequestException(
           'El nombre del documento identidad no puede estar vacío',

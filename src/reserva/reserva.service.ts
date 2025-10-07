@@ -324,10 +324,10 @@ export class ReservaService {
 
     if (aplicaPreferencial) {
       try {
-        console.log(
-          '[PREFERENCIAL] Aplicando lógica de preferencia para docente:',
-          docenteId,
-        );
+        // console.log(
+        //   '[PREFERENCIAL] Aplicando lógica de preferencia para docente:',
+        //   docenteId,
+        // );
 
         // Obtener preferencias para DOCENTES
         const credencialesDocentesPreferidas =
@@ -347,18 +347,19 @@ export class ReservaService {
           );
         estudiantesOrdenados = credencialesEstudiantesPreferidas;
 
-        console.log(
-          `[PREFERENCIAL] Docentes ordenados: ${docentesOrdenados.length}, Estudiantes ordenados: ${estudiantesOrdenados.length}`,
-        );
+        // console.log(
+        //   `[PREFERENCIAL] Docentes ordenados: ${docentesOrdenados.length}, Estudiantes ordenados: ${estudiantesOrdenados.length}`,
+        // );
       } catch (error) {
         console.warn(
           'Error al obtener preferencias, usando orden normal:',
           error,
         );
       }
-    } else {
-      console.log('[PREFERENCIAL] No aplica asignación preferencial');
-    }
+    } 
+    // else {
+      // console.log('[PREFERENCIAL] No aplica asignación preferencial');
+    // }
 
     // console.log(
     //   `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
@@ -1090,8 +1091,8 @@ export class ReservaService {
       // Filtro por reservas expiradas/no expiradas
       if (sort_expired) {
         const now = new Date();
-        console.log(`FECHA ACTUAL: ${now}`);
-        console.log(`FECHA ACTUAL ISO: ${now.toISOString()}`);
+        // console.log(`FECHA ACTUAL: ${now}`);
+        // console.log(`FECHA ACTUAL ISO: ${now.toISOString()}`);
         if (sort_expired === 1) {
           // Expiradas
           query.andWhere('reserva.fin < :now', { now });
