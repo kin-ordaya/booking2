@@ -177,13 +177,16 @@ export class EmailService {
             relations: ['usuario', 'rol'],
           });
 
+          //console.log('ID de Autor: '+ reservaData.autor.id);
           autor = await this.rolUsuarioRepository.findOne({
             where: {
-              id: reservaData.autor.id,
-              rol: { nombre: 'ADMINISTRADOR' },
+              id: reservaData.autor.id
             },
-            relations: ['usuario', 'rol'],
+            relations: ['usuario'],
           });
+
+          //console.log('Autor: '+ autor);
+
 
           //console.log('Docente:', docente);
 
@@ -204,6 +207,7 @@ export class EmailService {
               `Autor con ID ${reservaData.autor.id} no encontrado`,
             );
           }
+
           if (!autor.usuario.correo_institucional) {
             throw new NotFoundException(
               `Correo no configurado para el autor con ID ${reservaData.autor.correo}`,

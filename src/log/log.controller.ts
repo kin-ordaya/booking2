@@ -1,34 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+// log/log.controller.ts
+import { Controller, Get, Delete, Query, UseGuards } from '@nestjs/common';
 import { LogService } from './log.service';
-import { CreateLogDto } from './dto/create-log.dto';
-import { UpdateLogDto } from './dto/update-log.dto';
+import { GetLogsDto } from './dto/get-log.dto';
+import { LogsResponseDto } from './dto/log-response.dto';
+import { LogStatisticsResponseDto } from './dto/log-statistics-response.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @Controller('log')
 export class LogController {
   constructor(private readonly logService: LogService) {}
 
-  @Post()
-  create(@Body() createLogDto: CreateLogDto) {
-    return this.logService.create(createLogDto);
-  }
-
   @Get()
-  findAll() {
-    return this.logService.findAll();
+  @Roles('admin')
+  async getLogs(@Query() getLogsDto: GetLogsDto): Promise<LogsResponseDto> {
+    return this.logService.getLogs(getLogsDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.logService.findOne(+id);
+  @Get('statistics')
+  @Roles('admin')
+  async getLogStatistics(): Promise<LogStatisticsResponseDto> {
+    return this.logService.getLogStatistics();
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLogDto: UpdateLogDto) {
-    return this.logService.update(+id, updateLogDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.logService.remove(+id);
+  @Delete('cleanup')
+  @Roles('admin')
+  async cleanupLogs(@Query('daysToKeep') daysToKeep: number = 30) {
+    return this.logService.cleanupLogs(daysToKeep);
   }
 }
