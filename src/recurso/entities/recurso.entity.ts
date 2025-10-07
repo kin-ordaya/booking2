@@ -48,7 +48,7 @@ export class Recurso {
   @Column({ type: 'int' })
   tiempo_reserva: number;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   asignacion_preferencial: number;
 
   // @Column({ type: 'varchar', length: 50, nullable: true })
