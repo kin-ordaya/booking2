@@ -1,3 +1,4 @@
+// config/pinoConfig.ts
 import { Params } from 'nestjs-pino';
 import { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
@@ -9,10 +10,9 @@ export const pinoConfig: Params = {
   pinoHttp: {
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
     
-    // TRANSPORTE CORREGIDO - crea archivos en desarrollo
     transport: {
       targets: [
-        // Consola (solo para visualización)
+        // Consola para desarrollo
         {
           target: 'pino-pretty',
           level: 'debug',
@@ -24,13 +24,22 @@ export const pinoConfig: Params = {
             singleLine: false,
           },
         },
-        // Archivo principal (SE CREARÁ EN DESARROLLO)
+        // Archivo principal SIN rotación automática
         {
           target: 'pino/file',
           level: 'debug',
           options: {
             destination: join(process.cwd(), 'logs', 'app.log'),
-            mkdir: true, // 👈 ESTO CREA LA CARPETA AUTOMÁTICAMENTE
+            mkdir: true,
+          },
+        },
+        // Archivo de errores separado
+        {
+          target: 'pino/file',
+          level: 'error',
+          options: {
+            destination: join(process.cwd(), 'logs', 'error.log'),
+            mkdir: true,
           },
         },
       ],
