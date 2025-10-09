@@ -30,7 +30,7 @@ export const pinoConfig: Params = {
           level: 'debug',
           options: {
             destination: join(process.cwd(), 'logs', 'app.log'),
-            // mkdir: true,
+            mkdir: true,
           },
         },
         // Archivo de errores separado
@@ -39,7 +39,7 @@ export const pinoConfig: Params = {
           level: 'error',
           options: {
             destination: join(process.cwd(), 'logs', 'error.log'),
-            // mkdir: true,
+            mkdir: true,
           },
         },
       ],

@@ -2,6 +2,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Crear directorio de logs con permisos adecuados
+RUN mkdir -p /app/logs && chown -R node:node /app/logs
+
 COPY package*.json ./
 
 RUN npm ci && npm cache clean --force
