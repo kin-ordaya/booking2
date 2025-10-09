@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { CursoModule } from './curso/curso.module';
@@ -40,6 +40,10 @@ import { SeccionEmailModule } from './seccion_email/seccion_email.module';
 import { PeriodoModule } from './periodo/periodo.module';
 import { ImportModule } from './import/import.module';
 import { HealthModule } from './health/health.module';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoConfig } from './config/pinoConfig';
+// import { CorrelationIdMiddleware } from './config/correlation-id.middleware';
+import { LogModule } from './log/log.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -47,6 +51,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
 
 @Module({
   imports: [
+    LoggerModule.forRoot(pinoConfig),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -63,8 +68,8 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: true,
-      logging: true,
+      synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
+      logging: process.env.NODE_ENV !== 'production', // Solo en desarrollo
       extra: {
         options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
         // types: {
@@ -115,6 +120,11 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     PeriodoModule,
     ImportModule,
     HealthModule,
+    LogModule,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  // configure(consumer: MiddlewareConsumer) {
+  //   consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  // }
+}

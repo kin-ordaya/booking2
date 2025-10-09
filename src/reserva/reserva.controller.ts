@@ -57,7 +57,7 @@ export class ReservaController {
   CreateReservaGeneral(
     @Body() createReservaGeneralDto: CreateReservaGeneralDto,
   ) {
-    console.log(createReservaGeneralDto);
+    //console.log(createReservaGeneralDto);
     return this.reservaService.createReservaGeneral(createReservaGeneralDto);
   }
 
@@ -67,7 +67,7 @@ export class ReservaController {
   CreateReservaDocenteEstudiante(
     @Body() createReservaMixtoDto: CreateReservaMixtoDto,
   ) {
-    console.log(createReservaMixtoDto);
+    //console.log(createReservaMixtoDto);
     return this.reservaService.createReservaMixto(createReservaMixtoDto);
   }
 

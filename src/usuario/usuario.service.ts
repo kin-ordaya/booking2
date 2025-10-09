@@ -201,8 +201,8 @@ export class UsuarioService {
   async findOneByNumeroDocumento(numero_documento: string, tipo_documento: string) {
     try {
 
-      console.log(`tipo_documento: ${tipo_documento}`);
-      console.log(`numero_documento: `+numero_documento);
+      // console.log(`tipo_documento: ${tipo_documento}`);
+      // console.log(`numero_documento: `+numero_documento);
 
       const tipoDocumento = await this.documentoIdentidadRepository.findOne({ where: { nombre: tipo_documento } });
 
