@@ -20,10 +20,15 @@ import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reser
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
 import { CreateReservaMantenimientoMixtoDto } from './dto/create-reserva-mantenimiento-mixto.dto';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class ReservaService {
   constructor(
+
+    @InjectPinoLogger(ReservaService.name) 
+        private readonly logger: PinoLogger,
+        
     @InjectRepository(Reserva)
     private readonly reservaRepository: Repository<Reserva>,
 
@@ -181,17 +186,17 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
-    // console.log('[validarInicioyFinReserva] Inicio:', inicio);
-    // console.log('[validarInicioyFinReserva] Fin:', fin);
-    // console.log('[validarInicioyFinReserva] Rol:', autorRol);
-    // console.log(
-    //   '[validarInicioyFinReserva] Tiempo Reserva:',
-    //   recursoTiempoReserva,
-    // );
+    this.logger.info('[validarInicioyFinReserva] Inicio:', inicio);
+     this.logger.info('[validarInicioyFinReserva] Fin:', fin);
+     this.logger.info('[validarInicioyFinReserva] Rol:', autorRol);
+     this.logger.info(
+      '[validarInicioyFinReserva] Tiempo Reserva:',
+      recursoTiempoReserva,
+    );
     const ahoraUTC = new Date().toISOString();
     const inicioUTC = new Date(inicio).toISOString();
-    console.log('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
-    console.log('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
+     this.logger.info('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
+     this.logger.info('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
     if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
@@ -203,8 +208,8 @@ export class ReservaService {
       const ahora = new Date(ahoraUTC).getTime();
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
       const minimoReservaUTC = new Date(minimoReserva).toISOString();
-      console.log('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
-      console.log(
+       this.logger.info('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
+       this.logger.info(
         '[validarInicioyFinReserva] minimoReservaUTC:',
         minimoReservaUTC,
       );
