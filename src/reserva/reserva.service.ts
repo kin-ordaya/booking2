@@ -25,10 +25,9 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 @Injectable()
 export class ReservaService {
   constructor(
+    @InjectPinoLogger(ReservaService.name)
+    private readonly logger: PinoLogger,
 
-    @InjectPinoLogger(ReservaService.name) 
-        private readonly logger: PinoLogger,
-        
     @InjectRepository(Reserva)
     private readonly reservaRepository: Repository<Reserva>,
 
@@ -167,9 +166,9 @@ export class ReservaService {
       })
       .getOne();
 
-      // console.log(`[RESERVA EXISTENTE] Rango: ${inicio} - ${fin}`);
-      // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio}, Fin: ${reservaExistente?.fin}`);
-      // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio.toISOString()}, Fin: ${reservaExistente?.fin.toISOString()}`);
+    // console.log(`[RESERVA EXISTENTE] Rango: ${inicio} - ${fin}`);
+    // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio}, Fin: ${reservaExistente?.fin}`);
+    // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio.toISOString()}, Fin: ${reservaExistente?.fin.toISOString()}`);
 
     if (reservaExistente) {
       throw new ConflictException(
@@ -187,16 +186,16 @@ export class ReservaService {
     recursoTiempoReserva: number,
   ) {
     this.logger.info('[validarInicioyFinReserva] Inicio:', inicio);
-     this.logger.info('[validarInicioyFinReserva] Fin:', fin);
-     this.logger.info('[validarInicioyFinReserva] Rol:', autorRol);
-     this.logger.info(
+    this.logger.info('[validarInicioyFinReserva] Fin:', fin);
+    this.logger.info('[validarInicioyFinReserva] Rol:', autorRol);
+    this.logger.info(
       '[validarInicioyFinReserva] Tiempo Reserva:',
       recursoTiempoReserva,
     );
     const ahoraUTC = new Date().toISOString();
     const inicioUTC = new Date(inicio).toISOString();
-     this.logger.info('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
-     this.logger.info('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
+    this.logger.info('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
+    this.logger.info('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
 
     if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
@@ -208,8 +207,11 @@ export class ReservaService {
       const ahora = new Date(ahoraUTC).getTime();
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
       const minimoReservaUTC = new Date(minimoReserva).toISOString();
-       this.logger.info('[validarInicioyFinReserva] minimoReserva:', minimoReserva);
-       this.logger.info(
+      this.logger.info(
+        '[validarInicioyFinReserva] minimoReserva:',
+        minimoReserva,
+      );
+      this.logger.info(
         '[validarInicioyFinReserva] minimoReservaUTC:',
         minimoReservaUTC,
       );
@@ -227,7 +229,6 @@ export class ReservaService {
       );
     }
   }
-  
 
   private validateReservationDuration(rol: string, inicio: Date, fin: Date) {
     const duracionMin = 45 * 60 * 1000;
@@ -362,9 +363,9 @@ export class ReservaService {
           error,
         );
       }
-    } 
+    }
     // else {
-      // console.log('[PREFERENCIAL] No aplica asignación preferencial');
+    // console.log('[PREFERENCIAL] No aplica asignación preferencial');
     // }
 
     // console.log(
@@ -625,7 +626,7 @@ export class ReservaService {
           0,
           credencialesGenerales,
           [],
-          capacidadPorCredencial
+          capacidadPorCredencial,
         );
 
       const reservaGuardada = await this.saveReservation(
@@ -746,7 +747,7 @@ export class ReservaService {
         cantidad_accesos_docente || 0,
         credencialesEstudiantes,
         credencialDocentes,
-        capacidadPorCredencial
+        capacidadPorCredencial,
       );
 
       const reservaGuardada = await this.saveReservation(
