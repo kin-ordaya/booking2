@@ -6,11 +6,17 @@ WORKDIR /app
 # Copiar archivos de package
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar dependencias (incluyendo devDependencies para compilar)
+RUN npm ci
 
 # Copiar código fuente
 COPY . .
+
+# Compilar TypeScript a JavaScript
+RUN npm run build
+
+# Remover devDependencies después de compilar
+RUN npm prune --production
 
 # Crear un usuario no-root
 RUN addgroup -g 1001 -S nodejs
@@ -30,8 +36,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Cambiar al usuario no-root
 USER nestjs
 
-# Exponer puerto
-EXPOSE 3000
+# Exponer puerto 3001 (configurado por T.I)
+EXPOSE 3001
 
 # Usar el script de entrada
 ENTRYPOINT ["docker-entrypoint.sh"]
