@@ -185,17 +185,16 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
-    this.logger.info('[validarInicioyFinReserva] Inicio:', inicio);
-    this.logger.info('[validarInicioyFinReserva] Fin:', fin);
-    this.logger.info('[validarInicioyFinReserva] Rol:', autorRol);
-    this.logger.info(
-      '[validarInicioyFinReserva] Tiempo Reserva:',
-      recursoTiempoReserva,
+    this.logger.info({inicio},'[validarInicioyFinReserva] Inicio');
+    this.logger.info({fin},'[validarInicioyFinReserva] Fin');
+    this.logger.info({autorRol},'[validarInicioyFinReserva] Rol');
+    this.logger.info({recursoTiempoReserva},
+      '[validarInicioyFinReserva] Tiempo Reserva'
     );
     const ahoraUTC = new Date().toISOString();
     const inicioUTC = new Date(inicio).toISOString();
-    this.logger.info('[validarInicioyFinReserva] ahoraUTC:', ahoraUTC);
-    this.logger.info('[validarInicioyFinReserva] inicioUTC:', inicioUTC);
+    this.logger.info({ahoraUTC},'[validarInicioyFinReserva] ahoraUTC', );
+    this.logger.info({inicioUTC},'[validarInicioyFinReserva] inicioUTC', );
 
     if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
@@ -207,13 +206,11 @@ export class ReservaService {
       const ahora = new Date(ahoraUTC).getTime();
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
       const minimoReservaUTC = new Date(minimoReserva).toISOString();
-      this.logger.info(
-        '[validarInicioyFinReserva] minimoReserva:',
-        minimoReserva,
+      this.logger.info({minimoReserva},
+        '[validarInicioyFinReserva] minimoReserva'
       );
-      this.logger.info(
-        '[validarInicioyFinReserva] minimoReservaUTC:',
-        minimoReservaUTC,
+      this.logger.info({minimoReservaUTC},
+        '[validarInicioyFinReserva] minimoReservaUTC'
       );
 
       if (inicioUTC < minimoReservaUTC) {
