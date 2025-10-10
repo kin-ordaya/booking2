@@ -1,5 +1,8 @@
 FROM node:18-alpine
 
+# Instalar curl para el health check
+RUN apk add --no-cache curl
+
 # Crear directorio de la aplicación
 WORKDIR /app
 
@@ -38,6 +41,10 @@ USER nestjs
 
 # Exponer puerto 3001 (configurado por T.I)
 EXPOSE 3001
+
+# Agregar health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
 
 # Usar el script de entrada
 ENTRYPOINT ["docker-entrypoint.sh"]
