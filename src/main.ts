@@ -29,6 +29,7 @@ async function bootstrap() {
       'http://localhost:4200',
       'https://bookingravts.continental.edu.pe',
       'http://bookingravts.continental.edu.pe',
+      'https://bookinguc.netlify.app'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
