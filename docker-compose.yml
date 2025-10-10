@@ -5,15 +5,23 @@ services:
     build: .
     container_name: booking2-app-prod
     ports:
-      - "3000:3000"
+      - "3001:3001"
     volumes:
       - ./logs:/app/logs
     environment:
       - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USER:-booking2}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=booking2
     restart: unless-stopped
     user: "1001:1001"
     depends_on:
       - db
+    networks:
+      - booking2-network
 
   db:
     image: postgres:15-alpine
@@ -27,6 +35,12 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    networks:
+      - booking2-network
 
 volumes:
   postgres_data:
+
+networks:
+  booking2-network:
+    driver: bridge
