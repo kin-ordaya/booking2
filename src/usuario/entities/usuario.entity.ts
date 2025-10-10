@@ -36,10 +36,10 @@ export class Usuario {
   @Column({ type: 'varchar', length: 100, nullable: true })
   correo_personal?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   telefono_institucional?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   telefono_personal?: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
