@@ -1,36 +1,38 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine
 
+# Crear directorio de la aplicación
 WORKDIR /app
 
-# Crear directorio de logs con permisos adecuados
-RUN mkdir -p /app/logs && chown -R node:node /app/logs
-
+# Copiar archivos de package
 COPY package*.json ./
 
-RUN npm ci && npm cache clean --force
+# Instalar dependencias
+RUN npm ci --only=production
 
+# Copiar código fuente
 COPY . .
 
-RUN npm run build
-
-# Etapa de producción
-FROM node:18-alpine AS production
-
-RUN apk add --no-cache dumb-init
-
+# Crear un usuario no-root
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001
 
-WORKDIR /app
+# Crear directorio de logs con permisos apropiados
+RUN mkdir -p /app/logs && chmod 755 /app/logs
 
-# Solo copiar las dependencias de producción
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+# Cambiar propiedad del directorio de la app al usuario nestjs
+RUN chown -R nestjs:nodejs /app
+RUN chmod -R 755 /app
 
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+# Copiar y hacer ejecutable el script de entrada
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Cambiar al usuario no-root
 USER nestjs
 
+# Exponer puerto
 EXPOSE 3000
 
-CMD ["dumb-init", "node", "dist/main"]
+# Usar el script de entrada
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "run", "start:prod"]
