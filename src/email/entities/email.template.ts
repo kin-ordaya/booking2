@@ -485,13 +485,11 @@ export const getReservaTemplate = (data: {
                       class="Lm ng"
                       >pone</span
                     >
-                    a disposición los siguientes documentos: Matriz de
-                    requisitos del servicio, Reglamento Interno LT y Ficha de
-                    Sugerencias, Quejas y Reclamos.</font
+                    a disposición documentos del SGC en el siguiente QR</font
                   >
                 </p>
                 <p style="margin-bottom: 10px">
-                  <font face="tahoma, sans-serif" size="4"
+                  <font face="tahoma, sans-serif" size="4" style="color: white;"
                     >El Código QR deberá ser compartido con los
                     estudiantes.</font
                   >
@@ -514,7 +512,7 @@ export const getReservaTemplate = (data: {
                 </h3>
                 <ul style="list-style: none; padding: 0px; margin: 0px">
                   <li style="margin-left: 15px; margin-bottom: 10px">
-                    <font face="tahoma, sans-serif" size="4"
+                    <font face="tahoma, sans-serif" size="4" style="color: white;"
                       >Las reservas y uso de los laboratorios de cómputo
                       realizarlas con programación académica y <a
                         href="mailto:mesadeayuda@continental.edu.pe"
@@ -525,7 +523,7 @@ export const getReservaTemplate = (data: {
                     >
                   </li>
                   <li style="margin-left: 15px; margin-bottom: 10px">
-                    <font face="tahoma, sans-serif" size="4"
+                    <font face="tahoma, sans-serif" size="4" style="color: white;"
                       >Para el FabLab coordinar con <a
                         href="mailto:cerrons@continental.edu.pe"
                         style="color: white; text-decoration-line: none"
@@ -543,7 +541,7 @@ export const getReservaTemplate = (data: {
                 <ul style="list-style: none; padding: 0px; margin: 0px">
                   <div style="display: flex">
                     <div>
-                      <font face="tahoma, sans-serif" size="4"
+                      <font face="tahoma, sans-serif" size="4" style="color: white;"
                         ><img
                           src="https://ci3.googleusercontent.com/meips/ADKq_Nb9pYFIvwXDqLiZDHQZ2w8tjvEXzh8Yf0IRsKZf3sJIRbVoJ2VyWf3mFs-ueAOSkVxjyuphja48zccUpqtfHsQWLsWrAjpV8J6zSWVPF9IRZia3CAIGUZ6n7fxIitnEETE=s0-d-e1-ft#https://res.cloudinary.com/dpjoocxnd/image/upload/v1742306467/ti_nwkcvv.png"
                           alt=""
@@ -561,14 +559,14 @@ export const getReservaTemplate = (data: {
                     >
                       <li style="margin-left: 15px">
                         <font face="tahoma, sans-serif" size="4"
-                          >Soporte de TI - 964 565 922</font
+                          >Mesa de ayuda - Soporte de TI - 064 481455</font
                         >
                       </li>
                     </div>
                   </div>
                   <div style="display: flex">
                     <div>
-                      <font face="tahoma, sans-serif" size="4"
+                      <font face="tahoma, sans-serif" size="4" style="color: white;"
                         ><img
                           src="https://ci3.googleusercontent.com/meips/ADKq_NbZu-vpfmDXYdf9CxMsG7uJDOZJ-KMtNA2yvg4hppfmiaFSR8OgxcsbsDUvEgHGWC3TU5FiQTmrYsk9ya9N_yXD5K--fOTMmo9VWpv8uYubKsc66RhLfo45tscArGeTjXHgdQ=s0-d-e1-ft#https://res.cloudinary.com/dpjoocxnd/image/upload/v1742306467/Boss_k7dgjh.png"
                           alt=""
@@ -585,7 +583,7 @@ export const getReservaTemplate = (data: {
                       "
                     >
                       <li style="margin-left: 15px">
-                        <font face="tahoma, sans-serif" size="4"
+                        <font face="tahoma, sans-serif" size="4" style="color: white;"
                           >Jefatura de Laboratorios y Talleres - Guillermo
                           Jaramillo – 957952394</font
                         >
@@ -594,7 +592,7 @@ export const getReservaTemplate = (data: {
                   </div>
                   <div style="display: flex">
                     <div>
-                      <font face="tahoma, sans-serif" size="4"
+                      <font face="tahoma, sans-serif" size="4" style="color: white;"
                         ><img
                           src="https://ci3.googleusercontent.com/meips/ADKq_NYof8_HDpFhLiJPnxHrrx0GfvPau6Y5U3WzFoZX0x7TDLtOcwUuoGw41GAMdI6TQCjfPBCeseRkaeRSUCMrQzQnIHXJiG-NqMw_lwKd7Q-I9tdH0JuPL4rNPH0JvDn2QyJ3qfw9AM7CEw=s0-d-e1-ft#https://res.cloudinary.com/dpjoocxnd/image/upload/v1742306468/Supervisor_bkr0mo.png"
                           alt=""
@@ -611,7 +609,7 @@ export const getReservaTemplate = (data: {
                       "
                     >
                       <li style="margin-left: 15px">
-                        <font face="tahoma, sans-serif" size="4"
+                        <font face="tahoma, sans-serif" size="4" style="color: white;"
                           >Supervisión de Recursos Académicos Virtuales –
                           Nicolás Espinoza - 945605752</font
                         >
@@ -620,7 +618,7 @@ export const getReservaTemplate = (data: {
                   </div>
                   <div style="display: flex">
                     <div>
-                      <font face="tahoma, sans-serif" size="4"
+                      <font face="tahoma, sans-serif" size="4" style="color: white;"
                         ><img
                           src="https://ci3.googleusercontent.com/meips/ADKq_NZe0KpgWe3UV8Gtpj675BtXz1-CxkTYWQ2K9AZk5omh_L0zvuMVWEgV2bXCt5m2QiO5oPSDTawERhodPHyoSyqd45IHH2R630WLpexI0Q3RRfujJWl5kgffGIwfehe4h4vosQ7CXTzyt77VdB4=s0-d-e1-ft#https://res.cloudinary.com/dpjoocxnd/image/upload/v1742306467/Inclusi%C3%B3n_mox3ny.png"
                           alt=""
@@ -639,12 +637,7 @@ export const getReservaTemplate = (data: {
                       <li style="margin-left: 15px">
                         <font face="tahoma, sans-serif" size="4"
                           >Unidad de inclusión de estudiantes con discapacidad -
-                          Lourdes Suasnabar - 943328906 - <a
-                            href="mailto:lsuasnabar@continental.edu.pe"
-                            style="color: white; text-decoration-line: none"
-                            target="_blank"
-                            >lsuasnabar@continental.edu.<wbr />pe</a
-                          ></font
+                          Lourdes Suasnabar - 943328906</font
                         >
                       </li>
                     </div>

@@ -134,8 +134,9 @@ export class CredencialService {
       }
 
       if (search) {
-        query.where(
-          'UPPER(credencial.usuario) LIKE UPPER(:search) OR UPPER(credencial.clave) LIKE UPPER(:search)',
+        // Cambiar .where() por .andWhere() aquí
+        query.andWhere(
+          '(UPPER(credencial.usuario) LIKE UPPER(:search) OR UPPER(credencial.clave) LIKE UPPER(:search))',
           { search: `%${search}%` },
         );
       }
@@ -170,7 +171,7 @@ export class CredencialService {
 
       const credencial = await this.credencialRepository.findOne({
         where: { id },
-        relations: [ 'rol'],
+        relations: ['rol'],
       });
       if (!credencial) throw new NotFoundException('Credencial no encontrada');
       return credencial;
