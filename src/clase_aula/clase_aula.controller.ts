@@ -13,33 +13,33 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 export class ClaseAulaController {
   constructor(private readonly claseAulaService: ClaseAulaService) {}
 
-  @Post()
-  @Roles('ADMINISTRADOR')
-  create(@Body() createClaseAulaDto: CreateClaseAulaDto) {
-    return this.claseAulaService.create(createClaseAulaDto);
-  }
+  // @Post()
+  // @Roles('ADMINISTRADOR')
+  // create(@Body() createClaseAulaDto: CreateClaseAulaDto) {
+  //   return this.claseAulaService.create(createClaseAulaDto);
+  // }
 
-  @Get()
-  @Roles('ADMINISTRADOR')
-  findAll() {
-    return this.claseAulaService.findAll();
-  }
+  // @Get()
+  // @Roles('ADMINISTRADOR')
+  // findAll() {
+  //   return this.claseAulaService.findAll();
+  // }
 
-  @Get(':id')
-  @Roles('ADMINISTRADOR')
-  findOne(@Param('id') id: string) {
-    return this.claseAulaService.findOne(+id);
-  }
+  // @Get(':id')
+  // @Roles('ADMINISTRADOR')
+  // findOne(@Param('id') id: string) {
+  //   return this.claseAulaService.findOne(+id);
+  // }
 
-  @Patch(':id')
-  @Roles('ADMINISTRADOR')
-  update(@Param('id') id: string, @Body() updateClaseAulaDto: UpdateClaseAulaDto) {
-    return this.claseAulaService.update(+id, updateClaseAulaDto);
-  }
+  // @Patch(':id')
+  // @Roles('ADMINISTRADOR')
+  // update(@Param('id') id: string, @Body() updateClaseAulaDto: UpdateClaseAulaDto) {
+  //   return this.claseAulaService.update(+id, updateClaseAulaDto);
+  // }
 
-  @Delete(':id')
-  @Roles('ADMINISTRADOR')
-  remove(@Param('id') id: string) {
-    return this.claseAulaService.remove(+id);
-  }
+  // @Delete(':id')
+  // @Roles('ADMINISTRADOR')
+  // remove(@Param('id') id: string) {
+  //   return this.claseAulaService.remove(+id);
+  // }
 }

@@ -15,10 +15,13 @@ import { RecursoDocenteClaseDto } from './dto/recurso-docente-clase.dto';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class ClaseService {
   constructor(
+    @InjectPinoLogger(ClaseService.name)
+    private readonly logger: PinoLogger,
     @InjectRepository(Clase)
     private readonly claseRepository: Repository<Clase>,
     @InjectRepository(CursoModalidad)
@@ -45,11 +48,29 @@ export class ClaseService {
         periodo_id,
       } = createClaseDto;
 
+      this.logger.info(
+        {
+          operation: 'create_started',
+          entity: 'clase',
+        },
+        'Iniciando creación de clase',
+      );
+
       const cursoModalidadExists = await this.cursoModalidadRepository.existsBy(
         { id: curso_modalidad_id },
       );
 
       if (!cursoModalidadExists) {
+        this.logger.error(
+          {
+            operation: 'create_failed',
+            entity: 'clase',
+            reason: 'curso_modalidad_not_found',
+            curso_modalidad_id: curso_modalidad_id || 'unknown',
+          },
+          'No existe un curso modalidad con ese id',
+        );
+
         throw new NotFoundException('No existe un curso modalidad con ese id');
       }
 
@@ -57,8 +78,18 @@ export class ClaseService {
         id: periodo_id,
       });
 
-      if (!periodoExists)
+      if (!periodoExists) {
+        this.logger.error(
+          {
+            operation: 'create_failed',
+            entity: 'clase',
+            reason: 'periodo_not_found',
+            periodo_id: periodo_id || 'unknown',
+          },
+          'No existe un periodo con ese id',
+        );
         throw new NotFoundException('No existe un periodo con ese id');
+      }
       // si ya existe una clase con ese nrc y en el mismo semestre, se devuelve error
       const claseExists = await this.claseRepository.findOne({
         where: { nrc, periodo: { id: periodo_id } },
@@ -66,6 +97,15 @@ export class ClaseService {
       });
 
       if (claseExists) {
+        this.logger.error(
+          {
+            operation: 'create_failed',
+            entity: 'clase',
+            reason: 'clase_exists',
+            claseId: claseExists.id || 'unknown',
+          },
+          'Ya existe una clase con ese nrc en el mismo periodo',
+        );
         throw new NotFoundException(
           'Ya existe una clase con ese nrc en el mismo periodo',
         );
@@ -83,49 +123,125 @@ export class ClaseService {
         periodo: { id: periodo_id },
       });
 
+      this.logger.info(
+        {
+          operation: 'create_success',
+          entity: 'clase',
+          reason: 'create_success',
+          claseId: clase.id || 'unknown',
+        },
+        'Clase creada exitosamente',
+      );
+
       return await this.claseRepository.save(clase);
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof InternalServerErrorException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
+      this.logger.error(
+        {
+          operation: 'create_error',
+          entity: 'clase',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de creación de clase',
+      );
+      throw error;
     }
   }
 
   async findAll() {
     try {
-      return await this.claseRepository.find({ order: { nrc: 'ASC' } });
+      this.logger.info(
+        {
+          operation: 'find_all_started',
+          entity: 'clase',
+        },
+        'Iniciando búsqueda de clases',
+      );
+
+      const query = await this.claseRepository.find({ order: { nrc: 'ASC' } });
+
+      this.logger.info(
+        {
+          operation: 'find_all_success',
+          entity: 'clase',
+        },
+        'Clases encontradas exitosamente',
+      );
+      return query
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      this.logger.error(
+        {
+          operation: 'find_all_error',
+          entity: 'clase',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de búsqueda de clases',
+      );
+      throw error;
     }
   }
 
   async findOne(id: string) {
     try {
+      this.logger.info(
+        {
+          operation: 'find_one_started',
+          entity: 'clase',
+          claseId: id || 'unknown',
+        },
+        'Iniciando búsqueda de clase',
+      );
+
       if (!id) {
+        this.logger.error(
+          {
+            operation: 'find_one_failed',
+            entity: 'clase',
+            reason: 'clase_id_empty',
+            claseId: id || 'unknown',
+          },
+          'El ID de la clase no puede estar vacío',
+        );
+
         throw new BadRequestException('El ID de la clase no puede estar vacío');
       }
+
       const clase = await this.claseRepository.findOne({
         where: { id },
         relations: ['cursoModalidad', 'periodo'],
       });
+
       if (!clase) {
+        this.logger.error(
+          {
+            operation: 'find_one_failed',
+            entity: 'clase',
+            reason: 'clase_not_found',
+            claseId: id || 'unknown',
+          },
+          `Clase con id ${id} no encontrado`,
+        );
         throw new NotFoundException(`Clase con id ${id} no encontrado`);
       }
+
+      this.logger.info(
+        {
+          operation: 'find_one_success',
+          entity: 'clase',
+          claseId: id || 'unknown',
+        },
+        'Clase encontrada exitosamente',
+      );
       return clase;
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
+      this.logger.error(
+        {
+          operation: 'find_one_error',
+          entity: 'clase',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de búsqueda de clase',
+      );
+      throw error;
     }
   }
 
@@ -135,6 +251,13 @@ export class ClaseService {
     try {
       const { recurso_id, rol_usuario_id } = recursoDocenteClaseDto;
 
+      this.logger.info(
+        {
+          operation: 'get_clases_by_recurso_docente_started',
+          entity: 'clase',
+        },
+        'Iniciando búsqueda de clases por recurso docente',
+      );
       // 1. Verificaciones iniciales
       const [recursoExists, rolUsuarioExists] = await Promise.all([
         this.recursoRepository.existsBy({ id: recurso_id }),
@@ -144,11 +267,45 @@ export class ClaseService {
         }),
       ]);
 
-      if (!recursoExists)
+      if (!recursoExists) {
+        this.logger.error(
+          {
+            operation: 'get_clases_by_recurso_docente_failed',
+            entity: 'clase',
+            reason: 'recurso_not_found',
+            recursoId: recurso_id || 'unknown',
+          },
+          'No existe un recurso con ese id',
+        );
+
         throw new NotFoundException('No existe un recurso con ese id');
-      if (!rolUsuarioExists)
+      }
+
+      if (!rolUsuarioExists) {
+        this.logger.error(
+          {
+            operation: 'get_clases_by_recurso_docente_failed',
+            entity: 'clase',
+            reason: 'rol_usuario_not_found',
+            rolUsuarioId: rol_usuario_id || 'unknown',
+          },
+          'No existe un docente con ese id',
+        );
+
         throw new NotFoundException('No existe un docente con ese id');
+      }
+
       if (rolUsuarioExists.rol.nombre !== 'DOCENTE') {
+        this.logger.error(
+          {
+            operation: 'get_clases_by_recurso_docente_failed',
+            entity: 'clase',
+            reason: 'rol_usuario_not_docente',
+            rolUsuarioId: rol_usuario_id || 'unknown',
+          },
+          'El usuario no tiene rol de DOCENTE',
+        );
+
         throw new BadRequestException('El usuario no tiene rol de DOCENTE');
       }
 
@@ -203,10 +360,26 @@ export class ClaseService {
       return clases.map((clase) => {
         // Verificar que las relaciones existen
         if (!clase.cursoModalidad || !clase.cursoModalidad.curso) {
+          this.logger.error({
+            operation: 'get_clases_by_recurso_docente_failed',
+            entity: 'clase',
+            reason: 'curso_not_found',
+            cursoId: clase.cursoModalidad.id || 'unknown',
+          });
+
           throw new InternalServerErrorException(
             'Error al cargar la información del curso',
           );
         }
+
+        this.logger.info(
+          {
+            operation: 'get_clases_by_recurso_docente_success',
+            entity: 'clase',
+            claseId: clase.id || 'unknown',
+          },
+          'Clase cargada exitosamente',
+        );
 
         return {
           id: clase.id,
@@ -219,15 +392,15 @@ export class ClaseService {
         };
       });
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error al obtener las clases del docente: ' + error.message,
+      this.logger.error(
+        {
+          operation: 'get_clases_by_recurso_docente_error',
+          entity: 'clase',
+          error: error.message || error || 'unknown',
+        },
+        'Error al obtener las clases del docente',
       );
+      throw error;
     }
   }
 
@@ -244,8 +417,23 @@ export class ClaseService {
         curso_modalidad_id,
         periodo_id,
       } = updateClaseDto;
-
+      this.logger.info({
+        operation: 'update_started',
+        entity: 'clase',
+        claseId: id || 'unknown',
+      })
+      
       if (!id) {
+        this.logger.error(
+          {
+            operation: 'update_failed',
+            entity: 'clase',
+            reason: 'clase_id_empty',
+            claseId: id || 'unknown',
+          },
+          'El ID de la clase no puede estar vacío',
+        );
+
         throw new BadRequestException('El ID de la clase no puede estar vacío');
       }
 
@@ -253,7 +441,18 @@ export class ClaseService {
         where: { id },
         relations: ['cursoModalidad'],
       });
+
       if (!clase) {
+        this.logger.error(
+          {
+            operation: 'update_failed',
+            entity: 'clase',
+            reason: 'clase_not_found',
+            claseId: id || 'unknown',
+          },
+          `Clase con id ${id} no encontrado`,
+        );
+
         throw new NotFoundException(`Clase con id ${id} no encontrado`);
       }
 
@@ -280,6 +479,16 @@ export class ClaseService {
         });
 
         if (claseExists) {
+          this.logger.error(
+            {
+              operation: 'update_failed',
+              entity: 'clase',
+              reason: 'clase_exists',
+              claseId: id || 'unknown',
+            },
+            'Ya existe una clase con esa combinación de NRC y periodo',
+          );
+
           throw new ConflictException(
             'Ya existe una clase con esa combinación de NRC y periodo',
           );
@@ -318,6 +527,16 @@ export class ClaseService {
           fin !== undefined ? new Date(fin) : new Date(clase.fin);
 
         if (fechaInicio >= fechaFin) {
+          this.logger.error(
+            {
+              operation: 'update_failed',
+              entity: 'clase',
+              reason: 'clase_invalid_dates',
+              claseId: id || 'unknown',
+            },
+            'La fecha de inicio debe ser anterior a la fecha de fin',
+          );
+
           throw new BadRequestException(
             'La fecha de inicio debe ser anterior a la fecha de fin',
           );
@@ -332,11 +551,23 @@ export class ClaseService {
           await this.cursoModalidadRepository.existsBy({
             id: curso_modalidad_id,
           });
+
         if (!cursoModalidadExists) {
+          this.logger.error(
+            {
+              operation: 'update_failed',
+              entity: 'clase',
+              reason: 'curso_modalidad_not_found',
+              curso_modalidad_id: curso_modalidad_id || 'unknown',
+            },
+            'No existe un curso modalidad con ese id',
+          );
+
           throw new NotFoundException(
             'No existe un curso modalidad con ese id',
           );
         }
+
         updateData.cursoModalidad = { id: curso_modalidad_id };
       }
 
@@ -345,44 +576,89 @@ export class ClaseService {
       }
 
       await this.claseRepository.update(id, updateData);
+
+      this.logger.info(
+        {
+          operation: 'update_success',
+          entity: 'clase',
+          claseId: id || 'unknown',
+        },
+        'Clase actualizada exitosamente',
+      );
+
       return await this.claseRepository.findOne({
         where: { id },
         relations: ['cursoModalidad'],
       });
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
+      this.logger.error(
+        {
+          operation: 'update_error',
+          entity: 'clase',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de actualización de clase',
+      );
+      throw error;
     }
   }
 
   async remove(id: string) {
     try {
       if (!id) {
+        this.logger.error(
+          {
+            operation: 'remove_failed',
+            entity: 'clase',
+            reason: 'clase_id_empty',
+            claseId: id || 'unknown',
+          },
+          'El ID de la clase no puede estar vacío',
+        );
+
         throw new BadRequestException('El ID de la clase no puede estar vacío');
       }
+
       const result = await this.claseRepository
         .createQueryBuilder()
         .update()
         .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
         .where('id = :id', { id })
         .execute();
-      if (result.affected === 0)
+      if (result.affected === 0) {
+        this.logger.error(
+          {
+            operation: 'remove_failed',
+            entity: 'clase',
+            reason: 'clase_not_found',
+            claseId: id || 'unknown',
+          },
+          `Clase con id ${id} no encontrado`,
+        );
+
         throw new NotFoundException('Clase no encontrado');
+      }
+
+      this.logger.info(
+        {
+          operation: 'remove_success',
+          entity: 'clase',
+          claseId: id || 'unknown',
+        },
+        'Clase eliminada exitosamente',
+      );
+
       return this.claseRepository.findOneBy({ id });
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
+      this.logger.error(
+        {
+          operation: 'remove_error',
+          entity: 'clase',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de eliminación de clase',
+      );
+      throw error;
     }
   }
 }

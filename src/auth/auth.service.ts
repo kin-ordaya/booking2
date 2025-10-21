@@ -15,10 +15,9 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
-
   private client: OAuth2Client;
   constructor(
-    @InjectPinoLogger(AuthService.name) 
+    @InjectPinoLogger(AuthService.name)
     private readonly logger: PinoLogger,
     private readonly jwtService: JwtService,
     @InjectRepository(Usuario)
@@ -32,10 +31,24 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     try {
       const { idToken } = loginDto;
-      this.logger.info('Login de usuario');
+      this.logger.info(
+        {
+          operation: 'login_started',
+          entity: 'auth',
+        },
+        'Iniciando proceso de login',
+      );
+
       const googleUser = await this.verifyIdToken(idToken);
       if (!googleUser) {
-        this.logger.error('Token de Google no válido');
+        this.logger.error(
+          {
+            operation: 'login_failed',
+            reason: 'invalid_google_token',
+          },
+          'Token de Google no válido',
+        );
+
         throw new BadRequestException('Token de Google no válido');
       }
       const emailGoogle = googleUser.email;
@@ -43,7 +56,16 @@ export class AuthService {
         where: { correo_institucional: emailGoogle },
       });
       if (!user) {
-        this.logger.error('Usuario no encontrado');
+        this.logger.error(
+          {
+            operation: 'login_failed',
+            entity: 'auth',
+            reason: 'user_not_found',
+            email: googleUser.email || 'unknown',
+          },
+          'Usuario no encontrado',
+        );
+
         throw new NotFoundException('Usuario no encontrado');
       }
       const rolUsuario = await this.rolUsuarioRepository.findOne({
@@ -51,7 +73,16 @@ export class AuthService {
         relations: ['rol'],
       });
       if (!rolUsuario) {
-        this.logger.error('Rol usuario no encontrado o rol usuario no activo');
+        this.logger.error(
+          {
+            operation: 'login_failed',
+            entity: 'auth',
+            reason: 'invalid_role',
+            userId: user.id || 'unknown',
+          },
+          'Rol de usuario no activo',
+        );
+
         throw new NotFoundException(
           'Rol usuario no encontrado o rol usuario no activo',
         );
@@ -65,12 +96,27 @@ export class AuthService {
         rol_nombre: rolUsuario.rol.nombre,
       };
       const token = await this.jwtService.signAsync(jwtPayload);
-      this.logger.info('Login exitoso');
+      this.logger.info(
+        {
+          operation: 'login_success',
+          entity: 'auth',
+          reason: 'login_success',
+          userId: user.id || 'unknown',
+          role: rolUsuario.rol.nombre || 'unknown',
+        },
+        'Login exitoso',
+      );
+
       return { token };
     } catch (error) {
-       this.logger.error('Error en el login de usuario', {
-        error: error.message,
-      });
+      this.logger.error(
+        {
+          operation: 'login_error',
+          entity: 'auth',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de login',
+      );
       throw error;
     }
   }

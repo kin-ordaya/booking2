@@ -100,161 +100,164 @@ export class RecursoService {
   }
 
   async findAll(paginationRecursoDto: PaginationRecursoDto) {
-  try {
-    const { rol_usuario_id, sort_name, sort_state, page, limit, search } =
-      paginationRecursoDto;
+    try {
+      const { rol_usuario_id, sort_name, sort_state, page, limit, search } =
+        paginationRecursoDto;
 
-    // Validar rol_usuario_id
-    if (rol_usuario_id) {
-      const rolUsuario = await this.rolUsuarioRepository.findOne({
-        where: { id: rol_usuario_id },
-        relations: ['usuario', 'rol'],
-      });
+      // Validar rol_usuario_id
+      if (rol_usuario_id) {
+        const rolUsuario = await this.rolUsuarioRepository.findOne({
+          where: { id: rol_usuario_id },
+          relations: ['usuario', 'rol'],
+        });
 
-      if (!rolUsuario) {
-        throw new BadRequestException(
-          'El rol de usuario proporcionado no existe',
+        if (!rolUsuario) {
+          throw new BadRequestException(
+            'El rol de usuario proporcionado no existe',
+          );
+        }
+      }
+
+      // Subquery para contar credenciales
+      const credencialCountSubQuery = this.recursoRepository
+        .createQueryBuilder('recurso_sub')
+        .leftJoin('recurso_sub.credencial', 'credencial_sub')
+        .select('COUNT(credencial_sub.id)', 'count')
+        .where('recurso_sub.id = recurso.id')
+        .getQuery();
+
+      // Query principal - USAR DISTINCT DE FORMA CORRECTA
+      const query = this.recursoRepository
+        .createQueryBuilder('recurso')
+        .distinct(true) // ✅ AGREGAR DISTINCT AQUÍ
+        .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
+        .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
+        .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+        .select([
+          'recurso.id',
+          'recurso.nombre',
+          'recurso.link_declaracion',
+          'recurso.creacion',
+          'recurso.estado',
+          'recurso.capacidad',
+          'tipoRecurso.nombre',
+          'proveedor.nombre',
+          'tipoAcceso.id',
+          'tipoAcceso.nombre',
+        ])
+        .addSelect(
+          `(${credencialCountSubQuery})`,
+          'recurso_cantidad_credenciales',
+        );
+
+      // Query para contar el total
+      const countQuery = this.recursoRepository
+        .createQueryBuilder('recurso')
+        .select('COUNT(DISTINCT recurso.id)', 'count');
+
+      // Filtro por rol_usuario_id (si es docente)
+      if (rol_usuario_id) {
+        const rolUsuario = await this.rolUsuarioRepository.findOne({
+          where: { id: rol_usuario_id },
+          relations: ['rol'],
+        });
+
+        if (rolUsuario && rolUsuario.rol.nombre === 'DOCENTE') {
+          // Subquery para recursos accesibles por el docente
+          const docenteSubQuery = this.recursoRepository
+            .createQueryBuilder('recurso_docente')
+            .leftJoin('recurso_docente.recurso_curso', 'recursoCurso_docente')
+            .leftJoin('recursoCurso_docente.curso', 'curso_docente')
+            .leftJoin('curso_docente.curso_modalidad', 'cursoModalidad_docente')
+            .leftJoin('cursoModalidad_docente.clase', 'clase_docente')
+            .leftJoin('clase_docente.responsable', 'responsable_docente')
+            .leftJoin(
+              'responsable_docente.rolUsuario',
+              'rolUsuarioResponsable_docente',
+            )
+            .where('rolUsuarioResponsable_docente.id = :rol_usuario_id')
+            .andWhere('recurso_docente.id = recurso.id')
+            .select('1');
+
+          query.andWhere(`EXISTS (${docenteSubQuery.getQuery()})`, {
+            rol_usuario_id,
+          });
+          countQuery.andWhere(`EXISTS (${docenteSubQuery.getQuery()})`, {
+            rol_usuario_id,
+          });
+        }
+      }
+
+      // Resto de filtros
+      if (sort_state !== undefined) {
+        const estado = sort_state === 1 ? 1 : 0;
+        query.andWhere('recurso.estado = :estado', { estado });
+        countQuery.andWhere('recurso.estado = :estado', { estado });
+      }
+
+      if (search) {
+        const searchPattern = `%${search}%`;
+        query.andWhere(
+          '(recurso.nombre ILIKE :search OR recurso.descripcion ILIKE :search)',
+          { search: searchPattern },
+        );
+        countQuery.andWhere(
+          '(recurso.nombre ILIKE :search OR recurso.descripcion ILIKE :search)',
+          { search: searchPattern },
         );
       }
-    }
 
-    // Subquery para contar credenciales
-    const credencialCountSubQuery = this.recursoRepository
-      .createQueryBuilder('recurso_sub')
-      .leftJoin('recurso_sub.credencial', 'credencial_sub')
-      .select('COUNT(credencial_sub.id)', 'count')
-      .where('recurso_sub.id = recurso.id')
-      .getQuery();
-
-    // Query principal
-    const query = this.recursoRepository
-      .createQueryBuilder('recurso')
-      .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
-      .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
-      .leftJoinAndSelect('recurso.proveedor', 'proveedor')
-      .select([
-        'recurso.id',
-        'recurso.nombre',
-        'recurso.link_declaracion',
-        'recurso.creacion',
-        'recurso.estado',
-        'recurso.capacidad',
-        'tipoRecurso.nombre',
-        'proveedor.nombre',
-        'tipoAcceso.id',
-        'tipoAcceso.nombre',
-      ])
-      .addSelect(`(${credencialCountSubQuery})`, 'recurso_cantidad_credenciales');
-
-    // Query para contar el total
-    const countQuery = this.recursoRepository
-      .createQueryBuilder('recurso')
-      .select('COUNT(DISTINCT recurso.id)', 'count');
-
-    // Filtro por rol_usuario_id (si es docente)
-    if (rol_usuario_id) {
-      const rolUsuario = await this.rolUsuarioRepository.findOne({
-        where: { id: rol_usuario_id },
-        relations: ['rol'],
-      });
-
-      if (rolUsuario && rolUsuario.rol.nombre === 'DOCENTE') {
-        const subQuery = query
-          .leftJoin('recurso.recurso_curso', 'recursoCurso')
-          .leftJoin('recursoCurso.curso', 'curso')
-          .leftJoin('curso.curso_modalidad', 'cursoModalidad')
-          .leftJoin('cursoModalidad.clase', 'clase')
-          .leftJoin('clase.responsable', 'responsable')
-          .leftJoin('responsable.rolUsuario', 'rolUsuarioResponsable')
-          .andWhere('rolUsuarioResponsable.id = :rol_usuario_id', {
-            rol_usuario_id,
-          });
-
-        countQuery
-          .leftJoin('recurso.recurso_curso', 'recursoCurso')
-          .leftJoin('recursoCurso.curso', 'curso')
-          .leftJoin('curso.curso_modalidad', 'cursoModalidad')
-          .leftJoin('cursoModalidad.clase', 'clase')
-          .leftJoin('clase.responsable', 'responsable')
-          .leftJoin('responsable.rolUsuario', 'rolUsuarioResponsable')
-          .andWhere('rolUsuarioResponsable.id = :rol_usuario_id', {
-            rol_usuario_id,
-          });
+      // Ordenamiento
+      if (sort_name !== undefined) {
+        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+      } else {
+        query.orderBy('recurso.creacion', 'DESC');
       }
+
+      // Paginación
+      query.offset((page - 1) * limit).limit(limit);
+
+      // Ejecutar queries
+      const [rawResults, totalCountResult] = await Promise.all([
+        query.getRawMany(),
+        countQuery.getRawOne(),
+      ]);
+
+      const totalCount = parseInt(totalCountResult.count, 10);
+
+      // Mapear resultados
+      const results = rawResults.map((raw) => ({
+        id: raw.recurso_id,
+        nombre: raw.recurso_nombre,
+        link_declaracion: raw.recurso_link_declaracion,
+        creacion: raw.recurso_creacion,
+        estado: raw.recurso_estado,
+        capacidad: raw.recurso_capacidad,
+        cantidad_credenciales:
+          parseInt(raw.recurso_cantidad_credenciales, 10) || 0,
+        tipoRecurso: { nombre: raw.tipoRecurso_nombre },
+        proveedor: { nombre: raw.proveedor_nombre },
+        tipoAcceso: {
+          id: raw.tipoAcceso_id,
+          nombre: raw.tipoAcceso_nombre,
+        },
+      }));
+
+      return {
+        results,
+        meta: {
+          count: totalCount,
+          page,
+          limit,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Error en findAll:', error);
+      throw new InternalServerErrorException('Error inesperado');
     }
-
-    // Resto de filtros
-    if (sort_state !== undefined) {
-      const estado = sort_state === 1 ? 1 : 0;
-      query.andWhere('recurso.estado = :estado', { estado });
-      countQuery.andWhere('recurso.estado = :estado', { estado });
-    }
-
-    if (search) {
-      const searchPattern = `%${search}%`;
-      query.andWhere(
-        '(recurso.nombre ILIKE :search OR recurso.descripcion ILIKE :search)',
-        { search: searchPattern },
-      );
-      countQuery.andWhere(
-        '(recurso.nombre ILIKE :search OR recurso.descripcion ILIKE :search)',
-        { search: searchPattern },
-      );
-    }
-
-    // Ordenamiento
-    if (sort_name !== undefined) {
-      query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
-    } else {
-      query.orderBy('recurso.creacion', 'DESC');
-    }
-
-    // Paginación
-    query.offset((page - 1) * limit).limit(limit);
-
-    // Ejecutar queries
-    const [rawResults, totalCountResult] = await Promise.all([
-      query.getRawMany(),
-      countQuery.getRawOne(),
-    ]);
-
-    const totalCount = parseInt(totalCountResult.count, 10);
-
-    // Mapear resultados
-    const results = rawResults.map(raw => ({
-      id: raw.recurso_id,
-      nombre: raw.recurso_nombre,
-      link_declaracion: raw.recurso_link_declaracion,
-      creacion: raw.recurso_creacion,
-      estado: raw.recurso_estado,
-      capacidad: raw.recurso_capacidad,
-      cantidad_credenciales: parseInt(raw.recurso_cantidad_credenciales, 10) || 0,
-      tipoRecurso: { nombre: raw.tipoRecurso_nombre },
-      proveedor: { nombre: raw.proveedor_nombre },
-      tipoAcceso: {
-        id: raw.tipoAcceso_id,
-        nombre: raw.tipoAcceso_nombre,
-      },
-    }));
-
-    return {
-      results,
-      meta: {
-        count: totalCount,
-        page,
-        limit,
-        totalPages: Math.ceil(totalCount / limit),
-      },
-    };
-  } catch (error) {
-    console.error('Error en findAll:', error);
-    throw new InternalServerErrorException('Error inesperado');
   }
-}
-
-  async findOne(
-    id: string,
-  ){
+  async findOne(id: string) {
     try {
       if (!id)
         throw new BadRequestException('El ID del recurso no puede estar vacío');
@@ -286,8 +289,8 @@ export class RecursoService {
 
       return {
         ...recurso,
-          general: soloCredencialesGenerales,
-          total_credenciales: credenciales.length,
+        general: soloCredencialesGenerales,
+        total_credenciales: credenciales.length,
       };
     } catch (error) {
       if (
