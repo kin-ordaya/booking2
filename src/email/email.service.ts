@@ -102,6 +102,8 @@ export class EmailService {
         docente: {
           id: reserva.docente?.id,
           correo: reserva.docente?.usuario?.correo_institucional,
+          nombres: reserva.docente?.usuario?.nombres,
+          apellidos: reserva.docente?.usuario?.apellidos,
         },
         autor: {
           id: reserva.autor?.id,
@@ -265,7 +267,11 @@ export class EmailService {
 
       // 5. Preparar datos para el template
       const emailData = {
+        recurso_id: recurso.id,
         recurso_nombre: recurso.nombre,
+        curso_nombre: reservaData.curso?.nombre || undefined,
+        docente_nombres: (reservaData.docente?.nombres + ' ' + reservaData.docente?.apellidos) || undefined,
+        nrc: reservaData.reserva.nrc || undefined,
         fecha_html: fechaHtml,
         credenciales: todasLasCredenciales,
         link_guia: recurso.link_guia || undefined, // undefined será manejado en el template

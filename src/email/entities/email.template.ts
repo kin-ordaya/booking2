@@ -1,5 +1,9 @@
 export const getReservaTemplate = (data: {
+  recurso_id: string;
   recurso_nombre: string;
+  curso_nombre?: string;
+  docente_nombres?: string;
+  nrc?: string;
   fecha_html: string;
   credenciales: Array<{ usuario?: string; clave: string; tipo?: string }>;
   link_guia?: string; // Nuevo campo opcional
@@ -16,7 +20,11 @@ export const getReservaTemplate = (data: {
   responsable_telefono?: string;
 }) => {
   const {
+    recurso_id,
     recurso_nombre,
+    curso_nombre,
+    docente_nombres,
+    nrc,
     fecha_html,
     credenciales,
     link_guia,
@@ -423,6 +431,14 @@ export const getReservaTemplate = (data: {
         : ''
     }
 
+    ${
+      recurso_id == 'c9ebfde2-9afe-495d-a4ad-55c972dbb999'
+        ? `<h3>Debera ubicar el curso:</h3>
+            <p>${curso_nombre?.toUpperCase()} - ${docente_nombres?.toUpperCase()} - NRC: ${nrc} - AGROINDUSTRIAL</p>
+    `
+        : ''
+    }
+
     <!-- NUEVA SECCIÓN: Tabla de contactos -->
     <div style="margin: 2rem 0;">
       <h3>Contacto de Recursos Académicos Virtuales</h3>
@@ -443,7 +459,7 @@ export const getReservaTemplate = (data: {
         </tr>
         <tr>
           <td><strong>Supervisor de Recursos Académicos Virtuales</strong></td>
-          <td>NICOLÁS ESPINOZA</td>
+          <td>ESPINOZA RAMOS NICOLÁS</td>
           <td>nespinoza@continental.edu.pe</td>
           <td>945605752</td>
         </tr>

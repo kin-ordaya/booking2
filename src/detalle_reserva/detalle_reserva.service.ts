@@ -25,25 +25,35 @@ export class DetalleReservaService {
 
   async findAll(paginationDetalleReservaDto: PaginationDetalleReservaDto) {
     try {
-      const { reserva_id, page, limit } = paginationDetalleReservaDto;
+      const { reserva_id, page, limit, search } = paginationDetalleReservaDto;
 
       const reserva = await this.reservaRepository.existsBy({ id: reserva_id });
       if (!reserva) {
         throw new NotFoundException('Reserva no encontrada');
       }
 
-      // Obtener el conteo total
-      const total = await this.detalleReservaRepository.count({
-        where: { reserva: { id: reserva_id } },
-      });
+      // Crear query builder para manejar la búsqueda
+      const queryBuilder = this.detalleReservaRepository
+        .createQueryBuilder('detalleReserva')
+        .leftJoinAndSelect('detalleReserva.credencial', 'credencial')
+        .leftJoinAndSelect('credencial.rol', 'rol')
+        .where('detalleReserva.reserva.id = :reserva_id', { reserva_id });
 
-      // Obtener los detalles con paginación
-      const detallesReserva = await this.detalleReservaRepository.find({
-        where: { reserva: { id: reserva_id } },
-        relations: ['credencial', 'credencial.rol'],
-        take: limit,
-        skip: (page - 1) * limit,
-      });
+      // Aplicar búsqueda si existe
+      if (search) {
+        queryBuilder.andWhere('credencial.usuario ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      // Obtener el conteo total CON la búsqueda aplicada
+      const total = await queryBuilder.getCount();
+
+      // Obtener los detalles con paginación y búsqueda
+      const detallesReserva = await queryBuilder
+        .take(limit)
+        .skip((page - 1) * limit)
+        .getMany();
 
       // Extraer solo las credenciales con su rol
       const results = detallesReserva.map((detalle) => ({
@@ -55,16 +65,17 @@ export class DetalleReservaService {
         results,
         meta: {
           count: results.length, // Cantidad en esta página
-          total, // Total general de registros
+          total, // Total general de registros (con filtro aplicado)
           page,
           limit,
-          totalPages: Math.ceil(total / limit), // Usar el total general
+          totalPages: Math.ceil(total / limit),
         },
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
+      console.error('Error en findAll detalles reserva:', error);
       throw new InternalServerErrorException(
         'Error al obtener los detalles de reserva',
       );

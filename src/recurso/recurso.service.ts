@@ -257,6 +257,7 @@ export class RecursoService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
+  
   async findOne(id: string) {
     try {
       if (!id)
