@@ -267,6 +267,7 @@ export class EmailService {
 
       // 5. Preparar datos para el template
       const emailData = {
+        reserva_codigo: reservaData.reserva.codigo,
         recurso_id: recurso.id,
         recurso_nombre: recurso.nombre,
         curso_nombre: reservaData.curso?.nombre || undefined,

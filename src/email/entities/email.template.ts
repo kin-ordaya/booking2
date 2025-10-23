@@ -1,4 +1,5 @@
 export const getReservaTemplate = (data: {
+  reserva_codigo: string;
   recurso_id: string;
   recurso_nombre: string;
   curso_nombre?: string;
@@ -20,6 +21,7 @@ export const getReservaTemplate = (data: {
   responsable_telefono?: string;
 }) => {
   const {
+    reserva_codigo,
     recurso_id,
     recurso_nombre,
     curso_nombre,
@@ -92,7 +94,7 @@ export const getReservaTemplate = (data: {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuentas Reservadas - ALGETEC CIENCIAS BÁSICAS</title>
+    <title>RAV</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -341,7 +343,7 @@ export const getReservaTemplate = (data: {
 </head>
 <body>
   <header>
-    <h2>CUENTAS RESERVADAS ${recurso_nombre}</h2>
+    <h2>CUENTAS RESERVADAS ${recurso_nombre} - ${reserva_codigo}</h2>
   </header>
   <div class="main">
     ${
