@@ -271,7 +271,7 @@ export class EmailService {
         recurso_id: recurso.id,
         recurso_nombre: recurso.nombre,
         curso_nombre: reservaData.curso?.nombre || undefined,
-        docente_nombres: (reservaData.docente?.nombres + ' ' + reservaData.docente?.apellidos) || undefined,
+        docente_nombres: (reservaData.docente?.nombres + ', ' + reservaData.docente?.apellidos) || undefined,
         nrc: reservaData.reserva.nrc || undefined,
         fecha_html: fechaHtml,
         credenciales: todasLasCredenciales,
@@ -280,9 +280,9 @@ export class EmailService {
         secciones_email: seccionesEmail.length > 0 ? seccionesEmail : undefined,
         esMantenimiento: reservaData.reserva.mantenimiento == 1,
         responsable_nombres: reservaData.responsable
-          ? reservaData.responsable?.apellidos +
-            ' ' +
-            reservaData.responsable?.nombres
+          ? reservaData.responsable?.nombres +
+            ', ' +
+            reservaData.responsable?.apellidos
           : undefined,
         responsable_correo: reservaData.responsable
           ? reservaData.responsable?.correo

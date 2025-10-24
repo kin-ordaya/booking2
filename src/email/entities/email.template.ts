@@ -461,7 +461,7 @@ export const getReservaTemplate = (data: {
         </tr>
         <tr>
           <td><strong>Supervisor de Recursos Académicos Virtuales</strong></td>
-          <td>ESPINOZA RAMOS NICOLÁS</td>
+          <td>NICOLÁS, ESPINOZA RAMOS</td>
           <td>nespinoza@continental.edu.pe</td>
           <td>945605752</td>
         </tr>
