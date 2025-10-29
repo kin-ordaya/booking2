@@ -176,6 +176,7 @@ export class RolUsuarioService {
           'usuario.nombres', // Nombres del usuario
           'usuario.apellidos',
           'usuario.numero_documento',
+          'usuario.correo_institucional',
           'documentoIdentidad.id',
           'documentoIdentidad.nombre',
         ])
