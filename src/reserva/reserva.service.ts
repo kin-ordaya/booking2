@@ -1,4 +1,3 @@
-
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import {
   BadRequestException,
@@ -186,16 +185,17 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
-    this.logger.info({inicio},'[validarInicioyFinReserva] Inicio');
-    this.logger.info({fin},'[validarInicioyFinReserva] Fin');
-    this.logger.info({autorRol},'[validarInicioyFinReserva] Rol');
-    this.logger.info({recursoTiempoReserva},
-      '[validarInicioyFinReserva] Tiempo Reserva'
+    this.logger.info({ inicio }, '[validarInicioyFinReserva] Inicio');
+    this.logger.info({ fin }, '[validarInicioyFinReserva] Fin');
+    this.logger.info({ autorRol }, '[validarInicioyFinReserva] Rol');
+    this.logger.info(
+      { recursoTiempoReserva },
+      '[validarInicioyFinReserva] Tiempo Reserva',
     );
     const ahoraUTC = new Date().toISOString();
     const inicioUTC = new Date(inicio).toISOString();
-    this.logger.info({ahoraUTC},'[validarInicioyFinReserva] ahoraUTC', );
-    this.logger.info({inicioUTC},'[validarInicioyFinReserva] inicioUTC', );
+    this.logger.info({ ahoraUTC }, '[validarInicioyFinReserva] ahoraUTC');
+    this.logger.info({ inicioUTC }, '[validarInicioyFinReserva] inicioUTC');
 
     if (inicioUTC < ahoraUTC) {
       throw new ConflictException(
@@ -207,11 +207,13 @@ export class ReservaService {
       const ahora = new Date(ahoraUTC).getTime();
       const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
       const minimoReservaUTC = new Date(minimoReserva).toISOString();
-      this.logger.info({minimoReserva},
-        '[validarInicioyFinReserva] minimoReserva'
+      this.logger.info(
+        { minimoReserva },
+        '[validarInicioyFinReserva] minimoReserva',
       );
-      this.logger.info({minimoReservaUTC},
-        '[validarInicioyFinReserva] minimoReservaUTC'
+      this.logger.info(
+        { minimoReservaUTC },
+        '[validarInicioyFinReserva] minimoReservaUTC',
       );
 
       if (inicioUTC < minimoReservaUTC) {
@@ -509,8 +511,6 @@ export class ReservaService {
         return freqB - freqA;
       });
   }
-
-  
 
   private async saveReservation(
     queryRunner: any,
@@ -1070,7 +1070,7 @@ export class ReservaService {
       }
       // Filtro por estado
       if (sort_state !== undefined) {
-        query.andWhere('reserva.estado = :estado', { estado: sort_state });
+        query.andWhere('reserva.estado = :estado', { estado: sort_state === 1 ? 1 : 0 });
       }
 
       // Ordenamiento por nombre o fecha

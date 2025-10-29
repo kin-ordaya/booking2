@@ -22,7 +22,7 @@ export class CursoService {
     @InjectRepository(Eap)
     private readonly eapRepository: Repository<Eap>,
     @InjectRepository(Plan)
-    private readonly planRepository: Repository<Plan>
+    private readonly planRepository: Repository<Plan>,
   ) {}
 
   async create(createCursoDto: CreateCursoDto): Promise<Curso> {
@@ -89,14 +89,7 @@ export class CursoService {
       }
 
       if (sort_state) {
-        switch (sort_state.toString()) {
-          case '1':
-            query.andWhere('curso.estado = :estado', { estado: 1 });
-            break;
-          case '2':
-            query.andWhere('curso.estado = :estado', { estado: 0 });
-            break;
-        }
+        query.andWhere('curso.estado = :estado', { estado: sort_state === 1 ? 1 : 0 });
       }
 
       if (search) {
