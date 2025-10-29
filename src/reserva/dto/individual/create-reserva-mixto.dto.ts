@@ -8,6 +8,7 @@ import {
 import { CreateReservaGeneralDto } from './create-reserva-general.dto';
 
 
+
 export class CreateReservaMixtoDto extends CreateReservaGeneralDto {
 
   @IsNotEmpty()

@@ -1,4 +1,3 @@
-import { CreateReservaGeneralDto } from './dto/create-reserva-general.dto';
 import {
   Controller,
   Get,
@@ -10,22 +9,47 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ReservaService } from './reserva.service';
-import { CreateReservaMantenimientoGeneralDto } from './dto/create-reserva-mantenimiento-general.dto';
+import { CreateReservaMantenimientoGeneralDto } from './dto/individual/create-reserva-mantenimiento-general.dto';
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
-import { CreateReservaMantenimientoMixtoDto } from './dto/create-reserva-mantenimiento-mixto.dto';
+import { CreateReservaMixtoDto } from './dto/individual/create-reserva-mixto.dto';
+import { CreateReservaMantenimientoMixtoDto } from './dto/individual/create-reserva-mantenimiento-mixto.dto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-general-multiple.dto';
+import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general.dto';
+import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';
+import { CreateReservaMixtoMultipleDto } from './dto/multiple/create-reserva-mixto-multiple.dto';
+import { CreateReservaMantenimientoMixtoMultipleDto } from './dto/multiple/create-reserva-mantenimiento-mixto-multiple.dto';
 
 @Controller('reserva')
 @ApiBearerAuth()
 @UseGuards(AuthGuard, RolesGuard)
 export class ReservaController {
   constructor(private readonly reservaService: ReservaService) {}
+
+  @Post('general')
+  @Roles('ADMINISTRADOR', 'DOCENTE')
+  @ApiBody({ type: CreateReservaGeneralDto })
+  CreateReservaGeneral(
+    @Body() createReservaGeneralDto: CreateReservaGeneralDto,
+  ) {
+    //console.log(createReservaGeneralDto);
+    return this.reservaService.createReservaGeneral(createReservaGeneralDto);
+  }
+
+  @Post('mixto')
+  @Roles('ADMINISTRADOR', 'DOCENTE')
+  @ApiBody({ type: CreateReservaMixtoDto })
+  CreateReservaDocenteEstudiante(
+    @Body() createReservaMixtoDto: CreateReservaMixtoDto,
+  ) {
+    //console.log(createReservaMixtoDto);
+    return this.reservaService.createReservaMixto(createReservaMixtoDto);
+  }
 
   @Post('mantenimiento-general')
   @Roles('ADMINISTRADOR')
@@ -51,24 +75,40 @@ export class ReservaController {
     );
   }
 
-  @Post('general')
-  @Roles('ADMINISTRADOR', 'DOCENTE')
-  @ApiBody({ type: CreateReservaGeneralDto })
-  CreateReservaGeneral(
-    @Body() createReservaGeneralDto: CreateReservaGeneralDto,
+  @Post('general-multiple')
+  @Roles('ADMINISTRADOR')
+  createReservaGeneralMultiple(
+    @Body()
+    createReservaGeneralMultipleDto: CreateReservaGeneralMultipleDto,
   ) {
-    //console.log(createReservaGeneralDto);
-    return this.reservaService.createReservaGeneral(createReservaGeneralDto);
+    return 'Mantenimiento general multiple';
   }
 
-  @Post('mixto')
-  @Roles('ADMINISTRADOR', 'DOCENTE')
-  @ApiBody({ type: CreateReservaMixtoDto })
-  CreateReservaDocenteEstudiante(
-    @Body() createReservaMixtoDto: CreateReservaMixtoDto,
+  @Post('mixto-multiple')
+  @Roles('ADMINISTRADOR')
+  createReservaMixtoMultiple(
+    @Body()
+    createReservaMixtoMultipleDto: CreateReservaMixtoMultipleDto,
   ) {
-    //console.log(createReservaMixtoDto);
-    return this.reservaService.createReservaMixto(createReservaMixtoDto);
+    return 'Mantenimiento mixto multiple';
+  }
+
+  @Post('mantenimiento-general-multiple')
+  @Roles('ADMINISTRADOR')
+  createReservaMantenimientoGeneralMultiple(
+    @Body()
+    createReservaMantenimientoGeneralMultipleDto: CreateReservaMantenimientoGeneralMultipleDto,
+  ) {
+    return 'Mantenimiento mantenimiento general multiple';
+  }
+
+  @Post('mantenimiento-mixto-multiple')
+  @Roles('ADMINISTRADOR')
+  createReservaMantenimientoMixtoMultiple(
+    @Body()
+    createReservaMantenimientoMixtoMultipleDto: CreateReservaMantenimientoMixtoMultipleDto,
+  ) {
+    return 'Mantenimiento mantenimiento mixto multiple';
   }
 
   @Get('credenciales-disponibles')

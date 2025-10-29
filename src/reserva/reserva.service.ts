@@ -1,4 +1,4 @@
-import { CreateReservaGeneralDto } from './dto/create-reserva-general.dto';
+
 import { PaginationReservaDto } from './dto/pagination-reserva.dto';
 import {
   BadRequestException,
@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateReservaMantenimientoGeneralDto } from './dto/create-reserva-mantenimiento-general.dto';
+import { CreateReservaMantenimientoGeneralDto } from './dto/individual/create-reserva-mantenimiento-general.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reserva } from './entities/reserva.entity';
 import { Repository, DataSource, Brackets } from 'typeorm';
@@ -18,9 +18,10 @@ import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reserva.dto';
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
-import { CreateReservaMixtoDto } from './dto/create-reserva-mixto.dto';
-import { CreateReservaMantenimientoMixtoDto } from './dto/create-reserva-mantenimiento-mixto.dto';
+import { CreateReservaMixtoDto } from './dto/individual/create-reserva-mixto.dto';
+import { CreateReservaMantenimientoMixtoDto } from './dto/individual/create-reserva-mantenimiento-mixto.dto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general.dto';
 
 @Injectable()
 export class ReservaService {
@@ -235,7 +236,7 @@ export class ReservaService {
 
     if (duracion < duracionMin) {
       throw new ConflictException(
-        `La duración mínima de reserva es de 45 minutos para todos los roles`,
+        `La duración mínima de reserva es de 1 hora academica(45 minutos) para todos los roles`,
       );
     }
 
@@ -250,7 +251,7 @@ export class ReservaService {
       case 'DOCENTE':
         if (duracion > duracionMaxDocente) {
           throw new ConflictException(
-            `La duración máxima para docentes es de 3 horas y 10 minutos`,
+            `La duración máxima para docentes es 4 horas academicas y 10 minutos extra por reserva`,
           );
         }
         break;
@@ -508,6 +509,8 @@ export class ReservaService {
         return freqB - freqA;
       });
   }
+
+  
 
   private async saveReservation(
     queryRunner: any,
@@ -1156,6 +1159,7 @@ export class ReservaService {
         codigo: reserva.codigo,
         inicio: reserva.inicio,
         fin: reserva.fin,
+        estado: reserva.estado,
         cantidad_accesos: reserva.cantidad_accesos,
         cantidad_credenciales: reserva.cantidad_credenciales,
         docente: reserva.docente
