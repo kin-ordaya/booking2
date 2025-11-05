@@ -81,7 +81,9 @@ export class ReservaController {
     @Body()
     createReservaGeneralMultipleDto: CreateReservaGeneralMultipleDto,
   ) {
-    return 'Mantenimiento general multiple';
+    return this.reservaService.createReservaGeneralMultiple(
+      createReservaGeneralMultipleDto,
+    );
   }
 
   @Post('mixto-multiple')

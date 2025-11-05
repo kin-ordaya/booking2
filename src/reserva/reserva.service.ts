@@ -21,6 +21,7 @@ import { CreateReservaMixtoDto } from './dto/individual/create-reserva-mixto.dto
 import { CreateReservaMantenimientoMixtoDto } from './dto/individual/create-reserva-mantenimiento-mixto.dto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general.dto';
+import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-general-multiple.dto';
 
 @Injectable()
 export class ReservaService {
@@ -1015,6 +1016,211 @@ export class ReservaService {
     }
   }
 
+  async createReservaGeneralMultiple(
+    createReservaGeneralMultipleDto: CreateReservaGeneralMultipleDto,
+  ) {
+    const {
+      recurso_id,
+      autor_id,
+      clase_id,
+      docente_id,
+      rangos_fechas,
+      cantidad_accesos_general,
+    } = createReservaGeneralMultipleDto;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Validaciones iniciales comunes para todos los rangos
+      const [clase, docenteEncontrado] = await Promise.all([
+        this.claseRepository.findOneBy({ id: clase_id }),
+        docente_id
+          ? this.rolUsuarioRepository.findOne({
+              where: { id: docente_id },
+              relations: ['usuario', 'rol'],
+            })
+          : Promise.resolve(undefined),
+      ]);
+
+      if (!clase) throw new NotFoundException('Clase no encontrada');
+
+      // Manejar explícitamente el caso del docente
+      let docente: RolUsuario | undefined = undefined;
+
+      if (docente_id) {
+        if (!docenteEncontrado) {
+          throw new NotFoundException('Docente no encontrado');
+        }
+        if (docenteEncontrado.rol.nombre !== 'DOCENTE') {
+          throw new ConflictException('El docente_id debe ser de rol DOCENTE');
+        }
+        docente = docenteEncontrado; // Ahora sabemos que es RolUsuario, no null
+      }
+
+      // 2. Validar credenciales del recurso (común para todos los rangos)
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        throw new NotFoundException(
+          'El recurso no tiene credenciales configuradas',
+        );
+      }
+
+      if (
+        credenciales.some((credencial) => credencial.rol.nombre !== 'GENERAL')
+      ) {
+        throw new ConflictException(
+          'El recurso no tiene credenciales de tipo GENERAL',
+        );
+      }
+
+      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+      const credencialesGenerales = credenciales.filter(
+        (c) => c.rol.nombre === 'GENERAL',
+      );
+
+      const cantidadGeneralFinal = cantidad_accesos_general || 0;
+
+      // ✅ NUEVA VALIDACIÓN: Duplicados en el request
+      this.validarDuplicadosEnRequest(rangos_fechas);
+      this.validarSolapamientosEnRequest(rangos_fechas);
+
+      // 3. Validar todos los rangos de fechas usando validateBasicReservationData
+      const reservasValidadas = await Promise.all(
+        rangos_fechas.map(async (rango) => {
+          const inicio = new Date(rango.inicio);
+          const fin = new Date(rango.fin);
+
+          // ✅ USAR validateBasicReservationData para validaciones básicas
+          const { recurso, autor } = await this.validateBasicReservationData(
+            recurso_id,
+            autor_id,
+            inicio,
+            fin,
+            clase_id, // Pasar clase_id para validar duplicados
+          );
+
+          // Validar disponibilidad de credenciales para este rango específico
+          const { credencialesGeneralesAsignar } =
+            await this.validarYAsignarCredenciales(
+              recurso_id,
+              inicio,
+              fin,
+              cantidadGeneralFinal,
+              0, // No credenciales docentes en reservas generales
+              credencialesGenerales,
+              [], // Array vacío para credenciales docentes
+              capacidadPorCredencial,
+            );
+
+          return {
+            inicio,
+            fin,
+            credencialesGeneralesAsignar,
+            recurso,
+            autor,
+          };
+        }),
+      );
+
+      // 4. Crear todas las reservas en una sola transacción
+      const reservasCreadas = await Promise.all(
+        reservasValidadas.map(async (reservaValida, index) => {
+          const reservaGuardada = await this.saveReservation(
+            queryRunner,
+            {
+              codigo: `RES-MULT-${Math.floor(Date.now() / 1000)}-${index + 1}`,
+              mantenimiento: 0,
+              inicio: reservaValida.inicio,
+              fin: reservaValida.fin,
+              cantidad_accesos: cantidadGeneralFinal,
+              cantidad_credenciales:
+                reservaValida.credencialesGeneralesAsignar.length,
+              recurso: reservaValida.recurso,
+              autor: reservaValida.autor,
+              clase,
+              docente, // Ahora es definitivamente RolUsuario | undefined
+            },
+            reservaValida.credencialesGeneralesAsignar,
+          );
+
+          return reservaGuardada;
+        }),
+      );
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: `Se crearon ${reservasCreadas.length} reservas exitosamente`,
+        reservas: reservasCreadas.map((reserva) => ({
+          id: reserva.id,
+          codigo: reserva.codigo,
+          inicio: reserva.inicio,
+          fin: reserva.fin,
+          cantidad_accesos: reserva.cantidad_accesos,
+          cantidad_credenciales: reserva.cantidad_credenciales,
+        })),
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      // Mejorar mensaje de error para múltiples reservas
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw new ConflictException(
+          `Error en una de las reservas: ${error.message}. Ninguna reserva fue creada.`,
+        );
+      }
+
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private validarDuplicadosEnRequest(rangos_fechas: any[]): void {
+    const rangosUnicos = new Set();
+
+    for (const rango of rangos_fechas) {
+      const clave = `${rango.inicio}-${rango.fin}`;
+
+      if (rangosUnicos.has(clave)) {
+        throw new ConflictException(
+          `Se encontraron rangos duplicados en la solicitud: ${rango.inicio} - ${rango.fin}`,
+        );
+      }
+
+      rangosUnicos.add(clave);
+    }
+  }
+
+  private validarSolapamientosEnRequest(rangos_fechas: any[]): void {
+    // Ordenar por inicio para facilitar detección
+    const rangosOrdenados = [...rangos_fechas]
+      .map((r) => ({ inicio: new Date(r.inicio), fin: new Date(r.fin) }))
+      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+
+    for (let i = 1; i < rangosOrdenados.length; i++) {
+      const rangoActual = rangosOrdenados[i];
+      const rangoAnterior = rangosOrdenados[i - 1];
+
+      if (rangoActual.inicio < rangoAnterior.fin) {
+        throw new ConflictException(
+          `Los rangos de fecha se solapan: ` +
+            `${rangoAnterior.inicio.toISOString()} - ${rangoAnterior.fin.toISOString()} y ` +
+            `${rangoActual.inicio.toISOString()} - ${rangoActual.fin.toISOString()}`,
+        );
+      }
+    }
+  }
+
   async findAll(paginationReservaDto: PaginationReservaDto) {
     try {
       const {
@@ -1070,7 +1276,9 @@ export class ReservaService {
       }
       // Filtro por estado
       if (sort_state !== undefined) {
-        query.andWhere('reserva.estado = :estado', { estado: sort_state === 1 ? 1 : 0 });
+        query.andWhere('reserva.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
       }
 
       // Ordenamiento por nombre o fecha
