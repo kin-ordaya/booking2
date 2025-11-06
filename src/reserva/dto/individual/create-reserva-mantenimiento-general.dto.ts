@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsUUID,
 } from 'class-validator';
@@ -14,7 +15,7 @@ export class CreateReservaMantenimientoGeneralDto extends RangoFechaDto{
   // @Type(() => Number)
   // mantenimiento: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @ApiPropertyOptional({
     description:
       'cantidad_accesos_general opcional cuando es mantenimiento = 1',
@@ -22,7 +23,7 @@ export class CreateReservaMantenimientoGeneralDto extends RangoFechaDto{
   @IsInt()
   @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
   @Type(() => Number)
-  cantidad_accesos_general: number;
+  cantidad_accesos_general?: number;
 
   // @IsNotEmpty()
   // @IsDateString(
