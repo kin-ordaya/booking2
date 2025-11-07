@@ -181,73 +181,63 @@ export class ReservaService {
   }
 
   private async validarInicioyFinReserva(
-    inicio: Date,
-    fin: Date,
-    autorRol: string,
-    recursoTiempoReserva: number,
-  ) {
-    this.logger.info({ inicio }, '[validarInicioyFinReserva] Inicio');
-    this.logger.info({ fin }, '[validarInicioyFinReserva] Fin');
-    this.logger.info({ autorRol }, '[validarInicioyFinReserva] Rol');
-    this.logger.info(
-      { recursoTiempoReserva },
-      '[validarInicioyFinReserva] Tiempo Reserva',
+  inicio: Date,
+  fin: Date,
+  autorRol: string,
+  recursoTiempoReserva: number,
+) {
+  this.logger.info({ inicio }, '[validarInicioyFinReserva] Inicio');
+  this.logger.info({ fin }, '[validarInicioyFinReserva] Fin');
+  this.logger.info({ autorRol }, '[validarInicioyFinReserva] Rol');
+  this.logger.info(
+    { recursoTiempoReserva },
+    '[validarInicioyFinReserva] Tiempo Reserva',
+  );
+
+  // ✅ SOLUCIÓN: Ajustar solo para la comparación sumando 5 horas
+  const inicioAjustado = new Date(inicio.getTime() + (5 * 60 * 60 * 1000));
+  const ahora = new Date();
+  
+  this.logger.info({ 
+    inicioOriginal: inicio,
+    inicioAjustado: inicioAjustado,
+    inicioLocal: inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
+    ahoraLocal: ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
+    inicioTimestamp: inicioAjustado.getTime(),
+    ahoraTimestamp: ahora.getTime(),
+    diferencia: inicioAjustado.getTime() - ahora.getTime()
+  }, '[validarInicioyFinReserva] Comparación ajustada');
+
+  // ✅ Usar inicioAjustado solo para esta validación
+  if (inicioAjustado.getTime() < ahora.getTime()) {
+    throw new ConflictException(
+      `La fecha/hora de inicio: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
     );
+  }
 
-    // ✅ USAR TIMESTAMP EN LUGAR DE STRINGS ISO
-    const ahora = new Date();
-    const inicioDate = new Date(inicio);
+  if (autorRol === 'DOCENTE') {
+    const minimoReserva = new Date(ahora.getTime() + recursoTiempoReserva * 60 * 60 * 1000);
+    
+    this.logger.info({
+      inicioAjustado: inicioAjustado.getTime(),
+      minimoReserva: minimoReserva.getTime(),
+      diferenciaMinima: inicioAjustado.getTime() - minimoReserva.getTime()
+    }, '[validarInicioyFinReserva] Validación docente');
 
-    this.logger.info(
-      {
-        inicioTimestamp: inicioDate.getTime(),
-        ahoraTimestamp: ahora.getTime(),
-        diferencia: inicioDate.getTime() - ahora.getTime(),
-        inicioLocal: inicioDate.toLocaleString('es-PE', {
-          timeZone: 'America/Lima',
-        }),
-        ahoraLocal: ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
-      },
-      '[validarInicioyFinReserva] Comparación con timestamps',
-    );
-
-    // ✅ COMPARACIÓN CON TIMESTAMP (independiente de zona horaria)
-    if (inicioDate.getTime() < ahora.getTime()) {
+    if (inicioAjustado.getTime() < minimoReserva.getTime()) {
       throw new ConflictException(
-        `La fecha/hora de inicio: ${inicioDate.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
-      );
-    }
-
-    if (autorRol === 'DOCENTE') {
-      // ✅ También usar timestamp aquí
-      const ahoraTimestamp = ahora.getTime();
-      const minimoReservaTimestamp =
-        ahoraTimestamp + recursoTiempoReserva * 60 * 60 * 1000;
-
-      this.logger.info(
-        {
-          ahoraTimestamp,
-          minimoReservaTimestamp,
-          inicioTimestamp: inicioDate.getTime(),
-          diferenciaMinima: inicioDate.getTime() - minimoReservaTimestamp,
-        },
-        '[validarInicioyFinReserva] Validación docente',
-      );
-
-      if (inicioDate.getTime() < minimoReservaTimestamp) {
-        throw new ConflictException(
-          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio seleccionada: ${inicioDate.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaTimestamp).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
-        );
-      }
-    }
-
-    // ✅ También para esta comparación
-    if (fin.getTime() <= inicioDate.getTime()) {
-      throw new ConflictException(
-        'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
+        `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio seleccionada: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${minimoReserva.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
   }
+
+  // ✅ Para esta comparación usar las fechas originales (sin ajustar)
+  if (fin.getTime() <= inicio.getTime()) {
+    throw new ConflictException(
+      'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
+    );
+  }
+}
 
   private validateReservationDuration(rol: string, inicio: Date, fin: Date) {
     const duracionMin = 45 * 60 * 1000;
