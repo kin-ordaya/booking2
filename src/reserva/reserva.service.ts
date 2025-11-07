@@ -193,39 +193,56 @@ export class ReservaService {
       { recursoTiempoReserva },
       '[validarInicioyFinReserva] Tiempo Reserva',
     );
-    const ahoraUTC = new Date().toISOString();
-    //Sumarle 5 horas a la hora de inicio para convertirla a UTC
-    const inicioUTC = new Date(inicio).toISOString();
-    this.logger.info({ ahoraUTC }, '[validarInicioyFinReserva] ahoraUTC');
-    this.logger.info({ inicioUTC }, '[validarInicioyFinReserva] inicioUTC');
 
-    if (inicioUTC < ahoraUTC) {
+    // ✅ USAR TIMESTAMP EN LUGAR DE STRINGS ISO
+    const ahora = new Date();
+    const inicioDate = new Date(inicio);
+
+    this.logger.info(
+      {
+        inicioTimestamp: inicioDate.getTime(),
+        ahoraTimestamp: ahora.getTime(),
+        diferencia: inicioDate.getTime() - ahora.getTime(),
+        inicioLocal: inicioDate.toLocaleString('es-PE', {
+          timeZone: 'America/Lima',
+        }),
+        ahoraLocal: ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
+      },
+      '[validarInicioyFinReserva] Comparación con timestamps',
+    );
+
+    // ✅ COMPARACIÓN CON TIMESTAMP (independiente de zona horaria)
+    if (inicioDate.getTime() < ahora.getTime()) {
       throw new ConflictException(
-        `La fecha/hora de inicio: ${inicio.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${new Date(ahoraUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        `La fecha/hora de inicio: ${inicioDate.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
       );
     }
 
     if (autorRol === 'DOCENTE') {
-      const ahora = new Date(ahoraUTC).getTime();
-      const minimoReserva = ahora + recursoTiempoReserva * 60 * 60 * 1000;
-      const minimoReservaUTC = new Date(minimoReserva).toISOString();
+      // ✅ También usar timestamp aquí
+      const ahoraTimestamp = ahora.getTime();
+      const minimoReservaTimestamp =
+        ahoraTimestamp + recursoTiempoReserva * 60 * 60 * 1000;
+
       this.logger.info(
-        { minimoReserva },
-        '[validarInicioyFinReserva] minimoReserva',
-      );
-      this.logger.info(
-        { minimoReservaUTC },
-        '[validarInicioyFinReserva] minimoReservaUTC',
+        {
+          ahoraTimestamp,
+          minimoReservaTimestamp,
+          inicioTimestamp: inicioDate.getTime(),
+          diferenciaMinima: inicioDate.getTime() - minimoReservaTimestamp,
+        },
+        '[validarInicioyFinReserva] Validación docente',
       );
 
-      if (inicioUTC < minimoReservaUTC) {
+      if (inicioDate.getTime() < minimoReservaTimestamp) {
         throw new ConflictException(
-          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio selecionada: ${new Date(inicio).toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaUTC).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio seleccionada: ${inicioDate.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${new Date(minimoReservaTimestamp).toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
         );
       }
     }
 
-    if (fin <= inicio) {
+    // ✅ También para esta comparación
+    if (fin.getTime() <= inicioDate.getTime()) {
       throw new ConflictException(
         'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
       );
@@ -907,6 +924,7 @@ export class ReservaService {
         docente_id,
       } = createReservaMixtoDto;
 
+      this.logger.info;
       const { recurso, autor } = await this.validateBasicReservationData(
         recurso_id,
         autor_id,
