@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsPositive,
   IsUUID,
+  Min,
 } from 'class-validator';
 import { RangoFechaDto } from '../base/rango-fecha.dto';
 
@@ -21,7 +22,9 @@ export class CreateReservaMantenimientoGeneralDto extends RangoFechaDto{
       'cantidad_accesos_general opcional cuando es mantenimiento = 1',
   })
   @IsInt()
-  @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
+  @Min(0, {
+    message: 'El campo cantidad_accesos_general debe ser mayor o igual a 0',
+  })
   @Type(() => Number)
   cantidad_accesos_general?: number;
 
