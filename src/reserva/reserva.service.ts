@@ -193,7 +193,7 @@ export class ReservaService {
       { recursoTiempoReserva },
       '[validarInicioyFinReserva] Tiempo Reserva',
     );
-    const ahoraUTC = new Date().toISOString();
+    const ahoraUTC = new Date().toISOString() + 5*60*60*1000;
     const inicioUTC = new Date(inicio).toISOString();
     this.logger.info({ ahoraUTC }, '[validarInicioyFinReserva] ahoraUTC');
     this.logger.info({ inicioUTC }, '[validarInicioyFinReserva] inicioUTC');
