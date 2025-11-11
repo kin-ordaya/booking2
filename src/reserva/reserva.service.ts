@@ -1055,29 +1055,37 @@ export class ReservaService {
 
     try {
       // 1. Validaciones iniciales comunes para todos los rangos
-      const [clase, docenteEncontrado] = await Promise.all([
+      // 1. Validaciones iniciales comunes para todos los rangos
+      const [clase, recurso, autor] = await Promise.all([
         this.claseRepository.findOneBy({ id: clase_id }),
-        docente_id
-          ? this.rolUsuarioRepository.findOne({
-              where: { id: docente_id },
-              relations: ['usuario', 'rol'],
-            })
-          : Promise.resolve(undefined),
+        this.recursoRepository.findOneBy({ id: recurso_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: autor_id },
+          relations: ['usuario', 'rol'],
+        }),
       ]);
 
       if (!clase) throw new NotFoundException('Clase no encontrada');
+      if (!recurso) throw new NotFoundException('Recurso no encontrado');
+      if (!autor) throw new NotFoundException('Autor no encontrado');
 
       // Manejar explícitamente el caso del docente
       let docente: RolUsuario | undefined = undefined;
 
       if (docente_id) {
+        // Si se proporcionó docente_id, validar que exista y sea DOCENTE
+        const docenteEncontrado = await this.rolUsuarioRepository.findOne({
+          where: { id: docente_id },
+          relations: ['usuario', 'rol'],
+        });
+
         if (!docenteEncontrado) {
           throw new NotFoundException('Docente no encontrado');
         }
         if (docenteEncontrado.rol.nombre !== 'DOCENTE') {
           throw new ConflictException('El docente_id debe ser de rol DOCENTE');
         }
-        docente = docenteEncontrado; // Ahora sabemos que es RolUsuario, no null
+        docente = docenteEncontrado;
       }
 
       // 2. Validar credenciales del recurso (común para todos los rangos)
