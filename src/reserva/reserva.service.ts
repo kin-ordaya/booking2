@@ -22,6 +22,7 @@ import { CreateReservaMantenimientoMixtoDto } from './dto/individual/create-rese
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general.dto';
 import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-general-multiple.dto';
+import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';
 
 @Injectable()
 export class ReservaService {
@@ -111,6 +112,7 @@ export class ReservaService {
 
     return detalles ? detalles.credencial_id : null;
   }
+
   // Métodos comunes
   private async validateBasicReservationData(
     recursoId: string,
@@ -181,63 +183,73 @@ export class ReservaService {
   }
 
   private async validarInicioyFinReserva(
-  inicio: Date,
-  fin: Date,
-  autorRol: string,
-  recursoTiempoReserva: number,
-) {
-  this.logger.info({ inicio }, '[validarInicioyFinReserva] Inicio');
-  this.logger.info({ fin }, '[validarInicioyFinReserva] Fin');
-  this.logger.info({ autorRol }, '[validarInicioyFinReserva] Rol');
-  this.logger.info(
-    { recursoTiempoReserva },
-    '[validarInicioyFinReserva] Tiempo Reserva',
-  );
-
-  // ✅ SOLUCIÓN: Ajustar solo para la comparación sumando 5 horas
-  const inicioAjustado = new Date(inicio.getTime() + (5 * 60 * 60 * 1000));
-  const ahora = new Date();
-  
-  this.logger.info({ 
-    inicioOriginal: inicio,
-    inicioAjustado: inicioAjustado,
-    inicioLocal: inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
-    ahoraLocal: ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
-    inicioTimestamp: inicioAjustado.getTime(),
-    ahoraTimestamp: ahora.getTime(),
-    diferencia: inicioAjustado.getTime() - ahora.getTime()
-  }, '[validarInicioyFinReserva] Comparación ajustada');
-
-  // ✅ Usar inicioAjustado solo para esta validación
-  if (inicioAjustado.getTime() < ahora.getTime()) {
-    throw new ConflictException(
-      `La fecha/hora de inicio: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+    inicio: Date,
+    fin: Date,
+    autorRol: string,
+    recursoTiempoReserva: number,
+  ) {
+    this.logger.info({ inicio }, '[validarInicioyFinReserva] Inicio');
+    this.logger.info({ fin }, '[validarInicioyFinReserva] Fin');
+    this.logger.info({ autorRol }, '[validarInicioyFinReserva] Rol');
+    this.logger.info(
+      { recursoTiempoReserva },
+      '[validarInicioyFinReserva] Tiempo Reserva',
     );
-  }
 
-  if (autorRol === 'DOCENTE') {
-    const minimoReserva = new Date(ahora.getTime() + recursoTiempoReserva * 60 * 60 * 1000);
-    
-    this.logger.info({
-      inicioAjustado: inicioAjustado.getTime(),
-      minimoReserva: minimoReserva.getTime(),
-      diferenciaMinima: inicioAjustado.getTime() - minimoReserva.getTime()
-    }, '[validarInicioyFinReserva] Validación docente');
+    // ✅ SOLUCIÓN: Ajustar solo para la comparación sumando 5 horas
+    const inicioAjustado = new Date(inicio.getTime() + 5 * 60 * 60 * 1000);
+    const ahora = new Date();
 
-    if (inicioAjustado.getTime() < minimoReserva.getTime()) {
+    this.logger.info(
+      {
+        inicioOriginal: inicio,
+        inicioAjustado: inicioAjustado,
+        inicioLocal: inicioAjustado.toLocaleString('es-PE', {
+          timeZone: 'America/Lima',
+        }),
+        ahoraLocal: ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
+        inicioTimestamp: inicioAjustado.getTime(),
+        ahoraTimestamp: ahora.getTime(),
+        diferencia: inicioAjustado.getTime() - ahora.getTime(),
+      },
+      '[validarInicioyFinReserva] Comparación ajustada',
+    );
+
+    // ✅ Usar inicioAjustado solo para esta validación
+    if (inicioAjustado.getTime() < ahora.getTime()) {
       throw new ConflictException(
-        `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio seleccionada: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${minimoReserva.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        `La fecha/hora de inicio: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+      );
+    }
+
+    if (autorRol === 'DOCENTE') {
+      const minimoReserva = new Date(
+        ahora.getTime() + recursoTiempoReserva * 60 * 60 * 1000,
+      );
+
+      this.logger.info(
+        {
+          inicioAjustado: inicioAjustado.getTime(),
+          minimoReserva: minimoReserva.getTime(),
+          diferenciaMinima: inicioAjustado.getTime() - minimoReserva.getTime(),
+        },
+        '[validarInicioyFinReserva] Validación docente',
+      );
+
+      if (inicioAjustado.getTime() < minimoReserva.getTime()) {
+        throw new ConflictException(
+          `Como Docente, debe realizar la reserva con al menos ${recursoTiempoReserva} horas de anticipación. La fecha/hora de inicio seleccionada: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a: ${minimoReserva.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        );
+      }
+    }
+
+    // ✅ Para esta comparación usar las fechas originales (sin ajustar)
+    if (fin.getTime() <= inicio.getTime()) {
+      throw new ConflictException(
+        'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
       );
     }
   }
-
-  // ✅ Para esta comparación usar las fechas originales (sin ajustar)
-  if (fin.getTime() <= inicio.getTime()) {
-    throw new ConflictException(
-      'La fecha/hora de fin debe ser posterior a la fecha/hora de inicio',
-    );
-  }
-}
 
   private validateReservationDuration(rol: string, inicio: Date, fin: Date) {
     const duracionMin = 45 * 60 * 1000;
@@ -1194,6 +1206,161 @@ export class ReservaService {
     }
   }
 
+  async createReservaMantenimientoGeneralMultiple(
+    createReservaMantenimientoGeneralMultipleDto: CreateReservaMantenimientoGeneralMultipleDto,
+  ) {
+    const { recurso_id, autor_id, rangos_fechas, cantidad_accesos_general } =
+      createReservaMantenimientoGeneralMultipleDto;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Validaciones iniciales
+      const autor = await this.rolUsuarioRepository.findOne({
+        where: { id: autor_id },
+        relations: ['usuario', 'rol'],
+      });
+
+      if (!autor) throw new NotFoundException('Autor no encontrado');
+      if (autor.rol.nombre !== 'ADMINISTRADOR') {
+        throw new ConflictException(
+          'Solo administradores pueden crear reservas en modo mantenimiento',
+        );
+      }
+
+      // 2. Validar credenciales del recurso
+      const credenciales = await this.credencialRepository.find({
+        where: { recurso: { id: recurso_id } },
+        relations: ['recurso', 'rol'],
+      });
+
+      if (credenciales.length === 0) {
+        throw new NotFoundException(
+          'El recurso no tiene credenciales configuradas',
+        );
+      }
+
+      if (
+        credenciales.some((credencial) => credencial.rol.nombre !== 'GENERAL')
+      ) {
+        throw new ConflictException(
+          'El recurso no tiene credenciales de tipo GENERAL',
+        );
+      }
+
+      const capacidadPorCredencial = credenciales[0]?.recurso?.capacidad || 1;
+      const credencialesGenerales = credenciales.filter(
+        (c) => c.rol.nombre === 'GENERAL',
+      );
+
+      const cantidadGeneralFinal = cantidad_accesos_general || 0;
+
+      // 3. Validar duplicados y solapamientos en el request
+      this.validarDuplicadosEnRequest(rangos_fechas);
+      this.validarSolapamientosEnRequest(rangos_fechas);
+
+      // 4. Validar todos los rangos de fechas
+      const reservasValidadas = await Promise.all(
+        rangos_fechas.map(async (rango) => {
+          const inicio = new Date(rango.inicio);
+          const fin = new Date(rango.fin);
+
+          // Validaciones básicas de reserva
+          const { recurso, autor: autorValidado } =
+            await this.validateBasicReservationData(
+              recurso_id,
+              autor_id,
+              inicio,
+              fin,
+            );
+
+          // Validar disponibilidad de credenciales para este rango específico
+          const { credencialesGeneralesAsignar } =
+            await this.validarYAsignarCredenciales(
+              recurso_id,
+              inicio,
+              fin,
+              cantidadGeneralFinal,
+              0, // No credenciales docentes en mantenimiento general
+              credencialesGenerales,
+              [], // Array vacío para credenciales docentes
+              capacidadPorCredencial,
+            );
+
+          return {
+            inicio,
+            fin,
+            credencialesGeneralesAsignar,
+            recurso,
+            autor: autorValidado,
+          };
+        }),
+      );
+
+      // 5. Crear todas las reservas en una sola transacción
+      const reservasCreadas = await Promise.all(
+        reservasValidadas.map(async (reservaValida, index) => {
+          const reservaGuardada = await this.saveReservation(
+            queryRunner,
+            {
+              codigo: `RES-MANT-MULT-${Math.floor(Date.now() / 1000)}-${index + 1}`,
+              mantenimiento: 1,
+              inicio: reservaValida.inicio,
+              fin: reservaValida.fin,
+              cantidad_accesos:
+                reservaValida.credencialesGeneralesAsignar.length, // CORRECCIÓN: usar reservaValida.credencialesGeneralesAsignar
+              cantidad_credenciales:
+                reservaValida.credencialesGeneralesAsignar.length,
+              recurso: reservaValida.recurso,
+              autor: reservaValida.autor,
+            },
+            reservaValida.credencialesGeneralesAsignar,
+          );
+
+          return reservaGuardada;
+        }),
+      );
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: `Se crearon ${reservasCreadas.length} reservas de mantenimiento exitosamente`,
+        reservas: reservasCreadas.map((reserva) => ({
+          id: reserva.id,
+          codigo: reserva.codigo,
+          inicio: reserva.inicio,
+          fin: reserva.fin,
+          cantidad_accesos: reserva.cantidad_accesos,
+          cantidad_credenciales: reserva.cantidad_credenciales,
+          mantenimiento: reserva.mantenimiento,
+        })),
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      // Mejorar mensaje de error para múltiples reservas
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw new ConflictException(
+          `Error en una de las reservas de mantenimiento: ${error.message}. Ninguna reserva fue creada.`,
+        );
+      }
+
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async createReservaMixtoMultiple(){}
+
+  async createReservaMantenimientoMixtoMultiple(){}
+
+  
   private validarDuplicadosEnRequest(rangos_fechas: any[]): void {
     const rangosUnicos = new Set();
 

@@ -24,6 +24,7 @@ import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general
 import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';
 import { CreateReservaMixtoMultipleDto } from './dto/multiple/create-reserva-mixto-multiple.dto';
 import { CreateReservaMantenimientoMixtoMultipleDto } from './dto/multiple/create-reserva-mantenimiento-mixto-multiple.dto';
+import { create } from 'domain';
 
 @Controller('reserva')
 @ApiBearerAuth()
@@ -101,7 +102,7 @@ export class ReservaController {
     @Body()
     createReservaMantenimientoGeneralMultipleDto: CreateReservaMantenimientoGeneralMultipleDto,
   ) {
-    return 'Mantenimiento mantenimiento general multiple';
+    return this.reservaService.createReservaMantenimientoGeneralMultiple(createReservaMantenimientoGeneralMultipleDto); ;
   }
 
   @Post('mantenimiento-mixto-multiple')
