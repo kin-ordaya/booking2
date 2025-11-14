@@ -11,6 +11,7 @@ import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.ent
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
+import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.ent
       Reserva,
       Responsable,
       RolUsuario,
+      GrupoReserva,
     ]),
   ],
   controllers: [ReservaController],

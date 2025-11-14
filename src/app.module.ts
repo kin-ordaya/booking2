@@ -44,6 +44,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from './config/pinoConfig';
 // import { CorrelationIdMiddleware } from './config/correlation-id.middleware';
 import { LogModule } from './log/log.module';
+import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -121,6 +122,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     ImportModule,
     HealthModule,
     LogModule,
+    GrupoReservaModule,
   ],
 })
 export class AppModule {

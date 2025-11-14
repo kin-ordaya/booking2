@@ -1,5 +1,6 @@
 import { Clase } from "src/clase/entities/clase.entity";
 import { DetalleReserva } from "src/detalle_reserva/entities/detalle_reserva.entity";
+import { GrupoReserva } from "src/grupo_reserva/entities/grupo_reserva.entity";
 import { Recurso } from "src/recurso/entities/recurso.entity";
 import { RolUsuario } from "src/rol_usuario/entities/rol_usuario.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
@@ -64,4 +65,10 @@ export class Reserva {
 
   @OneToMany(() => DetalleReserva, (detalleReserva) => detalleReserva.reserva)
   detalle_reserva: DetalleReserva[];
+
+  @ManyToOne(() => GrupoReserva, (grupoReserva) => grupoReserva.reservas, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'grupo_reserva_id' })
+  grupo_reserva?: GrupoReserva;
 }

@@ -23,6 +23,7 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general.dto';
 import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-general-multiple.dto';
 import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';
+import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
 
 @Injectable()
 export class ReservaService {
@@ -47,6 +48,9 @@ export class ReservaService {
 
     @InjectRepository(Credencial)
     private readonly credencialRepository: Repository<Credencial>,
+
+    @InjectRepository(GrupoReserva)
+    private readonly grupoReservaRepository: Repository<GrupoReserva>,
 
     private readonly dataSource: DataSource,
   ) {}
@@ -546,6 +550,7 @@ export class ReservaService {
       autor: RolUsuario;
       clase?: Clase;
       docente?: RolUsuario;
+      grupo_reserva?: GrupoReserva;
     },
     credencialesGeneralesAsignar: Credencial[],
     credencialesDocentesAsignar: Credencial[] = [],
@@ -1055,7 +1060,6 @@ export class ReservaService {
 
     try {
       // 1. Validaciones iniciales comunes para todos los rangos
-      // 1. Validaciones iniciales comunes para todos los rangos
       const [clase, recurso, autor] = await Promise.all([
         this.claseRepository.findOneBy({ id: clase_id }),
         this.recursoRepository.findOneBy({ id: recurso_id }),
@@ -1087,6 +1091,21 @@ export class ReservaService {
         }
         docente = docenteEncontrado;
       }
+
+      // Crear el grupo de reserva ANTES de crear las reservas individuales
+      const grupoReserva = this.grupoReservaRepository.create({
+        tipo: 'GENERAL_MULTIPLE',
+        recurso_id: recurso_id,
+        autor_id: autor_id,
+        clase_id: clase_id,
+        docente_id: docente_id,
+        cantidad_reservas: rangos_fechas.length,
+      });
+
+      // Guardar usando el mismo queryRunner para mantener la transacción
+      const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
+
+      console.log('✅ GrupoReserva creado:', grupoReservaGuardado.id); // ← DEBUG
 
       // 2. Validar credenciales del recurso (común para todos los rangos)
       const credenciales = await this.credencialRepository.find({
@@ -1174,9 +1193,15 @@ export class ReservaService {
               autor: reservaValida.autor,
               clase,
               docente, // Ahora es definitivamente RolUsuario | undefined
+              grupo_reserva: grupoReservaGuardado,
             },
             reservaValida.credencialesGeneralesAsignar,
           );
+
+          console.log('✅ Reserva creada con grupo:', {
+            reservaId: reservaGuardada.id,
+            grupoId: grupoReservaGuardado.id,
+          }); // ← DEBUG
 
           return reservaGuardada;
         }),
@@ -1186,6 +1211,11 @@ export class ReservaService {
 
       return {
         message: `Se crearon ${reservasCreadas.length} reservas exitosamente`,
+        grupo_reserva: {
+          id: grupoReservaGuardado.id,
+          tipo: grupoReservaGuardado.tipo,
+          cantidad_reservas: grupoReservaGuardado.cantidad_reservas,
+        },
         reservas: reservasCreadas.map((reserva) => ({
           id: reserva.id,
           codigo: reserva.codigo,
@@ -1226,10 +1256,13 @@ export class ReservaService {
 
     try {
       // 1. Validaciones iniciales
-      const autor = await this.rolUsuarioRepository.findOne({
-        where: { id: autor_id },
-        relations: ['usuario', 'rol'],
-      });
+      const [ recurso, autor] = await Promise.all([
+        this.recursoRepository.findOneBy({ id: recurso_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: autor_id },
+          relations: ['usuario', 'rol'],
+        }),
+      ]);
 
       if (!autor) throw new NotFoundException('Autor no encontrado');
       if (autor.rol.nombre !== 'ADMINISTRADOR') {
@@ -1237,6 +1270,7 @@ export class ReservaService {
           'Solo administradores pueden crear reservas en modo mantenimiento',
         );
       }
+      if(!recurso) throw new NotFoundException('Recurso no encontrado');
 
       // 2. Validar credenciales del recurso
       const credenciales = await this.credencialRepository.find({
