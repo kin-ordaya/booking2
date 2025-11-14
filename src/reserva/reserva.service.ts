@@ -24,6 +24,9 @@ import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general
 import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-general-multiple.dto';
 import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';
 import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
+import { CreateReservaMixtoMultipleDto } from './dto/multiple/create-reserva-mixto-multiple.dto';
+import { create } from 'domain';
+import { CreateReservaMantenimientoMixtoMultipleDto } from './dto/multiple/create-reserva-mantenimiento-mixto-multiple.dto';
 
 @Injectable()
 export class ReservaService {
@@ -1105,7 +1108,10 @@ export class ReservaService {
       // Guardar usando el mismo queryRunner para mantener la transacción
       const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
 
-      console.log('✅ GrupoReserva creado:', grupoReservaGuardado.id); // ← DEBUG
+      console.log(
+        '✅ GrupoReserva general multiple creado:',
+        grupoReservaGuardado.id,
+      ); // ← DEBUG
 
       // 2. Validar credenciales del recurso (común para todos los rangos)
       const credenciales = await this.credencialRepository.find({
@@ -1198,7 +1204,7 @@ export class ReservaService {
             reservaValida.credencialesGeneralesAsignar,
           );
 
-          console.log('✅ Reserva creada con grupo:', {
+          console.log('✅ Reserva general multiple creada con grupo:', {
             reservaId: reservaGuardada.id,
             grupoId: grupoReservaGuardado.id,
           }); // ← DEBUG
@@ -1256,7 +1262,7 @@ export class ReservaService {
 
     try {
       // 1. Validaciones iniciales
-      const [ recurso, autor] = await Promise.all([
+      const [recurso, autor] = await Promise.all([
         this.recursoRepository.findOneBy({ id: recurso_id }),
         this.rolUsuarioRepository.findOne({
           where: { id: autor_id },
@@ -1270,7 +1276,22 @@ export class ReservaService {
           'Solo administradores pueden crear reservas en modo mantenimiento',
         );
       }
-      if(!recurso) throw new NotFoundException('Recurso no encontrado');
+      if (!recurso) throw new NotFoundException('Recurso no encontrado');
+
+      const grupoReserva = this.grupoReservaRepository.create({
+        tipo: 'MANTENIMIENTO_GENERAL_MULTIPLE',
+        recurso_id: recurso_id,
+        autor_id: autor_id,
+        cantidad_reservas: rangos_fechas.length,
+      });
+
+      // Guardar usando el mismo queryRunner para mantener la transacción
+      const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
+
+      console.log(
+        '✅ GrupoReserva general multiple mantenimiento creado:',
+        grupoReservaGuardado.id,
+      ); // ← DEBUG
 
       // 2. Validar credenciales del recurso
       const credenciales = await this.credencialRepository.find({
@@ -1357,9 +1378,18 @@ export class ReservaService {
                 reservaValida.credencialesGeneralesAsignar.length,
               recurso: reservaValida.recurso,
               autor: reservaValida.autor,
+              grupo_reserva: grupoReservaGuardado,
             },
             reservaValida.credencialesGeneralesAsignar,
           );
+
+          console.log(
+            '✅ Reserva general multiple de mantenimiento creada con grupo:',
+            {
+              reservaId: reservaGuardada.id,
+              grupoId: grupoReservaGuardado.id,
+            },
+          ); // ← DEBUG
 
           return reservaGuardada;
         }),
@@ -1369,6 +1399,11 @@ export class ReservaService {
 
       return {
         message: `Se crearon ${reservasCreadas.length} reservas de mantenimiento exitosamente`,
+        grupo_reserva: {
+          id: grupoReservaGuardado.id,
+          tipo: grupoReservaGuardado.tipo,
+          cantidad_reservas: grupoReservaGuardado.cantidad_reservas,
+        },
         reservas: reservasCreadas.map((reserva) => ({
           id: reserva.id,
           codigo: reserva.codigo,
@@ -1399,7 +1434,7 @@ export class ReservaService {
   }
 
   async createReservaMixtoMultiple(
-    createReservaMixtoMultipleDto: any, // Deberías crear el DTO correspondiente
+    createReservaMixtoMultipleDto: CreateReservaMixtoMultipleDto, // Deberías crear el DTO correspondiente
   ) {
     const {
       recurso_id,
@@ -1417,19 +1452,48 @@ export class ReservaService {
 
     try {
       // 1. Validaciones iniciales comunes para todos los rangos
-      const [clase, docente] = await Promise.all([
+      const [clase, recurso] = await Promise.all([
         this.claseRepository.findOneBy({ id: clase_id }),
-        this.rolUsuarioRepository.findOne({
-          where: { id: docente_id },
-          relations: ['usuario', 'rol'],
-        }),
+        this.recursoRepository.findOneBy({ id: recurso_id }),
       ]);
 
       if (!clase) throw new NotFoundException('Clase no encontrada');
-      if (!docente) throw new NotFoundException('Docente no encontrado');
-      if (docente.rol.nombre !== 'DOCENTE') {
-        throw new ConflictException('El docente_id debe ser de rol DOCENTE');
+      if (!recurso) throw new NotFoundException('Recurso no encontrado');
+
+      // Manejar explícitamente el caso del docente
+      let docente: RolUsuario | undefined = undefined;
+      
+      if (docente_id) {
+        const docenteEncontrado = await this.rolUsuarioRepository.findOne({
+          where: { id: docente_id },
+          relations: ['usuario', 'rol'],
+        })
+
+        if (!docenteEncontrado) throw new NotFoundException('Docente no encontrado');
+
+        if (docenteEncontrado.rol.nombre !== 'DOCENTE') {
+          throw new ConflictException('El docente_id debe ser de rol DOCENTE');
+        }
+
+        docente = docenteEncontrado;
       }
+
+      const grupoReserva = this.grupoReservaRepository.create({
+        tipo: 'MIXTO_MULTIPLE',
+        recurso_id: recurso_id,
+        autor_id: autor_id,
+        clase_id: clase_id,
+        docente_id: docente_id,
+        cantidad_reservas: rangos_fechas.length,
+      });
+
+      // Guardar usando el mismo queryRunner para mantener la transacción
+      const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
+
+      console.log(
+        '✅ GrupoReserva mixto multiple creado:',
+        grupoReservaGuardado.id,
+      );
 
       // 2. Validar credenciales del recurso (común para todos los rangos)
       const credenciales = await this.credencialRepository.find({
@@ -1542,10 +1606,16 @@ export class ReservaService {
               autor: reservaValida.autor,
               clase,
               docente,
+              grupo_reserva: grupoReservaGuardado,
             },
             reservaValida.credencialesEstudiantesAsignar,
             reservaValida.credencialesDocentesAsignar,
           );
+
+          console.log('✅ Reserva mixto multiple creada con grupo:', {
+            reservaId: reservaGuardada.id,
+            grupoId: grupoReservaGuardado.id,
+          }); // ← DEBUG
 
           return reservaGuardada;
         }),
@@ -1555,6 +1625,11 @@ export class ReservaService {
 
       return {
         message: `Se crearon ${reservasCreadas.length} reservas mixtas exitosamente`,
+        grupo_reserva: {
+          id: grupoReservaGuardado.id,
+          tipo: grupoReservaGuardado.tipo,
+          cantidad_reservas: grupoReservaGuardado.cantidad_reservas,
+        },
         reservas: reservasCreadas.map((reserva) => ({
           id: reserva.id,
           codigo: reserva.codigo,
@@ -1585,7 +1660,7 @@ export class ReservaService {
   }
 
   async createReservaMantenimientoMixtoMultiple(
-    createReservaMantenimientoMixtoMultipleDto: any, // Deberías crear el DTO correspondiente
+    createReservaMantenimientoMixtoMultipleDto: CreateReservaMantenimientoMixtoMultipleDto
   ) {
     const {
       recurso_id,
@@ -1601,10 +1676,14 @@ export class ReservaService {
 
     try {
       // 1. Validaciones iniciales
-      const autor = await this.rolUsuarioRepository.findOne({
-        where: { id: autor_id },
-        relations: ['usuario', 'rol'],
-      });
+
+      const [recurso, autor] = await Promise.all([
+        this.recursoRepository.findOneBy({ id: recurso_id }),
+        this.rolUsuarioRepository.findOne({
+          where: { id: autor_id },
+          relations: ['usuario', 'rol'],
+        }),
+      ]);
 
       if (!autor) throw new NotFoundException('Autor no encontrado');
       if (autor.rol.nombre !== 'ADMINISTRADOR') {
@@ -1612,6 +1691,22 @@ export class ReservaService {
           'Solo administradores pueden crear reservas en modo mantenimiento',
         );
       }
+      if (!recurso) throw new NotFoundException('Recurso no encontrado');
+
+      const grupoReserva = this.grupoReservaRepository.create({
+        tipo: 'MANTENIMIENTO_MIXTO_MULTIPLE',
+        recurso_id: recurso_id,
+        autor_id: autor_id,
+        cantidad_reservas: rangos_fechas.length,
+      });
+
+      // Guardar usando el mismo queryRunner para mantener la transacción
+      const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
+
+      console.log(
+        '✅ GrupoReserva mantenimiento mixto multiple creado:',
+        grupoReservaGuardado.id,
+      ); // ← DEBUG
 
       // 2. Validar credenciales del recurso
       const credenciales = await this.credencialRepository.find({
@@ -1719,10 +1814,16 @@ export class ReservaService {
                 reservaValida.credencialesDocentesAsignar.length,
               recurso: reservaValida.recurso,
               autor: reservaValida.autor,
+              grupo_reserva: grupoReservaGuardado,
             },
             reservaValida.credencialesEstudiantesAsignar,
             reservaValida.credencialesDocentesAsignar,
           );
+
+          console.log('✅ Reserva mixto de mantenimiento creada con grupo:', {
+            reservaId: reservaGuardada.id,
+            grupoId: grupoReservaGuardado.id,
+          });
 
           return reservaGuardada;
         }),
@@ -1732,6 +1833,11 @@ export class ReservaService {
 
       return {
         message: `Se crearon ${reservasCreadas.length} reservas de mantenimiento mixto exitosamente`,
+        grupo_reserva: {
+          id: grupoReservaGuardado.id,
+          tipo: grupoReservaGuardado.tipo,
+          cantidad_reservas: grupoReservaGuardado.cantidad_reservas,
+        },
         reservas: reservasCreadas.map((reserva) => ({
           id: reserva.id,
           codigo: reserva.codigo,

@@ -4,7 +4,6 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
-  IsPositive,
   IsUUID,
   Min,
 } from 'class-validator';

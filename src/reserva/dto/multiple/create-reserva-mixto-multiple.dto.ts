@@ -19,11 +19,17 @@ export class CreateReservaMixtoMultipleDto {
   @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
   docente_id?: string;
 
+  @IsOptional()
+  @IsInt()
+  @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
+  @Type(() => Number)
+  cantidad_accesos_general?: number;
+
   @IsNotEmpty()
   @IsInt()
   @IsPositive({ message: 'El campo cantidad_accesos debe ser positivo' })
   @Type(() => Number)
-  cantidad_accesos_general: number;
+  cantidad_accesos_docente: number;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
