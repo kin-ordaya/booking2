@@ -1188,11 +1188,13 @@ export class ReservaService {
           const reservaGuardada = await this.saveReservation(
             queryRunner,
             {
-              codigo: `RES-MULT-${Math.floor(Date.now() / 1000)}-${index + 1}`,
+              codigo: `RES-${Math.floor(Date.now() / 1000)}-${index + 1}`,
               mantenimiento: 0,
               inicio: reservaValida.inicio,
               fin: reservaValida.fin,
-              cantidad_accesos: cantidadGeneralFinal,
+              cantidad_accesos:
+                reservaValida.credencialesGeneralesAsignar.length *
+                capacidadPorCredencial,
               cantidad_credenciales:
                 reservaValida.credencialesGeneralesAsignar.length,
               recurso: reservaValida.recurso,
@@ -1368,12 +1370,13 @@ export class ReservaService {
           const reservaGuardada = await this.saveReservation(
             queryRunner,
             {
-              codigo: `RES-MANT-MULT-${Math.floor(Date.now() / 1000)}-${index + 1}`,
+              codigo: `RES-${Math.floor(Date.now() / 1000)}-${index + 1}`,
               mantenimiento: 1,
               inicio: reservaValida.inicio,
               fin: reservaValida.fin,
               cantidad_accesos:
-                reservaValida.credencialesGeneralesAsignar.length, // CORRECCIÓN: usar reservaValida.credencialesGeneralesAsignar
+                reservaValida.credencialesGeneralesAsignar.length *
+                capacidadPorCredencial,
               cantidad_credenciales:
                 reservaValida.credencialesGeneralesAsignar.length,
               recurso: reservaValida.recurso,
@@ -1462,14 +1465,15 @@ export class ReservaService {
 
       // Manejar explícitamente el caso del docente
       let docente: RolUsuario | undefined = undefined;
-      
+
       if (docente_id) {
         const docenteEncontrado = await this.rolUsuarioRepository.findOne({
           where: { id: docente_id },
           relations: ['usuario', 'rol'],
-        })
+        });
 
-        if (!docenteEncontrado) throw new NotFoundException('Docente no encontrado');
+        if (!docenteEncontrado)
+          throw new NotFoundException('Docente no encontrado');
 
         if (docenteEncontrado.rol.nombre !== 'DOCENTE') {
           throw new ConflictException('El docente_id debe ser de rol DOCENTE');
@@ -1591,7 +1595,7 @@ export class ReservaService {
           const reservaGuardada = await this.saveReservation(
             queryRunner,
             {
-              codigo: `RES-MIX-MULT-${Math.floor(Date.now() / 1000)}-${index + 1}`,
+              codigo: `RES-${Math.floor(Date.now() / 1000)}-${index + 1}`,
               mantenimiento: 0,
               inicio: reservaValida.inicio,
               fin: reservaValida.fin,
@@ -1660,7 +1664,7 @@ export class ReservaService {
   }
 
   async createReservaMantenimientoMixtoMultiple(
-    createReservaMantenimientoMixtoMultipleDto: CreateReservaMantenimientoMixtoMultipleDto
+    createReservaMantenimientoMixtoMultipleDto: CreateReservaMantenimientoMixtoMultipleDto,
   ) {
     const {
       recurso_id,
@@ -1802,13 +1806,14 @@ export class ReservaService {
           const reservaGuardada = await this.saveReservation(
             queryRunner,
             {
-              codigo: `RES-MANT-MIX-MULT-${Math.floor(Date.now() / 1000)}-${index + 1}`,
+              codigo: `RES-${Math.floor(Date.now() / 1000)}-${index + 1}`,
               mantenimiento: 1,
               inicio: reservaValida.inicio,
               fin: reservaValida.fin,
               cantidad_accesos:
-                reservaValida.credencialesEstudiantesAsignar.length +
-                reservaValida.credencialesDocentesAsignar.length,
+                (reservaValida.credencialesEstudiantesAsignar.length +
+                  reservaValida.credencialesDocentesAsignar.length) *
+                capacidadPorCredencial,
               cantidad_credenciales:
                 reservaValida.credencialesEstudiantesAsignar.length +
                 reservaValida.credencialesDocentesAsignar.length,
