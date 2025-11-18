@@ -1,4 +1,5 @@
 import { Clase } from 'src/clase/entities/clase.entity';
+import { RecursoCursoPeriodo } from 'src/recurso_curso_periodo/entities/recurso_curso_periodo.entity';
 import {
   Column,
   CreateDateColumn,
@@ -28,4 +29,8 @@ export class Periodo {
 
   @OneToMany(()=>Clase, (clase) => clase.periodo)
   clase: Clase[];
+
+  @OneToMany(()=>RecursoCursoPeriodo, (rcp) => rcp.periodo)
+  recurso_curso_periodo: RecursoCursoPeriodo[];
+
 }

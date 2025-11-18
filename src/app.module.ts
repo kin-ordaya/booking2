@@ -45,6 +45,7 @@ import { pinoConfig } from './config/pinoConfig';
 // import { CorrelationIdMiddleware } from './config/correlation-id.middleware';
 import { LogModule } from './log/log.module';
 import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
+import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso_periodo.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -123,6 +124,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     HealthModule,
     LogModule,
     GrupoReservaModule,
+    RecursoCursoPeriodoModule,
   ],
 })
 export class AppModule {

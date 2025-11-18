@@ -1,6 +1,7 @@
 import { Curso } from 'src/curso/entities/curso.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { RecursoCursoPeriodo } from 'src/recurso_curso_periodo/entities/recurso_curso_periodo.entity';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class RecursoCurso {
   @PrimaryGeneratedColumn('uuid')
@@ -23,4 +24,7 @@ export class RecursoCurso {
   })
   @JoinColumn({ name: 'curso_id' })
   curso: Curso;
+
+  @OneToMany(() => RecursoCursoPeriodo, (rcp) => rcp.recurso_curso)
+  recurso_curso_periodo: RecursoCursoPeriodo[];
 }
