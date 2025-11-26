@@ -70,6 +70,13 @@ export class RecursoCursoPeriodoService {
         .leftJoinAndSelect('rc.recurso', 'r')
         .leftJoinAndSelect('rc.curso', 'c')
         .leftJoinAndSelect('rcp.periodo', 'p')
+        .select([
+          'rcp.id',
+          'rcp.asignacion',
+          'rcp.estado',
+          'rcp.inicio',
+          'rcp.fin',
+        ])
         .andWhere('p.id = :periodo_id', { periodo_id })
         .andWhere('r.id = :recurso_id', { recurso_id })
         .andWhere('c.id = :curso_id', { curso_id });
