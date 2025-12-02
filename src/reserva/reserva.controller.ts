@@ -93,7 +93,7 @@ export class ReservaController {
     @Body()
     createReservaMixtoMultipleDto: CreateReservaMixtoMultipleDto,
   ) {
-    return 'Mantenimiento mixto multiple';
+    return this.reservaService.createReservaMixtoMultiple(createReservaMixtoMultipleDto);
   }
 
   @Post('mantenimiento-general-multiple')
@@ -111,7 +111,7 @@ export class ReservaController {
     @Body()
     createReservaMantenimientoMixtoMultipleDto: CreateReservaMantenimientoMixtoMultipleDto,
   ) {
-    return 'Mantenimiento mantenimiento mixto multiple';
+    return this.reservaService.createReservaMantenimientoMixtoMultiple(createReservaMantenimientoMixtoMultipleDto);
   }
 
   @Get('credenciales-disponibles')
