@@ -701,9 +701,9 @@ export class EmailService {
     
     return { 
       message: 'Email enviado correctamente',
-      cantidad_reservas: reservas.length,
-      destinatario_principal: destinatarioPrincipal,
-      destinatarios_cc: destinatariosSecundarios
+      // cantidad_reservas: reservas.length,
+      // destinatario_principal: destinatarioPrincipal,
+      // destinatarios_cc: destinatariosSecundarios
     };
     
   } catch (error) {
