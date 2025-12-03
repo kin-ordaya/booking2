@@ -10,6 +10,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { SendEmailGrupoDto } from './dto/sendEmailGrupo.dto';
 
 @Controller('email')
 @ApiBearerAuth()
@@ -21,5 +22,12 @@ export class EmailController {
   async sendMail(@Body() dto: SendEmailDto) {
     return await this.emailService.sendEmail(dto);
     // return { message: 'Email sent successfully' };
+  }
+
+  @Post('send-grupo')
+  //@Roles('ADMINISTRADOR', 'DOCENTE')
+  async sendMailGrupo(@Body() dto: SendEmailGrupoDto) {
+    return await this.emailService.sendEmailGrupo(dto);
+    // return { message: 'Emails for group sent successfully' };
   }
 }
