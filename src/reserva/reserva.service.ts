@@ -222,14 +222,13 @@ export class ReservaService {
       '[validarInicioyFinReserva] Comparación ajustada',
     );
 
-    // ✅ Usar inicioAjustado solo para esta validación
-    if (inicioAjustado.getTime() < ahora.getTime()) {
-      throw new ConflictException(
-        `La fecha/hora de inicio: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
-      );
-    }
-
     if (autorRol === 'DOCENTE') {
+      if (inicioAjustado.getTime() < ahora.getTime()) {
+        throw new ConflictException(
+          `La fecha/hora de inicio: ${inicioAjustado.toLocaleString('es-PE', { timeZone: 'America/Lima' })} debe ser posterior a la fecha/hora actual: ${ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+        );
+      }
+
       const minimoReserva = new Date(
         ahora.getTime() + recursoTiempoReserva * 60 * 60 * 1000,
       );
