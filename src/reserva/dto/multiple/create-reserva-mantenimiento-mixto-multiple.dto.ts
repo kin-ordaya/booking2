@@ -11,13 +11,13 @@ import { RangoFechaDto } from '../base/rango-fecha.dto';
 import { Type } from 'class-transformer';
 
 export class CreateReservaMantenimientoMixtoMultipleDto {
-  @IsNotEmpty()
-  @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
-  clase_id: string;
+  // @IsNotEmpty()
+  // @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
+  // clase_id: string;
 
-  @IsOptional()
-  @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
-  docente_id?: string;
+  // @IsOptional()
+  // @IsUUID('4', { message: 'El campo docente_id debe ser de tipo uuid' })
+  // docente_id?: string;
 
   @IsOptional()
   @IsInt()
