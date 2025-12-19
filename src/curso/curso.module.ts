@@ -10,5 +10,6 @@ import { Plan } from 'src/plan/entities/plan.entity';
   imports: [TypeOrmModule.forFeature([Curso, Eap, Plan])],
   controllers: [CursoController],
   providers: [CursoService],
+  exports: [CursoService],
 })
 export class CursoModule {}

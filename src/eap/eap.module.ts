@@ -9,5 +9,6 @@ import { Facultad } from 'src/facultad/entities/facultad.entity';
   imports: [TypeOrmModule.forFeature([Eap, Facultad])],
   controllers: [EapController],
   providers: [EapService],
+  exports: [EapService],
 })
 export class EapModule {}

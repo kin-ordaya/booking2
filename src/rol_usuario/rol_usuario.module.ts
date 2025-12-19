@@ -11,5 +11,6 @@ import { Recurso } from 'src/recurso/entities/recurso.entity';
   imports: [TypeOrmModule.forFeature([RolUsuario, Usuario,Recurso, Rol])],
   controllers: [RolUsuarioController],
   providers: [RolUsuarioService],
+  exports: [RolUsuarioService],
 })
 export class RolUsuarioModule {}

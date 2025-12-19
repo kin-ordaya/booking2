@@ -16,7 +16,7 @@ export class ImportController {
         data: resultado
       }
     } catch (error) {
-      throw new BadRequestException('Error al procesar el archivo');
+      throw error;
     }
   }
 

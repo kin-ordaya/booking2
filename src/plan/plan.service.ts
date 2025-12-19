@@ -66,6 +66,27 @@ export class PlanService {
     }
   }
 
+  async findOneByNombre(nombre: string): Promise<Plan> {
+    try {
+      if (!nombre)
+        throw new BadRequestException(
+          'El nombre del plan no puede estar vacío',
+        );
+
+      const plan = await this.planRepository.findOne({ where: { nombre } });
+      if (!plan) throw new NotFoundException('Plan no encontrado');
+      return plan;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(id: string, updatePlanDto: UpdatePlanDto) {
     try {
       const { nombre } = updatePlanDto;
@@ -75,7 +96,7 @@ export class PlanService {
       }
 
       const plan = await this.planRepository.findOneBy({ id });
-      
+
       if (!plan) {
         throw new NotFoundException('Plan no encontrado');
       }
