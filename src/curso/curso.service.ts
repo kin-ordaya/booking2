@@ -35,7 +35,7 @@ export class CursoService {
         eap_id ? this.eapRepository.existsBy({ id: eap_id }) : true,
       ]);
 
-      if (codigoExiste) throw new ConflictException('Código ya existe');
+      if (codigoExiste) throw new ConflictException(`Curso con código: ${codigo} ya existe`);
 
       if (!planExiste) throw new NotFoundException('Plan no encontrado');
 

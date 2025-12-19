@@ -84,6 +84,27 @@ export class EapService {
     }
   }
 
+  async findOneByNombre(nombre: string): Promise<Eap> {
+    try {
+      if (!nombre)
+        throw new BadRequestException(
+          'El nombre de la EAP no puede estar vacío',
+        );
+
+      const eap = await this.eapRepository.findOne({ where: { nombre } });
+      if (!eap) throw new NotFoundException('EAP no encontrado');
+      return eap;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(id: string, updateEapDto: UpdateEapDto) {
     try {
       const { nombre, facultad_id } = updateEapDto;

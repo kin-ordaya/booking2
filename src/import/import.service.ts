@@ -14,6 +14,7 @@ import { RolUsuarioService } from 'src/rol_usuario/rol_usuario.service';
 import { CursoService } from 'src/curso/curso.service';
 import { EapService } from 'src/eap/eap.service';
 import { PlanService } from 'src/plan/plan.service';
+import { CreateCursoDto } from 'src/curso/dto/create-curso.dto';
 
 @Injectable()
 export class ImportService {
@@ -29,6 +30,12 @@ export class ImportService {
     'sexo',
     'direccion',
     'rol',
+    'plan',
+    'eap',
+    'codigo_curso',
+    'curso',
+    'descripcion',
+    'codigo_cruzado'
   ];
 
   private readonly COLUMNAS_OBLIGATORIAS = [
@@ -71,7 +78,6 @@ export class ImportService {
 
     const worksheet = workbook.Sheets['usuario'];
     const data = XLSX.utils.sheet_to_json(worksheet);
-    console.log();
 
     // Validar si hay datos
     if (!data || data.length === 0) {
@@ -79,7 +85,7 @@ export class ImportService {
     }
 
     // mostrar el nombre de la hoja
-    console.log(workbook.SheetNames);
+    //console.log(workbook.SheetNames);
 
     // Validar que existan las columnas obligatorias en el encabezado
     this.validarColumnasObligatoriasEncabezado(data);
@@ -103,7 +109,7 @@ export class ImportService {
       detalles: [],
     };
     //Procesando usuarios
-    console.log("Procesando usuarios");
+    console.log('Procesando usuarios');
     for (const [index, row] of data.entries()) {
       try {
         // Filtrar solo las columnas que necesitamos (ignorar extras)
@@ -118,7 +124,7 @@ export class ImportService {
         });
       }
     }
-    console.log("Procesando roles usuarios");
+    console.log('Procesando roles usuarios');
     //Procesando roles
     for (const [index, row] of data.entries()) {
       try {
@@ -136,7 +142,7 @@ export class ImportService {
     }
 
     //Procesando cursos
-    console.log("Procesando cursos");
+    console.log('Procesando cursos');
     for (const [index, row] of data.entries()) {
       try {
         // Filtrar solo las columnas que necesitamos (ignorar extras)
@@ -155,6 +161,7 @@ export class ImportService {
     return {
       usuarios: resultados_usuarios,
       roles_usuarios: resultados_roles_usuarios,
+      cursos: resultados_cursos,
     };
   }
 
@@ -345,18 +352,31 @@ export class ImportService {
 
   private async procesarCurso(row: any): Promise<any> {
     // Validar que exista un plan con ese nombre
-    console.log("Procesando curso");
+    console.log('Procesando curso');
     console.log(row.plan);
     const plan = await this.planService.findOneByNombre(row.plan);
     if (!plan)
       throw new NotFoundException(
         'No existe un plan con ese nombre: ' + row.plan,
       );
+    console.log(row.eap);
+    const eap = await this.eapService.findOneByNombre(row.eap);
+    if (!eap)
+      throw new NotFoundException(
+        'No existe un EAP con ese nombre: ' + row.eap,
+      );
+
+    // Crear DTO para curso
+    const createCursoDto = new CreateCursoDto();
+    createCursoDto.codigo = row.codigo_curso;
+    createCursoDto.codigo_cruzado = row.codigo_cruzado;
+    createCursoDto.nombre = row.curso;
+    createCursoDto.descripcion = row.descripcion;
+    createCursoDto.eap_id = eap.id;
+    createCursoDto.plan_id = plan.id;
+
     // Crear curso
-    const curso = await this.cursoService.create({
-      ...row,
-      plan_id: plan.id,
-    });
+    const curso = await this.cursoService.create(createCursoDto);
 
     return curso;
   }
@@ -371,7 +391,7 @@ export class ImportService {
       }
     }
     // Validar que exista un rol con ese nombre
-    console.log("Procesando fila rol usuario");
+    console.log('Procesando fila rol usuario');
     // console.log(row.rol);
     // console.log(typeof row.rol);
     const rol = await this.rolService.findOneByNombre(row.rol);
