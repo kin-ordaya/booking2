@@ -14,5 +14,6 @@ import { Periodo } from 'src/periodo/entities/periodo.entity';
   ],
   controllers: [ClaseController],
   providers: [ClaseService],
+  exports: [ClaseService],
 })
 export class ClaseModule {}

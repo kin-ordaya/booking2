@@ -85,6 +85,17 @@ export class PeriodoService {
     }
   }
 
+  async findOneByNombre(nombre: string) {
+    try {
+      if (!nombre)
+        throw new BadRequestException('El nombre del periodo no puede estar vacío');
+      return await this.periodoRepository.findOneBy({ nombre });
+    } catch (error) {
+      throw error;
+    }
+    
+  }
+
   async update(id: string, updatePeriodoDto: UpdatePeriodoDto) {
     try {
       const { nombre, inicio, fin } = updatePeriodoDto;

@@ -8,5 +8,6 @@ import { Periodo } from './entities/periodo.entity';
   imports:[TypeOrmModule.forFeature([Periodo])],
   controllers: [PeriodoController],
   providers: [PeriodoService],
+  exports: [PeriodoService],
 })
 export class PeriodoModule {}

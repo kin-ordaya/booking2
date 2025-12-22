@@ -178,6 +178,31 @@ export class CursoModalidadService {
     }
   }
 
+  async findOneByIDCursoAndModalidad(curso_id: string, modalidad_id: string) {
+    try {
+      if (!curso_id || !modalidad_id)
+        throw new BadRequestException(
+          'El ID del cursoModalidad no puede estar vacío',
+        );
+      return await this.cursoModalidadRepository.findOne({
+        where: {
+          curso: { id: curso_id },
+          modalidad: { id: modalidad_id },
+        },
+        relations: ['curso', 'modalidad'],
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
+
   async update(id: string, updateCursoModalidadDto: UpdateCursoModalidadDto) {
     try {
       const { curso_id, modalidad_id } = updateCursoModalidadDto;

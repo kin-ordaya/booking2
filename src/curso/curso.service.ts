@@ -190,6 +190,27 @@ export class CursoService {
     }
   }
 
+  async findOneByCodigo(codigo: string): Promise<Curso> {
+    try {
+      if (!codigo)
+        throw new BadRequestException(
+          'El codigo del curso no puede estar vacío',
+        );
+
+      const curso = await this.cursoRepository.findOneBy({ codigo });
+      if (!curso) throw new NotFoundException('Curso no encontrado');
+      return curso;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(id: string, updateCursoDto: UpdateCursoDto) {
     try {
       const { codigo, nombre, descripcion, eap_id, plan_id } = updateCursoDto;

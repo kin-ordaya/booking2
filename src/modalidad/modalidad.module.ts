@@ -8,5 +8,6 @@ import { Modalidad } from './entities/modalidad.entity';
   imports: [TypeOrmModule.forFeature([Modalidad])],
   controllers: [ModalidadController],
   providers: [ModalidadService],
+  exports: [ModalidadService],
 })
 export class ModalidadModule {}

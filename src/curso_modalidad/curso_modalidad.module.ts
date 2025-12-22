@@ -10,5 +10,6 @@ import { Modalidad } from 'src/modalidad/entities/modalidad.entity';
   imports: [TypeOrmModule.forFeature([CursoModalidad, Curso, Modalidad])],
   controllers: [CursoModalidadController],
   providers: [CursoModalidadService],
+  exports: [CursoModalidadService],
 })
 export class CursoModalidadModule {}

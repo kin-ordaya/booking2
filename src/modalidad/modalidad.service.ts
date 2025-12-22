@@ -9,7 +9,7 @@ import { CreateModalidadDto } from './dto/create-modalidad.dto';
 import { UpdateModalidadDto } from './dto/update-modalidad.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Modalidad } from './entities/modalidad.entity';
-import { In, Not, Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
 @Injectable()
 export class ModalidadService {
@@ -55,6 +55,25 @@ export class ModalidadService {
         throw new ConflictException('El ID del modalidad no puede estar vacío');
 
       const modalidad = await this.modalidadRepository.findOneBy({ id });
+      if (!modalidad) throw new NotFoundException('Modalidad no encontrado');
+      return modalidad;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
+  async findOneByNombre(nombre: string): Promise<Modalidad> {
+    try {
+      if (!nombre)
+        throw new ConflictException('El nombre del modalidad no puede estar vacío');
+
+      const modalidad = await this.modalidadRepository.findOneBy({ nombre });
       if (!modalidad) throw new NotFoundException('Modalidad no encontrado');
       return modalidad;
     } catch (error) {

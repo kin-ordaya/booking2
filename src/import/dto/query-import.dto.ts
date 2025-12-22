@@ -3,7 +3,13 @@ import { IsIn, IsString } from 'class-validator';
 export class QueryImportDto {
   @IsString({ message: 'El campo "tipo" debe ser un string' })
   @IsIn(['usuarios', 'cursos'], {
-    message: 'El campo "tipo" debe ser "usuarios" o "cursos"',
+    message: 'El campo "tipo" debe ser "usuarios", "cursos" o "clases"',
   })
   tipo: string;
+
+  @IsString({ message: 'El campo "hoja" debe ser un string' })
+  @IsIn(['usuario', 'credencial'], {
+    message: 'El campo "hoja" debe ser "usuario" o "credencial"'
+  })
+  hoja: string;
 }
