@@ -15,6 +15,7 @@ import { CursoService } from 'src/curso/curso.service';
 import { EapService } from 'src/eap/eap.service';
 import { PlanService } from 'src/plan/plan.service';
 import { CreateCursoDto } from 'src/curso/dto/create-curso.dto';
+import { QueryImportDto } from './dto/query-import.dto';
 
 @Injectable()
 export class ImportService {
@@ -35,7 +36,7 @@ export class ImportService {
     'codigo_curso',
     'curso',
     'descripcion',
-    'codigo_cruzado'
+    'codigo_cruzado',
   ];
 
   private readonly COLUMNAS_OBLIGATORIAS = [
@@ -65,7 +66,8 @@ export class ImportService {
     private readonly planService: PlanService,
   ) {}
 
-  async procesarExcel(fileBuffer: Buffer) {
+  async procesarExcel(fileBuffer: Buffer, queryImportDto: QueryImportDto) {
+    const { tipo } = queryImportDto;
     const workbook = XLSX.read(fileBuffer);
 
     // Verificar si existe la hoja "usuario"
