@@ -304,6 +304,16 @@ export class RecursoService {
     }
   }
 
+  async findOneByNombre(nombre: string) {
+    try {
+      if (!nombre)
+        throw new BadRequestException('El nombre del recurso no puede estar vacío');
+      return await this.recursoRepository.findOneBy({ nombre });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   //   async getRecursosByDocente(rol_usuario_id: string) {
   //   try {
   //     if (!rol_usuario_id) {

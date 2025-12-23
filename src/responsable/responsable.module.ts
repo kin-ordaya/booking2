@@ -13,5 +13,6 @@ import { Campus } from 'src/campus/entities/campus.entity';
   imports: [TypeOrmModule.forFeature([Responsable, RolUsuario, Recurso, Clase, CursoModalidad, Campus])],
   controllers: [ResponsableController],
   providers: [ResponsableService],
+  exports: [ResponsableService],
 })
 export class ResponsableModule {}

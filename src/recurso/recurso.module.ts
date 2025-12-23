@@ -22,5 +22,6 @@ import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
   ],
   controllers: [RecursoController],
   providers: [RecursoService],
+  exports: [RecursoService],
 })
 export class RecursoModule {}

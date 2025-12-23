@@ -98,6 +98,26 @@ export class CredencialService {
             'Para recursos de tipo USERPASS, debe ingresar usuario y clave',
           );
         }
+        const credencialExists = await this.credencialRepository.findOne({
+          where: { usuario, clave, recurso: { id: recurso_id } },
+        });
+
+        if (credencialExists) {
+          this.logger.error(
+            {
+              operation: 'create_failed',
+              entity: 'credencial',
+              reason: 'credencial_exists',
+              usuario,
+              clave,
+            },
+            'Ya existe una credencial con ese usuario y clave en el recurso',
+          );
+
+          throw new ConflictException(
+            'Ya existe una credencial con ese usuario y clave en el recurso',
+          );
+        }
       } else if (tipoAcceso === 'KEY') {
         if (!clave) {
           this.logger.error(
@@ -112,6 +132,25 @@ export class CredencialService {
 
           throw new BadRequestException(
             'Para recursos de tipo KEY, debe ingresar la clave',
+          );
+        }
+        const credencialExists = await this.credencialRepository.findOne({
+          where: { clave, recurso: { id: recurso_id } },
+        });
+
+        if (credencialExists) {
+          this.logger.error(
+            {
+              operation: 'create_failed',
+              entity: 'credencial',
+              reason: 'credencial_exists',
+              clave,
+            },
+            'Ya existe una credencial con ese clave en el recurso',
+          );
+
+          throw new ConflictException(
+            'Ya existe una credencial con ese clave en el recurso',
           );
         }
       } else {
@@ -428,7 +467,7 @@ export class CredencialService {
         operation: 'remove_started',
         entity: 'credencial',
         credencialId: id || 'unknown',
-      })
+      });
 
       if (!id)
         throw new BadRequestException(
@@ -442,7 +481,7 @@ export class CredencialService {
         .where('id = :id', { id })
         .execute();
 
-      if (result.affected === 0){
+      if (result.affected === 0) {
         this.logger.info(
           {
             operation: 'remove_failed',

@@ -241,6 +241,29 @@ export class RolUsuarioService {
     }
   }
 
+  async findOneByUsuarioRol(usuario_id: string, rol_id: string) {
+    try {
+      if (!usuario_id || !rol_id)
+        throw new BadRequestException(
+          'El ID del rolUsuario no puede estar vacío',
+        );
+      return await this.rolUsuarioRepository.findOne({
+        where: {
+          usuario: { id: usuario_id },
+          rol: { id: rol_id },
+        },
+        relations: ['usuario', 'rol'],
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
+
   async update(id: string, updateRolUsuarioDto: UpdateRolUsuarioDto) {
     try {
       const { rol_id } = updateRolUsuarioDto;

@@ -23,6 +23,13 @@ import { ClaseService } from 'src/clase/clase.service';
 import { PeriodoService } from 'src/periodo/periodo.service';
 import { create } from 'domain';
 import { CreateClaseDto } from 'src/clase/dto/create-clase.dto';
+import { CredencialService } from 'src/credencial/credencial.service';
+import { RecursoService } from 'src/recurso/recurso.service';
+import { CreateCredencialDto } from 'src/credencial/dto/create-credencial.dto';
+import { RecursoCursoService } from '../recurso_curso/recurso_curso.service';
+import { CreateResponsableDto } from 'src/responsable/dto/create-responsable.dto';
+import { ResponsableService } from 'src/responsable/responsable.service';
+import { CampusService } from 'src/campus/campus.service';
 
 @Injectable()
 export class ImportService {
@@ -50,61 +57,73 @@ export class ImportService {
     },
   };
 
-  private readonly COLUMNAS_CURSOS_MODALIDADES_CLASES = {
-    obligatorias: ['codigo_curso', 'curso', 'plan', 'modalidad'],
-    opcionales: ['codigo_cruzado', 'descripcion', 'eap'],
+  private readonly COLUMNAS_RECURSOS_CURSOS_MODALIDADES_CLASES_RESPONSABLE = {
+    obligatorias: [
+      'nrc',
+      'inscritos',
+      'tipo',
+      'inicio',
+      'fin',
+      'recurso',
+      'codigo_curso',
+      'curso',
+      'plan',
+      'modalidad',
+      'periodo',
+      'numero_documento',
+      'documento_identidad',
+      'rol',
+      'campus',
+    ],
+    opcionales: ['nrc_secundario', 'codigo_cruzado', 'descripcion', 'eap'],
     todas: function () {
       return [...this.obligatorias, ...this.opcionales];
     },
   };
 
-  // private readonly COLUMNAS_CLASES = {
-  //   obligatorias: [
-  //     'nrc',
-  //     'inscritos',
-  //     'tipo',
-  //     'inicio',
-  //     'fin',
-  //     'codigo_curso',
-  //     'modalidad',
-  //     'periodo',
-  //   ],
-  //   opcionales: ['nrc_secundario', 'codigo_cruzado'],
-  //   todas: function () {
-  //     return [...this.obligatorias, ...this.opcionales];
-  //   },
-  // };
+  private readonly COLUMNAS_CREDENCIALES = {
+    obligatorias: ['nombre_recurso', 'rol', 'clave'],
+    opcionales: ['usuario'],
+    todas: function () {
+      return [...this.obligatorias, ...this.opcionales];
+    },
+  };
 
   constructor(
+    private readonly campusService: CampusService,
     private readonly claseService: ClaseService,
     private readonly cursoModalidadService: CursoModalidadService,
     private readonly cursoService: CursoService,
+    private readonly credencialService: CredencialService,
     private readonly documentoIdentidadService: DocumentoIdentidadService,
     private readonly eapService: EapService,
     private readonly modalidadService: ModalidadService,
     private readonly periodoService: PeriodoService,
     private readonly planService: PlanService,
+    private readonly recursoService: RecursoService,
+    private readonly recursoCursoService: RecursoCursoService,
+    private readonly responsableService: ResponsableService,
     private readonly rolService: RolService,
     private readonly rolUsuarioService: RolUsuarioService,
     private readonly usuarioService: UsuarioService,
   ) {}
 
   async procesarExcel(fileBuffer: Buffer, queryImportDto: QueryImportDto) {
-    const { tipo } = queryImportDto;
+    const { tipo, hoja } = queryImportDto;
 
     this.logger.log(`Iniciando importación de tipo: ${tipo}`);
 
     const workbook = XLSX.read(fileBuffer);
 
     // Verificar si existe la hoja "usuario"
-    if (!workbook.SheetNames.includes('usuario')) {
+    if (!workbook.SheetNames.includes(hoja)) {
       throw new BadRequestException(
         `No se encontró la hoja 'usuario' en el archivo. \n` +
           `Hojas disponibles: ${workbook.SheetNames.join(', ')}`,
       );
     }
 
-    const worksheet = workbook.Sheets['usuario'];
+    const worksheet = workbook.Sheets[hoja];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
     // Validar si hay datos
@@ -114,16 +133,18 @@ export class ImportService {
 
     // Obtener columnas según el tipo
     let columnasConfig;
+    console.log(tipo);
     switch (tipo) {
       case 'usuarios':
         columnasConfig = this.COLUMNAS_USUARIOS_ROLES;
         break;
       case 'cursos':
-        columnasConfig = this.COLUMNAS_CURSOS_MODALIDADES_CLASES;
+        columnasConfig =
+          this.COLUMNAS_RECURSOS_CURSOS_MODALIDADES_CLASES_RESPONSABLE;
         break;
-      // case 'clases':
-      //   columnasConfig = this.COLUMNAS_CLASES;
-      //   break;
+      case 'credenciales':
+        columnasConfig = this.COLUMNAS_CREDENCIALES;
+        break;
       default:
         throw new BadRequestException(`Tipo de importación no válido: ${tipo}`);
     }
@@ -148,6 +169,8 @@ export class ImportService {
         return await this.procesarUsuarios(dataFiltrada);
       case 'cursos':
         return await this.procesarCursos(dataFiltrada);
+      case 'credenciales':
+        return await this.procesarCredenciales(dataFiltrada);
       default:
         throw new BadRequestException(`Tipo de importación no válido: ${tipo}`);
     }
@@ -251,6 +274,18 @@ export class ImportService {
       detalles: [],
     };
 
+    const resultados_recursos_cursos: ImportResultDto = {
+      exitosos: 0,
+      errores: 0,
+      detalles: [],
+    };
+
+    const resultados_responsables: ImportResultDto = {
+      exitosos: 0,
+      errores: 0,
+      detalles: [],
+    };
+
     // Procesar cursos
     for (const [index, row] of cursosUnicos.entries()) {
       const numeroFila = index + 2;
@@ -273,7 +308,7 @@ export class ImportService {
         });
       }
     }
-
+    // Procesar cursos
     for (const [index, row] of data.entries()) {
       const numeroFila = index + 2;
 
@@ -329,11 +364,211 @@ export class ImportService {
         });
       }
     }
+
+    // Procesar recursos de cursos
+    for (const [index, row] of data.entries()) {
+      const numeroFila = index + 2;
+
+      try {
+        // console.log('Procesando fila: ' + numeroFila);
+        // console.log(row);
+        // Validar que tenga datos mínimos de curso
+        if (!row.recurso || !row.codigo_curso) {
+          throw new BadRequestException(
+            `Fila ${numeroFila}: Faltan datos obligatorios para crear recurso de curso`,
+          );
+        }
+
+        await this.procesarRecursoCurso(row);
+        resultados_recursos_cursos.exitosos++;
+      } catch (error) {
+        resultados_recursos_cursos.errores++;
+        resultados_recursos_cursos.detalles.push({
+          fila: numeroFila,
+          error: error.message,
+        });
+      }
+    }
+
+    //procesar responsables
+    for (const [index, row] of data.entries()) {
+      const numeroFila = index + 2;
+      console.log(row);
+      try {
+        if (
+          !row.numero_documento ||
+          !row.documento_identidad ||
+          !row.rol ||
+          !row.recurso ||
+          !row.nrc ||
+          !row.codigo_curso ||
+          !row.modalidad ||
+          !row.campus
+        ) {
+          throw new BadRequestException(
+            `Fila ${numeroFila}: Faltan datos obligatorios para crear responsable`,
+          );
+        }
+
+        await this.procesarResponsable(row);
+        resultados_responsables.exitosos++;
+      } catch (error) {
+        resultados_responsables.errores++;
+        resultados_responsables.detalles.push({
+          fila: numeroFila,
+          error: error.message,
+        });
+      }
+    }
+
     return {
       cursos: resultados_cursos,
       cursos_modalidad: resultados_cursos_modalidad,
       clases: resultados_clases,
+      recursos_cursos: resultados_recursos_cursos,
+      responsables: resultados_responsables,
     };
+  }
+
+  private async procesarResponsable(row: any): Promise<any> {
+    // console.log('Procesando responsable');
+    // console.log(row);
+    const rol = await this.rolService.findOneByNombre(row.rol);
+    if (!rol) throw new NotFoundException('Rol no encontrado');
+
+    const documentoNormalizado = this.normalizarDocumentoIdentidad(
+      row.documento_identidad,
+    );
+
+    // Validar si usuario ya existe
+    const usuarioExistente = await this.usuarioService.findOneByNumeroDocumento(
+      row.numero_documento,
+      documentoNormalizado,
+    );
+
+    if (!usuarioExistente) {
+      throw new ConflictException(
+        `Usuario con documento ${row.numero_documento} no existe`,
+      );
+    }
+
+    const rolUsuarioExistente =
+      await this.rolUsuarioService.findOneByUsuarioRol(
+        usuarioExistente.id,
+        rol.id,
+      );
+
+    if (!rolUsuarioExistente) {
+      throw new ConflictException(
+        `Rol de usuario con documento ${row.numero_documento} no existe`,
+      );
+    }
+
+    const recurso = await this.recursoService.findOneByNombre(row.recurso);
+    if (!recurso) throw new NotFoundException('Recurso no encontrado');
+
+    const clase = await this.claseService.findOneByNRC(row.nrc);
+    if (!clase) throw new NotFoundException('Clase no encontrado');
+
+    const curso = await this.cursoService.findOneByCodigo(row.codigo_curso);
+    if (!curso) throw new NotFoundException('Curso no encontrado');
+
+    const modalidad = await this.modalidadService.findOneByNombre(
+      row.modalidad,
+    );
+    if (!modalidad) throw new NotFoundException('Modalidad no encontrado');
+
+    const cursoModalidad =
+      await this.cursoModalidadService.findOneByIDCursoAndModalidad(
+        curso.id,
+        modalidad.id,
+      );
+    if (!cursoModalidad)
+      throw new NotFoundException('CursoModalidad no encontrado');
+
+    const campus = await this.campusService.findOneByNombre(row.campus);
+    if (!campus) throw new NotFoundException('Campus no encontrado');
+
+    console.log('Procesando responsable');
+    console.log(row);
+
+    // Crear DTO para usuario
+    const createResponsableDto = new CreateResponsableDto();
+    createResponsableDto.rol_usuario_id = rolUsuarioExistente.id;
+    createResponsableDto.clase_id = clase.id;
+
+    console.log(createResponsableDto);
+
+    return await this.responsableService.create(createResponsableDto);
+  }
+
+  private async procesarRecursoCurso(row: any): Promise<any> {
+    // console.log('Procesando recurso de curso');
+    // console.log(row);
+    const recurso = await this.recursoService.findOneByNombre(row.recurso);
+    if (!recurso) throw new NotFoundException('Recurso no encontrado');
+    console.log(row.codigo_curso);
+    const curso = await this.cursoService.findOneByCodigo(row.codigo_curso);
+    if (!curso) throw new NotFoundException('Curso no encontrado');
+
+    return await this.recursoCursoService.create({
+      curso_id: curso.id,
+      recurso_id: recurso.id,
+    });
+  }
+
+  private async procesarCredenciales(data: any[]): Promise<any> {
+    this.logger.log(`Procesando ${data.length} filas para credenciales`);
+
+    const resultados: ImportResultDto = {
+      exitosos: 0,
+      errores: 0,
+      detalles: [],
+    };
+
+    for (const [index, row] of data.entries()) {
+      const numeroFila = index + 2;
+
+      try {
+        // Validar que tenga datos mínimos de credencial
+        if (!row.nombre_recurso || !row.clave || !row.rol) {
+          throw new BadRequestException(
+            `Fila ${numeroFila}: Faltan datos obligatorios para crear credencial`,
+          );
+        }
+
+        await this.procesarCredencial(row);
+        resultados.exitosos++;
+      } catch (error) {
+        resultados.errores++;
+        resultados.detalles.push({
+          fila: numeroFila,
+          error: error.message,
+        });
+      }
+    }
+
+    return resultados;
+  }
+
+  private async procesarCredencial(row: any): Promise<any> {
+    // console.log('Procesando credencial');
+    // console.log(row);
+    const recurso = await this.recursoService.findOneByNombre(
+      row.nombre_recurso,
+    );
+    if (!recurso) throw new NotFoundException('Recurso no encontrado');
+    // console.log(row.rol);
+    const rol = await this.rolService.findOneByNombre(row.rol);
+    if (!rol) throw new NotFoundException('Rol no encontrado');
+
+    const createCredencialDto = new CreateCredencialDto();
+    createCredencialDto.recurso_id = recurso.id;
+    createCredencialDto.usuario = row.usuario;
+    createCredencialDto.clave = row.clave;
+    createCredencialDto.rol_id = rol.id;
+
+    return await this.credencialService.create(createCredencialDto);
   }
 
   /**
@@ -365,7 +600,7 @@ export class ImportService {
     const columnasRelevantes =
       tipo === 'usuarios'
         ? this.COLUMNAS_USUARIOS_ROLES.todas()
-        : this.COLUMNAS_CURSOS_MODALIDADES_CLASES.todas();
+        : this.COLUMNAS_RECURSOS_CURSOS_MODALIDADES_CLASES_RESPONSABLE.todas();
 
     const columnasExtras = columnasEncontradas.filter(
       (columna) => !columnasRelevantes.includes(columna),

@@ -404,6 +404,16 @@ export class ClaseService {
     }
   }
 
+  async findOneByNRC(nrc: string) {
+    try {
+      if (!nrc)
+        throw new BadRequestException('El ID del recurso no puede estar vacío');
+      return await this.claseRepository.findOneBy({ nrc });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async update(id: string, updateClaseDto: UpdateClaseDto) {
     try {
       const {

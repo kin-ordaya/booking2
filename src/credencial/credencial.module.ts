@@ -10,5 +10,6 @@ import { Rol } from 'src/rol/entities/rol.entity';
   imports: [TypeOrmModule.forFeature([Credencial, Recurso, Rol])],
   controllers: [CredencialController],
   providers: [CredencialService],
+  exports: [CredencialService],
 })
 export class CredencialModule {}

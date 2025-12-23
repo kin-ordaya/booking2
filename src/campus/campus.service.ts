@@ -82,7 +82,9 @@ export class CampusService {
         'Iniciando búsqueda de campus',
       );
 
-      const query = await this.campusRepository.find({ order: { nombre: 'ASC' } });
+      const query = await this.campusRepository.find({
+        order: { nombre: 'ASC' },
+      });
 
       this.logger.info(
         {
@@ -91,8 +93,8 @@ export class CampusService {
         },
         'Campus encontrado exitosamente',
       );
-      
-      return query
+
+      return query;
     } catch (error) {
       this.logger.error(
         {
@@ -166,6 +168,18 @@ export class CampusService {
         },
         'Error en proceso de búsqueda de campus',
       );
+      throw error;
+    }
+  }
+
+  async findOneByNombre(nombre: string) {
+    try {
+      if (!nombre)
+        throw new BadRequestException(
+          'El nombre del campus no puede estar vacío',
+        );
+      return await this.campusRepository.findOneBy({ nombre });
+    } catch (error) {
       throw error;
     }
   }

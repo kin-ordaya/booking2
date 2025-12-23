@@ -49,6 +49,7 @@ export class ResponsableService {
         curso_modalidad_id,
         campus_id,
       } = createResponsableDto;
+      console .log(createResponsableDto);
 
       // 1. Validar que solo se envíe un campo opcional
       const optionalFields = [
@@ -60,7 +61,7 @@ export class ResponsableService {
 
       if (optionalFields.length !== 1) {
         throw new BadRequestException(
-          'Debe proporcionarse exactamente uno de los siguientes campos: recurso_id, clase_id, curso_modalidad_id o campus_id',
+          'Solo debe proporcionarse exactamente uno de los siguientes campos: recurso_id, clase_id, curso_modalidad_id o campus_id',
         );
       }
 
@@ -181,7 +182,7 @@ export class ResponsableService {
 
       if (existingResponsable) {
         throw new BadRequestException(
-          'Ya existe un responsable con esta combinación de rol y recurso',
+          'Ya existe un responsable con esta combinación de rol y recurso/clase/curso_modalidad/campus',
         );
       }
 
@@ -198,16 +199,7 @@ export class ResponsableService {
 
       return await this.responsableRepository.save(responsable);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        error.message || 'Error inesperado',
-      );
+      throw error;
     }
   }
 
@@ -272,7 +264,13 @@ export class ResponsableService {
       }
       const responsable = await this.responsableRepository.findOne({
         where: { id },
-        relations: ['rolUsuario', 'recurso', 'clase', 'cursoModalidad', 'campus'],
+        relations: [
+          'rolUsuario',
+          'recurso',
+          'clase',
+          'cursoModalidad',
+          'campus',
+        ],
       });
       if (!responsable) {
         throw new NotFoundException('Responsable not found');
@@ -307,7 +305,6 @@ export class ResponsableService {
   //     if (!responsable) {
   //       throw new NotFoundException('Responsable not found');
   //     }
-      
 
   //   } catch (error) {
   //     if (
@@ -324,7 +321,7 @@ export class ResponsableService {
 
   async remove(id: string) {
     try {
-      if(!id){
+      if (!id) {
         throw new BadRequestException('Id invalido');
       }
       const result = await this.responsableRepository
@@ -337,7 +334,7 @@ export class ResponsableService {
         throw new NotFoundException('Responsable no encontrado');
       return this.responsableRepository.findOneBy({ id });
     } catch (error) {
-      if( error instanceof NotFoundException){
+      if (error instanceof NotFoundException) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
