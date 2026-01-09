@@ -46,6 +46,8 @@ import { pinoConfig } from './config/pinoConfig';
 import { LogModule } from './log/log.module';
 import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
 import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso_periodo.module';
+import { plainToInstance } from 'class-transformer';
+import { EnvSchema } from './config/env.schema';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -56,6 +58,8 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     LoggerModule.forRoot(pinoConfig),
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: (config) =>
+        plainToInstance(EnvSchema, config, { enableImplicitConversion: true }),
     }),
     JwtModule.register({
       global: true,
@@ -101,15 +105,21 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     EmailModule,
     EstudianteModule,
     FacultadModule,
+    GrupoReservaModule,
+    HealthModule,
     HorarioModule,
+    ImportModule,
     LaboratorioAulaModule,
     LaboratorioModule,
+    LogModule,
     MatriculaClaseModule,
     ModalidadModule,
     PabellonModule,
+    PeriodoModule,
     PlanModule,
     ProveedorModule,
     RecursoCursoModule,
+    RecursoCursoPeriodoModule,
     RecursoModule,
     ReservaModule,
     ResponsableModule,
@@ -119,12 +129,6 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
-    PeriodoModule,
-    ImportModule,
-    HealthModule,
-    LogModule,
-    GrupoReservaModule,
-    RecursoCursoPeriodoModule,
   ],
 })
 export class AppModule {
