@@ -29,7 +29,8 @@ export class LogService {
     try {
       const page = getLogsDto.page ?? 1;
       const limit = getLogsDto.limit ?? 50;
-      const { search, level, correlationId, startDate, endDate, order } = getLogsDto;
+      const { search, level, correlationId, startDate, endDate, order } =
+        getLogsDto;
 
       const skip = (page - 1) * limit;
 
@@ -96,7 +97,13 @@ export class LogService {
         endDate: endDate || undefined,
       };
 
-      return LogsResponseDto.fromLogs(paginatedLogs, page, limit, total, filters);
+      return LogsResponseDto.fromLogs(
+        paginatedLogs,
+        page,
+        limit,
+        total,
+        filters,
+      );
     } catch (error) {
       throw new BadRequestException('Error al leer los logs');
     }
@@ -146,7 +153,9 @@ export class LogService {
     return levels[level] || 'unknown';
   }
 
-  async cleanupLogs(daysToKeep: number = 30): Promise<{ deletedCount: number; message: string }> {
+  async cleanupLogs(
+    daysToKeep: number = 30,
+  ): Promise<{ deletedCount: number; message: string }> {
     try {
       const files = await this.getLogFiles();
       const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
@@ -194,7 +203,7 @@ export class LogService {
         totalLogs,
         levelCounts,
         recentErrors,
-        files.length
+        files.length,
       );
     } catch (error) {
       throw new BadRequestException('Error al generar estadísticas de logs');

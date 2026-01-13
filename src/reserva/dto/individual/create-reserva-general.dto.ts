@@ -2,7 +2,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 import { CreateReservaMantenimientoGeneralDto } from './create-reserva-mantenimiento-general.dto';
 
-
 export class CreateReservaGeneralDto extends CreateReservaMantenimientoGeneralDto {
   @IsNotEmpty()
   @ApiPropertyOptional({

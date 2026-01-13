@@ -1,9 +1,17 @@
-import { Clase } from "src/clase/entities/clase.entity";
-import { DetalleReserva } from "src/detalle_reserva/entities/detalle_reserva.entity";
-import { GrupoReserva } from "src/grupo_reserva/entities/grupo_reserva.entity";
-import { Recurso } from "src/recurso/entities/recurso.entity";
-import { RolUsuario } from "src/rol_usuario/entities/rol_usuario.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Clase } from 'src/clase/entities/clase.entity';
+import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
+import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
+import { Recurso } from 'src/recurso/entities/recurso.entity';
+import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 @Entity()
 export class Reserva {
   @PrimaryGeneratedColumn('uuid')
@@ -18,7 +26,7 @@ export class Reserva {
   @Column({ type: 'varchar', length: 100 })
   codigo: string;
 
-  @Column({ type: 'int'})
+  @Column({ type: 'int' })
   mantenimiento: number;
 
   // @Column({ type: 'varchar', length: 100, nullable: true })
@@ -33,10 +41,10 @@ export class Reserva {
   @Column()
   fin: Date;
 
-  @Column({ type: 'int'})
+  @Column({ type: 'int' })
   cantidad_accesos: number;
 
-  @Column({ type: 'int'})
+  @Column({ type: 'int' })
   cantidad_credenciales: number;
 
   @ManyToOne(() => Clase, (clase) => clase.reserva, {

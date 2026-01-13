@@ -35,7 +35,8 @@ export class CursoService {
         eap_id ? this.eapRepository.existsBy({ id: eap_id }) : true,
       ]);
 
-      if (codigoExiste) throw new ConflictException(`Curso con código: ${codigo} ya existe`);
+      if (codigoExiste)
+        throw new ConflictException(`Curso con código: ${codigo} ya existe`);
 
       if (!planExiste) throw new NotFoundException('Plan no encontrado');
 
@@ -89,7 +90,9 @@ export class CursoService {
       }
 
       if (sort_state) {
-        query.andWhere('curso.estado = :estado', { estado: sort_state === 1 ? 1 : 0 });
+        query.andWhere('curso.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
       }
 
       if (search) {

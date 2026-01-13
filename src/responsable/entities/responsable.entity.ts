@@ -39,7 +39,7 @@ export class Responsable {
   @JoinColumn({ name: 'clase_id' })
   clase?: Clase;
 
-  @ManyToOne(()=> Campus, (campus) => campus.responsable, { nullable: true })
+  @ManyToOne(() => Campus, (campus) => campus.responsable, { nullable: true })
   @JoinColumn({ name: 'campus_id' })
   campus?: Campus;
 

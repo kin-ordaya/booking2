@@ -86,7 +86,7 @@ export class TipoRecursoService {
         throw new NotFoundException('TipoRecurso no encontrado');
       }
 
-      const updateData: any = {};
+      const updateData: Partial<TipoRecurso> = {};
 
       if (nombre !== undefined) {
         const nombreExists = await this.tipoRecursoRepository.existsBy({

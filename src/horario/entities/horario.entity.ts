@@ -1,5 +1,12 @@
 import { ClaseAula } from 'src/clase_aula/entities/clase_aula.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 @Entity()
 export class Horario {
   @PrimaryGeneratedColumn('uuid')

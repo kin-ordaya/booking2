@@ -38,7 +38,7 @@ export class LogEntryResponseDto {
   private static getLevelName(level: number): string {
     const levels: { [key: number]: string } = {
       10: 'trace',
-      20: 'debug', 
+      20: 'debug',
       30: 'info',
       40: 'warn',
       50: 'error',
@@ -70,11 +70,11 @@ export class LogsResponseDto {
   };
 
   static fromLogs(
-    entries: any[], 
-    page: number, 
-    limit: number, 
+    entries: any[],
+    page: number,
+    limit: number,
     total: number,
-    filters: any
+    filters: any,
   ): LogsResponseDto {
     const response = new LogsResponseDto();
     response.logs = entries.map(LogEntryResponseDto.fromLogEntry);

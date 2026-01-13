@@ -1,5 +1,4 @@
 import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
-import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
@@ -63,5 +62,4 @@ export class Usuario {
 
   @OneToMany(() => RolUsuario, (rolUsuario) => rolUsuario.usuario)
   rol_usuario: RolUsuario[];
-
 }

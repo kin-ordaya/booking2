@@ -170,7 +170,7 @@ export class EmailService {
       let docente;
       let autor;
       let destinatarioPrincipal;
-      let destinatariosSecundarios: string[] = [];
+      const destinatariosSecundarios: string[] = [];
 
       if (reservaData.reserva.mantenimiento == 0) {
         if (reservaData.docente) {
@@ -474,244 +474,252 @@ export class EmailService {
   }
 
   async sendEmailGrupo(sendEmailGrupoDto: SendEmailGrupoDto) {
-  const { grupo_reserva_id } = sendEmailGrupoDto;
-  const transport = this.emailTransport();
+    const { grupo_reserva_id } = sendEmailGrupoDto;
+    const transport = this.emailTransport();
 
-  try {
-    // 1. Obtener todas las reservas del grupo
-    const reservas = await this.reservaRepository.find({
-      where: { 
-        // Ajusta según tu estructura de entidad
-        grupo_reserva: { id: grupo_reserva_id }
-      },
-      relations: [
-        'recurso',
-        'recurso.responsable',
-        'recurso.responsable.rolUsuario',
-        'recurso.responsable.rolUsuario.usuario',
-        'docente',
-        'docente.usuario',
-        'docente.rol',
-        'autor',
-        'autor.usuario',
-        'autor.rol',
-        'clase',
-        'clase.cursoModalidad',
-        'clase.cursoModalidad.curso',
-      ],
-      order: { inicio: 'ASC' }, // Ordenar por fecha
-    });
+    try {
+      // 1. Obtener todas las reservas del grupo
+      const reservas = await this.reservaRepository.find({
+        where: {
+          // Ajusta según tu estructura de entidad
+          grupo_reserva: { id: grupo_reserva_id },
+        },
+        relations: [
+          'recurso',
+          'recurso.responsable',
+          'recurso.responsable.rolUsuario',
+          'recurso.responsable.rolUsuario.usuario',
+          'docente',
+          'docente.usuario',
+          'docente.rol',
+          'autor',
+          'autor.usuario',
+          'autor.rol',
+          'clase',
+          'clase.cursoModalidad',
+          'clase.cursoModalidad.curso',
+        ],
+        order: { inicio: 'ASC' }, // Ordenar por fecha
+      });
 
-    if (!reservas || reservas.length === 0) {
-      throw new NotFoundException(
-        `No se encontraron reservas con grupo_reserva_id ${grupo_reserva_id}`,
-      );
-    }
-
-    // 2. Tomar la primera reserva como referencia (todas deben tener los mismos datos básicos)
-    const primeraReserva = reservas[0];
-    
-    // 3. Obtener TODOS los detalles de reserva de todas las reservas
-    const detallesReservaIds = reservas.map(r => r.id);
-    const detallesReserva = await this.detalleReservaRepository.find({
-      where: { reserva: { id: In(detallesReservaIds) } },
-      relations: ['credencial', 'credencial.rol'],
-    });
-
-    // 4. Procesar todas las credenciales únicas
-    const todasCredenciales = detallesReserva
-      .filter((detalle) => detalle.credencial)
-      .map((detalle) => ({
-        usuario: detalle.credencial.usuario,
-        clave: detalle.credencial.clave,
-        tipo: detalle.credencial.rol?.nombre.toLowerCase() || 'general',
-      }));
-
-    // 5. Eliminar duplicados (usuario único)
-    const credencialesUnicas = [
-      ...new Map(todasCredenciales.map(item => [item.usuario, item])).values()
-    ];
-
-    // 6. Separar por tipos
-    const credencialesPorTipo = {
-      estudiantes: credencialesUnicas.filter((c) => c.tipo === 'estudiante'),
-      generales: credencialesUnicas.filter((c) => c.tipo === 'general'),
-      docentes: credencialesUnicas.filter((c) => c.tipo === 'docente'),
-    };
-
-    // 7. Obtener datos del recurso
-    const recurso = await this.recursoRepository.findOne({
-      where: { id: primeraReserva.recurso.id },
-      select: ['id', 'nombre', 'link_guia', 'link_aula_virtual'],
-    });
-
-    if (!recurso) {
-      throw new NotFoundException(
-        `Recurso con ID ${primeraReserva.recurso.id} no encontrado`,
-      );
-    }
-
-    // 8. Obtener datos comunes
-    const responsableRecurso =
-      primeraReserva.recurso.responsable?.[0]?.rolUsuario?.usuario;
-
-    const nombreCurso = primeraReserva.clase?.cursoModalidad?.curso?.nombre;
-
-    // 9. Determinar destinatarios (igual que en sendEmail)
-    let docente;
-    let autor;
-    let destinatarioPrincipal;
-    let destinatariosSecundarios: string[] = [];
-
-    if (primeraReserva.mantenimiento == 0) {
-      if (primeraReserva.docente) {
-        docente = await this.rolUsuarioRepository.findOne({
-          where: { id: primeraReserva.docente.id, rol: { nombre: 'DOCENTE' } },
-          relations: ['usuario', 'rol'],
-        });
-
-        autor = await this.rolUsuarioRepository.findOne({
-          where: { id: primeraReserva.autor.id },
-          relations: ['usuario'],
-        });
-
-        if (!docente) {
-          throw new NotFoundException(
-            `Docente con ID ${primeraReserva.docente.id} no encontrado`,
-          );
-        }
-
-        if (!docente.usuario.correo_institucional) {
-          throw new NotFoundException(
-            `Correo no configurado para el docente`,
-          );
-        }
-
-        if (!autor) {
-          throw new NotFoundException(
-            `Autor con ID ${primeraReserva.autor.id} no encontrado`,
-          );
-        }
-
-        if (!autor.usuario.correo_institucional) {
-          throw new NotFoundException(
-            `Correo no configurado para el autor`,
-          );
-        }
-
-        destinatarioPrincipal = docente.usuario.correo_institucional;
-        destinatariosSecundarios.push(autor.usuario.correo_institucional);
-      } else {
-        destinatarioPrincipal = primeraReserva.autor.usuario.correo_institucional;
+      if (!reservas || reservas.length === 0) {
+        throw new NotFoundException(
+          `No se encontraron reservas con grupo_reserva_id ${grupo_reserva_id}`,
+        );
       }
-    } else {
-      destinatarioPrincipal = primeraReserva.autor.usuario.correo_institucional;
-    }
-    
-    destinatariosSecundarios.push('nespinoza@continental.edu.pe');
-    
-    if (responsableRecurso?.correo_institucional) {
-      destinatariosSecundarios.push(responsableRecurso.correo_institucional);
-    }
 
-    // 10. Generar HTML con TODAS las fechas
-    const opcionesFecha: Intl.DateTimeFormatOptions = {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    };
-    const opcionesHora: Intl.DateTimeFormatOptions = {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC',
-    };
+      // 2. Tomar la primera reserva como referencia (todas deben tener los mismos datos básicos)
+      const primeraReserva = reservas[0];
 
-    // Crear lista HTML con todas las fechas
-    let fechaHtml = '<ul style="margin-left: 20px; padding-left: 0;">';
-    reservas.forEach((reserva, index) => {
-      const fechaInicio = new Date(reserva.inicio);
-      const fechaFin = new Date(reserva.fin);
-      
-      fechaHtml += `
+      // 3. Obtener TODOS los detalles de reserva de todas las reservas
+      const detallesReservaIds = reservas.map((r) => r.id);
+      const detallesReserva = await this.detalleReservaRepository.find({
+        where: { reserva: { id: In(detallesReservaIds) } },
+        relations: ['credencial', 'credencial.rol'],
+      });
+
+      // 4. Procesar todas las credenciales únicas
+      const todasCredenciales = detallesReserva
+        .filter((detalle) => detalle.credencial)
+        .map((detalle) => ({
+          usuario: detalle.credencial.usuario,
+          clave: detalle.credencial.clave,
+          tipo: detalle.credencial.rol?.nombre.toLowerCase() || 'general',
+        }));
+
+      // 5. Eliminar duplicados (usuario único)
+      const credencialesUnicas = [
+        ...new Map(
+          todasCredenciales.map((item) => [item.usuario, item]),
+        ).values(),
+      ];
+
+      // 6. Separar por tipos
+      const credencialesPorTipo = {
+        estudiantes: credencialesUnicas.filter((c) => c.tipo === 'estudiante'),
+        generales: credencialesUnicas.filter((c) => c.tipo === 'general'),
+        docentes: credencialesUnicas.filter((c) => c.tipo === 'docente'),
+      };
+
+      // 7. Obtener datos del recurso
+      const recurso = await this.recursoRepository.findOne({
+        where: { id: primeraReserva.recurso.id },
+        select: ['id', 'nombre', 'link_guia', 'link_aula_virtual'],
+      });
+
+      if (!recurso) {
+        throw new NotFoundException(
+          `Recurso con ID ${primeraReserva.recurso.id} no encontrado`,
+        );
+      }
+
+      // 8. Obtener datos comunes
+      const responsableRecurso =
+        primeraReserva.recurso.responsable?.[0]?.rolUsuario?.usuario;
+
+      const nombreCurso = primeraReserva.clase?.cursoModalidad?.curso?.nombre;
+
+      // 9. Determinar destinatarios (igual que en sendEmail)
+      let docente;
+      let autor;
+      let destinatarioPrincipal;
+      const destinatariosSecundarios: string[] = [];
+
+      if (primeraReserva.mantenimiento == 0) {
+        if (primeraReserva.docente) {
+          docente = await this.rolUsuarioRepository.findOne({
+            where: {
+              id: primeraReserva.docente.id,
+              rol: { nombre: 'DOCENTE' },
+            },
+            relations: ['usuario', 'rol'],
+          });
+
+          autor = await this.rolUsuarioRepository.findOne({
+            where: { id: primeraReserva.autor.id },
+            relations: ['usuario'],
+          });
+
+          if (!docente) {
+            throw new NotFoundException(
+              `Docente con ID ${primeraReserva.docente.id} no encontrado`,
+            );
+          }
+
+          if (!docente.usuario.correo_institucional) {
+            throw new NotFoundException(
+              `Correo no configurado para el docente`,
+            );
+          }
+
+          if (!autor) {
+            throw new NotFoundException(
+              `Autor con ID ${primeraReserva.autor.id} no encontrado`,
+            );
+          }
+
+          if (!autor.usuario.correo_institucional) {
+            throw new NotFoundException(`Correo no configurado para el autor`);
+          }
+
+          destinatarioPrincipal = docente.usuario.correo_institucional;
+          destinatariosSecundarios.push(autor.usuario.correo_institucional);
+        } else {
+          destinatarioPrincipal =
+            primeraReserva.autor.usuario.correo_institucional;
+        }
+      } else {
+        destinatarioPrincipal =
+          primeraReserva.autor.usuario.correo_institucional;
+      }
+
+      destinatariosSecundarios.push('nespinoza@continental.edu.pe');
+
+      if (responsableRecurso?.correo_institucional) {
+        destinatariosSecundarios.push(responsableRecurso.correo_institucional);
+      }
+
+      // 10. Generar HTML con TODAS las fechas
+      const opcionesFecha: Intl.DateTimeFormatOptions = {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      };
+      const opcionesHora: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC',
+      };
+
+      // Crear lista HTML con todas las fechas
+      let fechaHtml = '<ul style="margin-left: 20px; padding-left: 0;">';
+      reservas.forEach((reserva, index) => {
+        const fechaInicio = new Date(reserva.inicio);
+        const fechaFin = new Date(reserva.fin);
+
+        fechaHtml += `
         <li style="margin-bottom: 10px;">
           <strong>Sesión ${index + 1}:</strong><br>
           • Fecha: ${fechaInicio.toLocaleDateString('es-ES', opcionesFecha)}<br>
           • Horario: ${fechaInicio.toLocaleTimeString('es-ES', opcionesHora)} - ${fechaFin.toLocaleTimeString('es-ES', opcionesHora)}
         </li>
       `;
-    });
-    fechaHtml += '</ul>';
+      });
+      fechaHtml += '</ul>';
 
-    // 11. Obtener secciones de email
-    const seccionesEmail = await this.seccionEmailRepository.find({
-      where: { recurso: { id: recurso.id } },
-    });
+      // 11. Obtener secciones de email
+      const seccionesEmail = await this.seccionEmailRepository.find({
+        where: { recurso: { id: recurso.id } },
+      });
 
-    // 12. Preparar datos para el template
-    const emailData = {
-      reserva_codigo: primeraReserva.codigo,
-      recurso_id: recurso.id,
-      recurso_nombre: recurso.nombre,
-      curso_nombre: nombreCurso || undefined,
-      docente_nombres: primeraReserva.docente 
-        ? `${primeraReserva.docente.usuario.nombres}, ${primeraReserva.docente.usuario.apellidos}`
-        : undefined,
-      nrc: primeraReserva.clase?.nrc || undefined,
-      fecha_html: fechaHtml,
-      credenciales: credencialesPorTipo.estudiantes.concat(
-        credencialesPorTipo.generales,
-        credencialesPorTipo.docentes
-      ),
-      link_guia: recurso.link_guia || undefined,
-      link_aula_virtual: recurso.link_aula_virtual || undefined,
-      secciones_email: seccionesEmail.length > 0 ? seccionesEmail : undefined,
-      esMantenimiento: primeraReserva.mantenimiento == 1,
-      responsable_nombres: responsableRecurso
-        ? `${responsableRecurso.nombres}, ${responsableRecurso.apellidos}`
-        : undefined,
-      responsable_correo: responsableRecurso?.correo_institucional || undefined,
-      responsable_telefono: responsableRecurso?.telefono_institucional || undefined,
-      esGrupoReserva: true,
-      cantidad_reservas: reservas.length,
-    };
+      // 12. Preparar datos para el template
+      const emailData = {
+        reserva_codigo: primeraReserva.codigo,
+        recurso_id: recurso.id,
+        recurso_nombre: recurso.nombre,
+        curso_nombre: nombreCurso || undefined,
+        docente_nombres: primeraReserva.docente
+          ? `${primeraReserva.docente.usuario.nombres}, ${primeraReserva.docente.usuario.apellidos}`
+          : undefined,
+        nrc: primeraReserva.clase?.nrc || undefined,
+        fecha_html: fechaHtml,
+        credenciales: credencialesPorTipo.estudiantes.concat(
+          credencialesPorTipo.generales,
+          credencialesPorTipo.docentes,
+        ),
+        link_guia: recurso.link_guia || undefined,
+        link_aula_virtual: recurso.link_aula_virtual || undefined,
+        secciones_email: seccionesEmail.length > 0 ? seccionesEmail : undefined,
+        esMantenimiento: primeraReserva.mantenimiento == 1,
+        responsable_nombres: responsableRecurso
+          ? `${responsableRecurso.nombres}, ${responsableRecurso.apellidos}`
+          : undefined,
+        responsable_correo:
+          responsableRecurso?.correo_institucional || undefined,
+        responsable_telefono:
+          responsableRecurso?.telefono_institucional || undefined,
+        esGrupoReserva: true,
+        cantidad_reservas: reservas.length,
+      };
 
-    // 13. Crear asunto
-    let asunto = `Credenciales de acceso - ${recurso.nombre}`;
-    if (primeraReserva.mantenimiento == 0 && primeraReserva.clase?.nrc) {
-      asunto += ` - ${primeraReserva.clase.nrc} - ${nombreCurso || ''}`;
+      // 13. Crear asunto
+      let asunto = `Credenciales de acceso - ${recurso.nombre}`;
+      if (primeraReserva.mantenimiento == 0 && primeraReserva.clase?.nrc) {
+        asunto += ` - ${primeraReserva.clase.nrc} - ${nombreCurso || ''}`;
+      }
+      if (primeraReserva.mantenimiento == 1) {
+        asunto = `Reserva de Mantenimiento - ${recurso.nombre}`;
+      }
+      if (reservas.length > 1) {
+        asunto += ` (${reservas.length} sesiones)`;
+      }
+
+      // 14. Enviar UN SOLO email con todas las fechas
+      const options: nodemailer.SendMailOptions = {
+        from: this.configService.get<string>('EMAIL_USER'),
+        to: destinatarioPrincipal,
+        cc: destinatariosSecundarios.filter((email) => email).join(', '), // Filtrar emails vacíos
+        subject: asunto,
+        html: getReservaTemplate(emailData),
+      };
+
+      await transport.sendMail(options);
+
+      return {
+        message: 'Email enviado correctamente',
+        // cantidad_reservas: reservas.length,
+        // destinatario_principal: destinatarioPrincipal,
+        // destinatarios_cc: destinatariosSecundarios
+      };
+    } catch (error) {
+      console.error('Error al enviar mail de grupo:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error al enviar el correo del grupo',
+      );
     }
-    if (primeraReserva.mantenimiento == 1) {
-      asunto = `Reserva de Mantenimiento - ${recurso.nombre}`;
-    }
-    if (reservas.length > 1) {
-      asunto += ` (${reservas.length} sesiones)`;
-    }
-
-    // 14. Enviar UN SOLO email con todas las fechas
-    const options: nodemailer.SendMailOptions = {
-      from: this.configService.get<string>('EMAIL_USER'),
-      to: destinatarioPrincipal,
-      cc: destinatariosSecundarios.filter(email => email).join(', '), // Filtrar emails vacíos
-      subject: asunto,
-      html: getReservaTemplate(emailData),
-    };
-
-    await transport.sendMail(options);
-    
-    return { 
-      message: 'Email enviado correctamente',
-      // cantidad_reservas: reservas.length,
-      // destinatario_principal: destinatarioPrincipal,
-      // destinatarios_cc: destinatariosSecundarios
-    };
-    
-  } catch (error) {
-    console.error('Error al enviar mail de grupo:', error);
-    if (error instanceof NotFoundException) {
-      throw error;
-    }
-    throw new InternalServerErrorException('Error al enviar el correo del grupo');
   }
-}
 }

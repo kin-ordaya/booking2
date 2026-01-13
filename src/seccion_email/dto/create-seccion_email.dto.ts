@@ -1,4 +1,4 @@
-import { IsIn, IsNotEmpty, IsString, IsUrl, IsUUID } from 'class-validator';
+import { IsIn, IsNotEmpty, IsUrl, IsUUID } from 'class-validator';
 
 export class CreateSeccionEmailDto {
   @IsNotEmpty()

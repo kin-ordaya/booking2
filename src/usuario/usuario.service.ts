@@ -198,24 +198,29 @@ export class UsuarioService {
     }
   }
 
-  async findOneByNumeroDocumento(numero_documento: string, tipo_documento: string) {
+  async findOneByNumeroDocumento(
+    numero_documento: string,
+    tipo_documento: string,
+  ) {
     try {
-      console.log("Buscando usuario por numero de documento");
+      console.log('Buscando usuario por numero de documento');
       console.log(`tipo_documento: ${tipo_documento}`);
-      console.log(`numero_documento: `+numero_documento);
+      console.log(`numero_documento: ` + numero_documento);
 
-      const tipoDocumento = await this.documentoIdentidadRepository.findOne({ where: { nombre: tipo_documento } });
+      const tipoDocumento = await this.documentoIdentidadRepository.findOne({
+        where: { nombre: tipo_documento },
+      });
       console.log(tipoDocumento);
 
-      if(!tipoDocumento) throw new NotFoundException('Tipo de documento no encontrado');
+      if (!tipoDocumento)
+        throw new NotFoundException('Tipo de documento no encontrado');
 
       return await this.usuarioRepository.findOne({
         where: {
           numero_documento,
           documento_identidad: { id: tipoDocumento.id },
         },
-      })
-
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -239,7 +244,6 @@ export class UsuarioService {
         sexo,
         direccion,
       } = updateUsuarioDto;
-      updateUsuarioDto;
 
       if (!id)
         throw new BadRequestException('El ID del usuario no puede estar vacío');

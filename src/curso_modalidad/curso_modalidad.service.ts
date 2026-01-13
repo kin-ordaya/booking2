@@ -33,7 +33,10 @@ export class CursoModalidadService {
 
       const [cursoModalidadExist, cursoExiste, modalidadExiste] =
         await Promise.all([
-          this.cursoModalidadRepository.existsBy({ curso: { id: curso_id, }, modalidad: { id: modalidad_id, } }),
+          this.cursoModalidadRepository.existsBy({
+            curso: { id: curso_id },
+            modalidad: { id: modalidad_id },
+          }),
           this.cursoRepository.existsBy({ id: curso_id }),
           this.modalidadRepository.existsBy({ id: modalidad_id }),
         ]);
@@ -54,7 +57,10 @@ export class CursoModalidadService {
       });
       return await this.cursoModalidadRepository.save(cursoModalidad);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
@@ -90,7 +96,7 @@ export class CursoModalidadService {
           'modalidad.id',
           'modalidad.nombre',
         ]);
-      
+
       let orderApplied = false;
 
       if (sort_name) {
@@ -202,7 +208,6 @@ export class CursoModalidadService {
     }
   }
 
-
   async update(id: string, updateCursoModalidadDto: UpdateCursoModalidadDto) {
     try {
       const { curso_id, modalidad_id } = updateCursoModalidadDto;
@@ -263,7 +268,7 @@ export class CursoModalidadService {
         updateData.modalidad = { id: modalidad_id };
 
       await this.cursoModalidadRepository.update(id, updateData);
-      
+
       return await this.cursoModalidadRepository.findOneBy({ id });
     } catch (error) {
       if (

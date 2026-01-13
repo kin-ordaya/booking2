@@ -47,7 +47,8 @@ export class CursoModalidadController {
   @Roles('ADMINISTRADOR')
   update(
     @Param('id') id: string,
-    @Body(new AtLeastOneFieldPipe()) updateCursoModalidadDto: UpdateCursoModalidadDto,
+    @Body(new AtLeastOneFieldPipe())
+    updateCursoModalidadDto: UpdateCursoModalidadDto,
   ) {
     return this.cursoModalidadService.update(id, updateCursoModalidadDto);
   }

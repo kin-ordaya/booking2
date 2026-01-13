@@ -36,24 +36,24 @@ export class LaboratorioAulaController {
     return this.laboratorioAulaService.findAll();
   }
 
-  @Get(':id')
-  @Roles('ADMINISTRADOR')
-  findOne(@Param('id') id: string) {
-    return this.laboratorioAulaService.findOne(+id);
-  }
+  // @Get(':id')
+  // @Roles('ADMINISTRADOR')
+  // findOne(@Param('id') id: string) {
+  //   return this.laboratorioAulaService.findOne(+id);
+  // }
 
-  @Patch(':id')
-  @Roles('ADMINISTRADOR')
-  update(
-    @Param('id') id: string,
-    @Body() updateLaboratorioAulaDto: UpdateLaboratorioAulaDto,
-  ) {
-    return this.laboratorioAulaService.update(+id, updateLaboratorioAulaDto);
-  }
+  // @Patch(':id')
+  // @Roles('ADMINISTRADOR')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateLaboratorioAulaDto: UpdateLaboratorioAulaDto,
+  // ) {
+  //   return this.laboratorioAulaService.update(+id, updateLaboratorioAulaDto);
+  // }
 
-  @Delete(':id')
-  @Roles('ADMINISTRADOR')
-  remove(@Param('id') id: string) {
-    return this.laboratorioAulaService.remove(+id);
-  }
+  // @Delete(':id')
+  // @Roles('ADMINISTRADOR')
+  // remove(@Param('id') id: string) {
+  //   return this.laboratorioAulaService.remove(+id);
+  // }
 }

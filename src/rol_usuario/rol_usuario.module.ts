@@ -8,7 +8,7 @@ import { Rol } from 'src/rol/entities/rol.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RolUsuario, Usuario,Recurso, Rol])],
+  imports: [TypeOrmModule.forFeature([RolUsuario, Usuario, Recurso, Rol])],
   controllers: [RolUsuarioController],
   providers: [RolUsuarioService],
   exports: [RolUsuarioService],

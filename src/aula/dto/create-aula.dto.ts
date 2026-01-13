@@ -1,4 +1,4 @@
-import { Transform} from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateAulaDto {
@@ -14,5 +14,5 @@ export class CreateAulaDto {
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo pabellon_id debe ser de tipo uuid' })
-  pabellon_id: string
+  pabellon_id: string;
 }

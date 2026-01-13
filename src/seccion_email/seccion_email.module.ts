@@ -6,11 +6,7 @@ import { SeccionEmail } from './entities/seccion_email.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 
 @Module({
-  imports:[
-    TypeOrmModule.forFeature([
-      SeccionEmail, Recurso
-    ])
-  ],
+  imports: [TypeOrmModule.forFeature([SeccionEmail, Recurso])],
   controllers: [SeccionEmailController],
   providers: [SeccionEmailService],
 })

@@ -1,12 +1,12 @@
-import { Transform } from "class-transformer";
-import { IsNotEmpty, IsString, MaxLength } from "class-validator";
+import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class CreateTipoRecursoDto {
-    @IsNotEmpty()
-    @IsString({ message: 'El campo nombre debe ser de tipo string' })
-    @MaxLength(50, {
-        message: 'El campo nombre no puede tener mas de 50 caracteres',
-    })
-    @Transform(({ value }) => value?.toUpperCase().trim())
-    nombre: string;
+  @IsNotEmpty()
+  @IsString({ message: 'El campo nombre debe ser de tipo string' })
+  @MaxLength(50, {
+    message: 'El campo nombre no puede tener mas de 50 caracteres',
+  })
+  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
+  nombre: string;
 }

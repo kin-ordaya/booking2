@@ -20,6 +20,6 @@ export class TipoAcceso {
   @Column({ type: 'varchar', length: 50 })
   nombre: string;
 
-  @OneToMany(()=> Recurso, (recurso) => recurso.tipoAcceso)
+  @OneToMany(() => Recurso, (recurso) => recurso.tipoAcceso)
   recursos: Recurso[];
 }

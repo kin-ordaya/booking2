@@ -1,7 +1,7 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-import { IsIn, IsNumber, IsOptional, IsUUID } from "class-validator";
-import { PaginationDto } from "src/common/dtos/pagination.dto";
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsIn, IsNumber, IsOptional, IsUUID } from 'class-validator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 export class PaginationRecursoDto extends PaginationDto {
   @ApiProperty({ description: 'Ordena por nombre asc=1, desc=2' })

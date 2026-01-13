@@ -9,7 +9,9 @@ describe('RecursoCursoPeriodoService', () => {
       providers: [RecursoCursoPeriodoService],
     }).compile();
 
-    service = module.get<RecursoCursoPeriodoService>(RecursoCursoPeriodoService);
+    service = module.get<RecursoCursoPeriodoService>(
+      RecursoCursoPeriodoService,
+    );
   });
 
   it('should be defined', () => {

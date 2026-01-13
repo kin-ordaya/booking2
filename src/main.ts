@@ -3,9 +3,11 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
-
+import helmet from 'helmet';
+import { ThrottlerModule } from '@nestjs/throttler';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(helmet());
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(
     new ValidationPipe({
@@ -30,11 +32,24 @@ async function bootstrap() {
       'https://bookingravts.continental.edu.pe',
       'http://bookingravts.continental.edu.pe',
       'https://apibookingravts.continental.edu.pe',
-      'https://bookinguc.netlify.app'
+      'https://bookinguc.netlify.app',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  ThrottlerModule.forRoot({
+    throttlers: [
+      {
+        ttl: 1000,
+        limit: 10,
+      },
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ],
   });
 
   await app.listen(process.env.PORT ?? 3000);

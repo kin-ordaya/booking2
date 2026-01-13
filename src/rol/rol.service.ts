@@ -68,9 +68,7 @@ export class RolService {
     try {
       // console.log(nombre);
       if (!nombre)
-        throw new BadRequestException(
-          'El nombre del rol no puede estar vacío',
-        );
+        throw new BadRequestException('El nombre del rol no puede estar vacío');
       const rol = await this.rolRepository.findOne({ where: { nombre } });
       if (!rol) throw new NotFoundException('Rol no encontrado');
       return rol;

@@ -7,7 +7,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  IsUUID
+  IsUUID,
 } from 'class-validator';
 
 export class CreateClaseDto {

@@ -93,7 +93,9 @@ export class ReservaController {
     @Body()
     createReservaMixtoMultipleDto: CreateReservaMixtoMultipleDto,
   ) {
-    return this.reservaService.createReservaMixtoMultiple(createReservaMixtoMultipleDto);
+    return this.reservaService.createReservaMixtoMultiple(
+      createReservaMixtoMultipleDto,
+    );
   }
 
   @Post('mantenimiento-general-multiple')
@@ -102,7 +104,9 @@ export class ReservaController {
     @Body()
     createReservaMantenimientoGeneralMultipleDto: CreateReservaMantenimientoGeneralMultipleDto,
   ) {
-    return this.reservaService.createReservaMantenimientoGeneralMultiple(createReservaMantenimientoGeneralMultipleDto); ;
+    return this.reservaService.createReservaMantenimientoGeneralMultiple(
+      createReservaMantenimientoGeneralMultipleDto,
+    );
   }
 
   @Post('mantenimiento-mixto-multiple')
@@ -111,7 +115,9 @@ export class ReservaController {
     @Body()
     createReservaMantenimientoMixtoMultipleDto: CreateReservaMantenimientoMixtoMultipleDto,
   ) {
-    return this.reservaService.createReservaMantenimientoMixtoMultiple(createReservaMantenimientoMixtoMultipleDto);
+    return this.reservaService.createReservaMantenimientoMixtoMultiple(
+      createReservaMantenimientoMixtoMultipleDto,
+    );
   }
 
   @Get('credenciales-disponibles')

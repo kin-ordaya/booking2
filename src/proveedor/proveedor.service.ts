@@ -43,21 +43,21 @@ export class ProveedorService {
   }
 
   async findAll(searchDto: SearchDto) {
-  const { search } = searchDto;
-  
-  const query = this.proveedorRepository
-    .createQueryBuilder('proveedor')
-    .select(['proveedor.id', 'proveedor.nombre']);
+    const { search } = searchDto;
 
-  if (search) {
-    query.where(
-      'UPPER(proveedor.nombre) LIKE UPPER(:search) OR UPPER(proveedor.ruc) LIKE UPPER(:search)',
-      { search: `%${search}%` }
-    );
+    const query = this.proveedorRepository
+      .createQueryBuilder('proveedor')
+      .select(['proveedor.id', 'proveedor.nombre']);
+
+    if (search) {
+      query.where(
+        'UPPER(proveedor.nombre) LIKE UPPER(:search) OR UPPER(proveedor.ruc) LIKE UPPER(:search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    return query.getMany();
   }
-
-  return query.getMany();
-}
 
   async findOne(id: string) {
     try {

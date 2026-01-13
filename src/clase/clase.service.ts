@@ -166,7 +166,7 @@ export class ClaseService {
         },
         'Clases encontradas exitosamente',
       );
-      return query
+      return query;
     } catch (error) {
       this.logger.error(
         {
@@ -431,8 +431,8 @@ export class ClaseService {
         operation: 'update_started',
         entity: 'clase',
         claseId: id || 'unknown',
-      })
-      
+      });
+
       if (!id) {
         this.logger.error(
           {

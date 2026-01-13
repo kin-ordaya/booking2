@@ -49,7 +49,7 @@ export class ResponsableService {
         curso_modalidad_id,
         campus_id,
       } = createResponsableDto;
-      console .log(createResponsableDto);
+      console.log(createResponsableDto);
 
       // 1. Validar que solo se envíe un campo opcional
       const optionalFields = [

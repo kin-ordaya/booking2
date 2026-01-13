@@ -11,7 +11,9 @@ describe('RecursoCursoPeriodoController', () => {
       providers: [RecursoCursoPeriodoService],
     }).compile();
 
-    controller = module.get<RecursoCursoPeriodoController>(RecursoCursoPeriodoController);
+    controller = module.get<RecursoCursoPeriodoController>(
+      RecursoCursoPeriodoController,
+    );
   });
 
   it('should be defined', () => {

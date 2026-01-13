@@ -18,7 +18,6 @@ import { RecursoCursoModule } from 'src/recurso_curso/recurso_curso.module';
 import { ResponsableModule } from 'src/responsable/responsable.module';
 import { CampusModule } from 'src/campus/campus.module';
 
-
 @Module({
   imports: [
     CampusModule,

@@ -12,7 +12,7 @@ export class PaginationRecursoCursoDto extends PaginationDto {
   })
   @Type(() => Number)
   sort_name?: number;
-  
+
   @ApiProperty({ description: 'Ordena por estado activo=1, inactivo=2' })
   @IsOptional()
   @IsNumber()

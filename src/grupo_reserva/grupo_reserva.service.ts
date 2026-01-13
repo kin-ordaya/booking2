@@ -11,5 +11,4 @@ export class GrupoReservaService {
     @InjectRepository(GrupoReserva)
     private readonly grupoReservaRepository: Repository<GrupoReserva>,
   ) {}
-
 }

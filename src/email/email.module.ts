@@ -17,7 +17,7 @@ import { Curso } from 'src/curso/entities/curso.entity';
       DetalleReserva,
       RolUsuario,
       SeccionEmail,
-      Curso
+      Curso,
     ]),
   ],
   controllers: [EmailController],

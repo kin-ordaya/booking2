@@ -1,6 +1,14 @@
 import { Campus } from 'src/campus/entities/campus.entity';
 import { LaboratorioAula } from 'src/laboratorio_aula/entities/laboratorio_aula.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Laboratorio {
@@ -23,6 +31,9 @@ export class Laboratorio {
   @JoinColumn({ name: 'campus_id' })
   campus: Campus;
 
-  @OneToMany(() => LaboratorioAula, (laboratorioAula) => laboratorioAula.laboratorio)
+  @OneToMany(
+    () => LaboratorioAula,
+    (laboratorioAula) => laboratorioAula.laboratorio,
+  )
   laboratorioAula: LaboratorioAula[];
 }

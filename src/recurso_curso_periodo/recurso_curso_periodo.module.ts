@@ -7,7 +7,9 @@ import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RecursoCursoPeriodo, RecursoCurso, Periodo])],
+  imports: [
+    TypeOrmModule.forFeature([RecursoCursoPeriodo, RecursoCurso, Periodo]),
+  ],
   controllers: [RecursoCursoPeriodoController],
   providers: [RecursoCursoPeriodoService],
 })

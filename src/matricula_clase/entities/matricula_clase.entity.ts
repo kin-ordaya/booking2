@@ -1,6 +1,13 @@
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Estudiante } from 'src/estudiante/entities/estudiante.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 @Entity()
 export class MatriculaClase {
   @PrimaryGeneratedColumn('uuid')
@@ -23,5 +30,4 @@ export class MatriculaClase {
   })
   @JoinColumn({ name: 'estudiante_id' })
   estudiante: Estudiante;
-  
 }

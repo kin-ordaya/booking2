@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { SendEmailDto } from './dto/sendEmailDto.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';

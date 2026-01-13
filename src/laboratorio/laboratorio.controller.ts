@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { LaboratorioService } from './laboratorio.service';
 import { CreateLaboratorioDto } from './dto/create-laboratorio.dto';
 import { UpdateLaboratorioDto } from './dto/update-laboratorio.dto';
@@ -33,7 +42,10 @@ export class LaboratorioController {
 
   @Patch(':id')
   @Roles('ADMINISTRADOR')
-  update(@Param('id') id: string, @Body() updateLaboratorioDto: UpdateLaboratorioDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateLaboratorioDto: UpdateLaboratorioDto,
+  ) {
     return this.laboratorioService.update(id, updateLaboratorioDto);
   }
 

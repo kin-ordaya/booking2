@@ -1,6 +1,9 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSeccionEmailDto } from './dto/create-seccion_email.dto';
-import { UpdateSeccionEmailDto } from './dto/update-seccion_email.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SeccionEmail } from './entities/seccion_email.entity';
 import { Repository } from 'typeorm';
@@ -19,7 +22,9 @@ export class SeccionEmailService {
     try {
       const { asunto, link, tipo, recurso_id } = createSeccionEmailDto;
 
-      const recurso = await this.recursoRepository.findOneBy({ id: recurso_id });
+      const recurso = await this.recursoRepository.findOneBy({
+        id: recurso_id,
+      });
       if (!recurso) throw new NotFoundException('Recurso no encontrado');
 
       const seccionEmail = this.seccionEmailRepository.create({
@@ -31,26 +36,10 @@ export class SeccionEmailService {
 
       return await this.seccionEmailRepository.save(seccionEmail);
     } catch (error) {
-      if(error instanceof NotFoundException){
+      if (error instanceof NotFoundException) {
         throw error;
       }
       throw new InternalServerErrorException('Error inesperado');
     }
-  }
-
-  findAll() {
-    return `This action returns all seccionEmail`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} seccionEmail`;
-  }
-
-  update(id: number, updateSeccionEmailDto: UpdateSeccionEmailDto) {
-    return `This action updates a #${id} seccionEmail`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} seccionEmail`;
   }
 }

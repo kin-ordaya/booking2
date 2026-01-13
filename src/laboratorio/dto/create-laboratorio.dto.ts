@@ -7,7 +7,7 @@ export class CreateLaboratorioDto {
   @MaxLength(100, {
     message: 'El campo nombre no puede tener mas de 100 caracteres',
   })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
   nombre: string;
 
   @IsNotEmpty()

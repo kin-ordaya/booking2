@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateLaboratorioAulaDto } from './dto/create-laboratorio_aula.dto';
 import { UpdateLaboratorioAulaDto } from './dto/update-laboratorio_aula.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,7 +43,8 @@ export class LaboratorioAulaService {
           'Ya existe una asignacion de laboratorio a aula',
         );
 
-      if (!laboratorioExiste) throw new NotFoundException('Laboratorio no encontrado');
+      if (!laboratorioExiste)
+        throw new NotFoundException('Laboratorio no encontrado');
 
       if (!aulaExiste) throw new NotFoundException('Aula no encontrada');
 
@@ -48,7 +54,10 @@ export class LaboratorioAulaService {
       });
       return await this.laboratorioAulaRepository.save(laboratorioAula);
     } catch (error) {
-      if(error instanceof NotFoundException || error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
     }
@@ -64,15 +73,15 @@ export class LaboratorioAulaService {
     }
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} laboratorioAula`;
-  }
+  // async findOne(id: number) {
+  //   return `This action returns a #${id} laboratorioAula`;
+  // }
 
-  update(id: number, updateLaboratorioAulaDto: UpdateLaboratorioAulaDto) {
-    return `This action updates a #${id} laboratorioAula`;
-  }
+  // update(id: number, updateLaboratorioAulaDto: UpdateLaboratorioAulaDto) {
+  //   return `This action updates a #${id} laboratorioAula`;
+  // }
 
-  remove(id: number) {
-    return `This action removes a #${id} laboratorioAula`;
-  }
+  // remove(id: number) {
+  //   return `This action removes a #${id} laboratorioAula`;
+  // }
 }

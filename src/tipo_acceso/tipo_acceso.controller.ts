@@ -23,25 +23,25 @@ export class TipoAccesoController {
   constructor(private readonly tipoAccesoService: TipoAccesoService) {}
 
   @Post()
-    @Roles('ADMINISTRADOR')
+  @Roles('ADMINISTRADOR')
   create(@Body() createTipoAccesoDto: CreateTipoAccesoDto) {
     return this.tipoAccesoService.create(createTipoAccesoDto);
   }
 
   @Get()
-    @Roles('ADMINISTRADOR')
+  @Roles('ADMINISTRADOR')
   findAll() {
     return this.tipoAccesoService.findAll();
   }
 
   @Get(':id')
-    @Roles('ADMINISTRADOR')
+  @Roles('ADMINISTRADOR')
   findOne(@Param('id') id: string) {
     return this.tipoAccesoService.findOne(id);
   }
 
   @Patch(':id')
-    @Roles('ADMINISTRADOR')
+  @Roles('ADMINISTRADOR')
   update(
     @Param('id') id: string,
     @Body() updateTipoAccesoDto: UpdateTipoAccesoDto,
@@ -50,7 +50,7 @@ export class TipoAccesoController {
   }
 
   @Delete(':id')
-    @Roles('ADMINISTRADOR')
+  @Roles('ADMINISTRADOR')
   remove(@Param('id') id: string) {
     return this.tipoAccesoService.remove(id);
   }

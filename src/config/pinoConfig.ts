@@ -9,7 +9,7 @@ export const CORRELATION_ID_HEADER = 'X-Correlation-Id';
 export const pinoConfig: Params = {
   pinoHttp: {
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-    
+
     transport: {
       targets: [
         // Consola para desarrollo
@@ -47,15 +47,15 @@ export const pinoConfig: Params = {
 
     messageKey: 'message',
     timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
-    
+
     genReqId: (req: Request, res: Response) => {
-      const incomingCorrelationId = req.headers['x-correlation-id'] as string; 
+      const incomingCorrelationId = req.headers['x-correlation-id'] as string;
       const correlationId = incomingCorrelationId ?? randomUUID();
-      
+
       req.headers['x-correlation-id'] = correlationId;
       req[CORRELATION_ID_HEADER] = correlationId;
       res.setHeader('X-Correlation-Id', correlationId);
-      
+
       return correlationId;
     },
 
@@ -68,7 +68,7 @@ export const pinoConfig: Params = {
     },
 
     autoLogging: false,
-    
+
     serializers: {
       req: (req) => {
         return {

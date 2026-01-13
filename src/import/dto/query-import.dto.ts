@@ -9,7 +9,7 @@ export class QueryImportDto {
 
   @IsString({ message: 'El campo "hoja" debe ser un string' })
   @IsIn(['usuario', 'credencial'], {
-    message: 'El campo "hoja" debe ser "usuario" o "credencial"'
+    message: 'El campo "hoja" debe ser "usuario" o "credencial"',
   })
   hoja: string;
 }

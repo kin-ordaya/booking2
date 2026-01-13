@@ -115,7 +115,7 @@ export class AulaService {
         },
         'Iniciando búsqueda de aulas',
       );
-      
+
       const query = await this.aulaRepository.find({
         order: { nombre: 'ASC' },
       });

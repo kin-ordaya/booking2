@@ -11,7 +11,9 @@ describe('DocumentoIdentidadController', () => {
       providers: [DocumentoIdentidadService],
     }).compile();
 
-    controller = module.get<DocumentoIdentidadController>(DocumentoIdentidadController);
+    controller = module.get<DocumentoIdentidadController>(
+      DocumentoIdentidadController,
+    );
   });
 
   it('should be defined', () => {

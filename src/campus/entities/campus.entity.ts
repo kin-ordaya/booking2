@@ -29,9 +29,9 @@ export class Campus {
   @OneToMany(() => Pabellon, (pabellon) => pabellon.campus)
   pabellon: Pabellon[];
 
-  @OneToMany(()=> Responsable, (responsable) => responsable.campus)
+  @OneToMany(() => Responsable, (responsable) => responsable.campus)
   responsable: Responsable[];
 
-  @OneToMany(()=> Laboratorio, (laboratorio) => laboratorio.campus)
+  @OneToMany(() => Laboratorio, (laboratorio) => laboratorio.campus)
   laboratorio: Laboratorio[];
 }

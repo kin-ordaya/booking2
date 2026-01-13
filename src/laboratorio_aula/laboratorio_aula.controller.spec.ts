@@ -11,7 +11,9 @@ describe('LaboratorioAulaController', () => {
       providers: [LaboratorioAulaService],
     }).compile();
 
-    controller = module.get<LaboratorioAulaController>(LaboratorioAulaController);
+    controller = module.get<LaboratorioAulaController>(
+      LaboratorioAulaController,
+    );
   });
 
   it('should be defined', () => {

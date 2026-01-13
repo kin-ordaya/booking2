@@ -1,15 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsUUID, Min } from 'class-validator';
 import { RangoFechaDto } from '../base/rango-fecha.dto';
 
-export class CreateReservaMantenimientoGeneralDto extends RangoFechaDto{
+export class CreateReservaMantenimientoGeneralDto extends RangoFechaDto {
   // @IsInt()
   // @IsIn([0, 1], { message: 'El campo mantenimiento debe ser 0 o 1' })
   // @Type(() => Number)

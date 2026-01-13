@@ -46,13 +46,17 @@ export class Estudiante {
 
   @ManyToOne(
     () => DocumentoIdentidad,
-    (documentoIdentidad) => documentoIdentidad.usuario, {
-    nullable: false,
-  }
+    (documentoIdentidad) => documentoIdentidad.usuario,
+    {
+      nullable: false,
+    },
   )
   @JoinColumn({ name: 'documento_identidad_id' })
   documento_identidad: DocumentoIdentidad;
 
-  @OneToMany(() => MatriculaClase, (matriculaClase) => matriculaClase.estudiante)
+  @OneToMany(
+    () => MatriculaClase,
+    (matriculaClase) => matriculaClase.estudiante,
+  )
   matricula_clase: MatriculaClase[];
 }

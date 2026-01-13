@@ -33,7 +33,7 @@ export class RecursoController {
   }
 
   @Get()
-  @Roles('ADMINISTRADOR','DOCENTE')
+  @Roles('ADMINISTRADOR', 'DOCENTE')
   findAll(@Query() paginationRecursoDto: PaginationRecursoDto) {
     return this.recursoService.findAll(paginationRecursoDto);
   }
@@ -44,7 +44,7 @@ export class RecursoController {
   // }
 
   @Get(':id')
-  @Roles('ADMINISTRADOR','DOCENTE')
+  @Roles('ADMINISTRADOR', 'DOCENTE')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.recursoService.findOne(id);
   }

@@ -27,16 +27,19 @@ export class Aula {
   @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
   codigo?: string;
 
-  @ManyToOne(() => Pabellon, (pabellon) => pabellon.aula, {nullable: false})
+  @ManyToOne(() => Pabellon, (pabellon) => pabellon.aula, { nullable: false })
   @JoinColumn({ name: 'pabellon_id' })
   pabellon: Pabellon;
 
   // @OneToMany(() => Clase, (clase) => clase.aula)
   // clase: Clase[];
 
-  @OneToMany(()=> LaboratorioAula, (laboratorioAula) => laboratorioAula.laboratorio)
+  @OneToMany(
+    () => LaboratorioAula,
+    (laboratorioAula) => laboratorioAula.laboratorio,
+  )
   laboratorioAula: LaboratorioAula[];
 
-  @OneToMany(()=>ClaseAula, (claseAula) => claseAula.aula)
+  @OneToMany(() => ClaseAula, (claseAula) => claseAula.aula)
   claseAula: ClaseAula[];
 }

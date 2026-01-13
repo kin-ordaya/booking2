@@ -8,7 +8,14 @@ import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DeclaracionJurada, RolUsuario, Recurso, Responsable])],
+  imports: [
+    TypeOrmModule.forFeature([
+      DeclaracionJurada,
+      RolUsuario,
+      Recurso,
+      Responsable,
+    ]),
+  ],
   controllers: [DeclaracionJuradaController],
   providers: [DeclaracionJuradaService],
 })

@@ -11,7 +11,9 @@ describe('DeclaracionJuradaController', () => {
       providers: [DeclaracionJuradaService],
     }).compile();
 
-    controller = module.get<DeclaracionJuradaController>(DeclaracionJuradaController);
+    controller = module.get<DeclaracionJuradaController>(
+      DeclaracionJuradaController,
+    );
   });
 
   it('should be defined', () => {

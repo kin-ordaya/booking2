@@ -82,7 +82,7 @@ export class TipoAccesoService {
         throw new NotFoundException('TipoAcceso no encontrada');
       }
 
-      const updateData: any = {};
+      const updateData: Partial<TipoAcceso> = {};
 
       if (nombre !== undefined) {
         const nombreExists = await this.tipoAccesoRepository.existsBy({
@@ -103,9 +103,7 @@ export class TipoAccesoService {
         return tipoAcceso;
       }
 
-      await this.tipoAccesoRepository.update(id, {
-        nombre,
-      });
+      await this.tipoAccesoRepository.update(id, updateData);
       return await this.tipoAccesoRepository.findOneBy({ id });
     } catch (error) {
       if (

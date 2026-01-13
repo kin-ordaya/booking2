@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { ClaseAulaService } from './clase_aula.service';
 import { CreateClaseAulaDto } from './dto/create-clase_aula.dto';
 import { UpdateClaseAulaDto } from './dto/update-clase_aula.dto';

@@ -12,7 +12,7 @@ export class SeccionEmail {
   id: string;
 
   @Column({ nullable: false })
-  asunto: 'ADVERTENCIA' | 'INFORMACION' | 'INSTRUCCION'; 
+  asunto: 'ADVERTENCIA' | 'INFORMACION' | 'INSTRUCCION';
 
   @Column({ nullable: false })
   tipo: 'LINK' | 'IMAGEN';

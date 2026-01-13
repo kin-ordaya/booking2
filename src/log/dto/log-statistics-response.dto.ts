@@ -6,15 +6,15 @@ export class LogStatisticsResponseDto {
   @ApiProperty({ description: 'Total de logs analizados' })
   totalLogs: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Conteo de logs por nivel',
-    example: { 'error': 15, 'info': 120, 'warn': 8 }
+    example: { error: 15, info: 120, warn: 8 },
   })
   levelCounts: { [key: string]: number };
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Últimos 10 errores encontrados',
-    type: [LogEntryResponseDto] 
+    type: [LogEntryResponseDto],
   })
   recentErrors: LogEntryResponseDto[];
 
@@ -25,13 +25,13 @@ export class LogStatisticsResponseDto {
     totalLogs: number,
     levelCounts: { [key: string]: number },
     recentErrors: any[],
-    totalFiles: number
+    totalFiles: number,
   ): LogStatisticsResponseDto {
     const response = new LogStatisticsResponseDto();
     response.totalLogs = totalLogs;
     response.levelCounts = levelCounts;
-    response.recentErrors = recentErrors.map(log => 
-      LogEntryResponseDto.fromLogEntry(log)
+    response.recentErrors = recentErrors.map((log) =>
+      LogEntryResponseDto.fromLogEntry(log),
     );
     response.totalFiles = totalFiles;
     return response;

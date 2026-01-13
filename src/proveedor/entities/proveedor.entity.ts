@@ -41,5 +41,4 @@ export class Proveedor {
 
   @OneToMany(() => Recurso, (recurso) => recurso.proveedor)
   recursos: Recurso[];
-
 }

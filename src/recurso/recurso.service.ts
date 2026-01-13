@@ -257,7 +257,7 @@ export class RecursoService {
       throw new InternalServerErrorException('Error inesperado');
     }
   }
-  
+
   async findOne(id: string) {
     try {
       if (!id)
@@ -307,7 +307,9 @@ export class RecursoService {
   async findOneByNombre(nombre: string) {
     try {
       if (!nombre)
-        throw new BadRequestException('El nombre del recurso no puede estar vacío');
+        throw new BadRequestException(
+          'El nombre del recurso no puede estar vacío',
+        );
       return await this.recursoRepository.findOneBy({ nombre });
     } catch (error) {
       throw error;

@@ -69,74 +69,75 @@ export class RecursoCursoService {
   }
 
   async findAll(paginationRecursoCursoDto: PaginationRecursoCursoDto) {
-  try {
-    const { page, limit, sort_name, sort_state, search, curso_id } =
-      paginationRecursoCursoDto;
+    try {
+      const { page, limit, sort_name, sort_state, search, curso_id } =
+        paginationRecursoCursoDto;
 
-    const query = this.recursoCursoRepository
-      .createQueryBuilder('recursoCurso')
-      .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
-      .leftJoinAndSelect('recursoCurso.curso', 'curso')
-      .leftJoinAndSelect('recurso.proveedor', 'proveedor')
-      .select([
-        'recursoCurso.id',
-        'recurso.id',
-        'recurso.nombre',
-        'recurso.creacion',
-        'proveedor.nombre',
-        'curso.id as curso_id',
-        'curso.nombre as curso_nombre',
-      ]);
+      const query = this.recursoCursoRepository
+        .createQueryBuilder('recursoCurso')
+        .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
+        .leftJoinAndSelect('recursoCurso.curso', 'curso')
+        .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+        .select([
+          'recursoCurso.id',
+          'recurso.id',
+          'recurso.nombre',
+          'recurso.creacion',
+          'proveedor.nombre',
+          'curso.id as curso_id',
+          'curso.nombre as curso_nombre',
+        ]);
 
-    let orderApplied = false;
+      let orderApplied = false;
 
-    if (sort_name) {
-      query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
-      orderApplied = true;
-    }
-    
-    if (!orderApplied) {
+      if (sort_name) {
+        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+        orderApplied = true;
+      }
+
+      if (!orderApplied) {
         query.orderBy('recurso.creacion', 'DESC');
       }
 
-    if (sort_state) {
-      query.andWhere('recursoCurso.estado = :estado', {
-        estado: sort_state === 1 ? 1 : 0,
+      if (sort_state) {
+        query.andWhere('recursoCurso.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
+      }
+
+      if (curso_id) {
+        query.andWhere('curso.id = :curso_id', {
+          curso_id,
+        });
+      }
+
+      if (search) {
+        query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search))', {
+          // Paréntesis corregido
+          search: `%${search}%`,
+        });
+      }
+
+      const [results, count] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return {
+        results,
+        meta: {
+          count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error inesperado', {
+        cause: error,
       });
     }
-
-    if (curso_id) {
-      query.andWhere('curso.id = :curso_id', {
-        curso_id,
-      });
-    }
-
-    if (search) {
-      query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search))', { // Paréntesis corregido
-        search: `%${search}%`,
-      });
-    }
-
-    const [results, count] = await query
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      results,
-      meta: {
-        count,
-        page,
-        limit,
-        totalPages: Math.ceil(count / limit),
-      },
-    };
-  } catch (error) {
-    throw new InternalServerErrorException('Error inesperado', {
-      cause: error,
-    });
   }
-}
 
   async findOne(id: string) {
     try {
@@ -218,9 +219,13 @@ export class RecursoCursoService {
       }
 
       // Preparar datos de actualización
-      const updateData: any = {};
-      if (recurso_id !== undefined) updateData.recurso = { id: recurso_id };
-      if (curso_id !== undefined) updateData.curso = { id: curso_id };
+      const updateData: Partial<RecursoCurso> & {
+        recurso?: { id: string };
+        curso?: { id: string };
+      } = {};
+      if (recurso_id !== undefined)
+        updateData.recurso = { id: recurso_id } as any;
+      if (curso_id !== undefined) updateData.curso = { id: curso_id } as any;
 
       // Realizar actualización
       await this.recursoCursoRepository.update(id, updateData);

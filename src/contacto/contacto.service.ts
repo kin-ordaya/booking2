@@ -274,7 +274,7 @@ export class ContactoService {
           },
           `Contacto con id ${id} no encontrado`,
         );
-          
+
         throw new NotFoundException('Contacto no encontrado');
       }
 
@@ -357,7 +357,7 @@ export class ContactoService {
       }
 
       await this.contactoRepository.update(id, updateData);
-      
+
       this.logger.info(
         {
           operation: 'update_success',
@@ -393,7 +393,7 @@ export class ContactoService {
         'Iniciando eliminación de contacto',
       );
 
-      if (!id){
+      if (!id) {
         this.logger.error(
           {
             operation: 'remove_failed',
@@ -406,7 +406,8 @@ export class ContactoService {
 
         throw new BadRequestException(
           'El ID del contacto no puede estar vacío',
-        );}
+        );
+      }
 
       const result = await this.contactoRepository
         .createQueryBuilder()
@@ -415,7 +416,7 @@ export class ContactoService {
         .where('id = :id', { id })
         .execute();
 
-      if (result.affected === 0){
+      if (result.affected === 0) {
         this.logger.error(
           {
             operation: 'remove_failed',
@@ -447,7 +448,7 @@ export class ContactoService {
         },
         'Error en proceso de eliminación de contacto',
       );
-      throw error
+      throw error;
     }
   }
 }

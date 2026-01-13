@@ -29,12 +29,12 @@ export class RecursoCursoPeriodo {
   @ManyToOne(() => RecursoCurso, (rc) => rc.recurso_curso_periodo, {
     nullable: false,
   })
-  @JoinColumn({name: 'recurso_curso_id'})
+  @JoinColumn({ name: 'recurso_curso_id' })
   recurso_curso: RecursoCurso;
 
   @ManyToOne(() => Periodo, (periodo) => periodo.recurso_curso_periodo, {
     nullable: false,
   })
-  @JoinColumn({name: 'periodo_id'})
+  @JoinColumn({ name: 'periodo_id' })
   periodo: Periodo;
 }

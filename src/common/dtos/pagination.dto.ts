@@ -1,9 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsInt,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsInt, Max, Min } from 'class-validator';
 import { SearchDto } from './search.dto';
 
 export class PaginationDto extends SearchDto {
@@ -25,6 +21,4 @@ export class PaginationDto extends SearchDto {
   // })
   // @Type(() => Number)
   // sort?: number;
-
-  
 }

@@ -11,7 +11,6 @@ import { Laboratorio } from './entities/laboratorio.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { Campus } from 'src/campus/entities/campus.entity';
-import e from 'express';
 
 @Injectable()
 export class LaboratorioService {
@@ -156,7 +155,7 @@ export class LaboratorioService {
       }
 
       // Preparar datos para actualización
-      const updateData: any = {};
+      const updateData: Partial<Laboratorio> & { campus?: { id: string } } = {};
       if (nombre !== undefined) {
         updateData.nombre = nombre;
       }
@@ -164,7 +163,7 @@ export class LaboratorioService {
         updateData.codigo = codigo;
       }
       if (campus_id !== undefined) {
-        updateData.campus = { id: campus_id };
+        updateData.campus = { id: campus_id } as any;
       }
 
       if (Object.keys(updateData).length === 0) {

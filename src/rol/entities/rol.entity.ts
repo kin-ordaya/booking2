@@ -23,8 +23,7 @@ export class Rol {
 
   @OneToMany(() => RolUsuario, (rolUsuario) => rolUsuario.rol)
   rol_usuario: RolUsuario[];
-  
+
   @OneToMany(() => Credencial, (credencial) => credencial.rol)
   credencial: Credencial[];
-
 }

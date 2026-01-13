@@ -71,7 +71,9 @@ export class ModalidadService {
   async findOneByNombre(nombre: string): Promise<Modalidad> {
     try {
       if (!nombre)
-        throw new ConflictException('El nombre del modalidad no puede estar vacío');
+        throw new ConflictException(
+          'El nombre del modalidad no puede estar vacío',
+        );
 
       const modalidad = await this.modalidadRepository.findOneBy({ nombre });
       if (!modalidad) throw new NotFoundException('Modalidad no encontrado');

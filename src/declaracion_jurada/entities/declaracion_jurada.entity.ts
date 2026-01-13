@@ -24,7 +24,7 @@ export class DeclaracionJurada {
   @JoinColumn({ name: 'rol_usuario_id' })
   rolUsuario: RolUsuario;
 
-  @ManyToOne(()=> Recurso , (recurso) => recurso.declaracionJurada)
+  @ManyToOne(() => Recurso, (recurso) => recurso.declaracionJurada)
   @JoinColumn({ name: 'recurso_id' })
   recurso: Recurso;
 }

@@ -27,10 +27,9 @@ export class Periodo {
   @Column({ type: 'date' })
   fin: Date;
 
-  @OneToMany(()=>Clase, (clase) => clase.periodo)
+  @OneToMany(() => Clase, (clase) => clase.periodo)
   clase: Clase[];
 
-  @OneToMany(()=>RecursoCursoPeriodo, (rcp) => rcp.periodo)
+  @OneToMany(() => RecursoCursoPeriodo, (rcp) => rcp.periodo)
   recurso_curso_periodo: RecursoCursoPeriodo[];
-
 }

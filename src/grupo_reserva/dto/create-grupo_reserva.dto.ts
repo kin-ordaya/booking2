@@ -1,4 +1,3 @@
-import { IsIn } from "class-validator";
+import { IsIn } from 'class-validator';
 
 export class CreateGrupoReservaDto {}
-

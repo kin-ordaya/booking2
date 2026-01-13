@@ -26,7 +26,10 @@ export class ImportController {
     @Query() queryImportDto: QueryImportDto,
   ) {
     try {
-      const resultado = await this.importService.procesarExcel(file.buffer, queryImportDto);
+      const resultado = await this.importService.procesarExcel(
+        file.buffer,
+        queryImportDto,
+      );
       return {
         success: true,
         data: resultado,

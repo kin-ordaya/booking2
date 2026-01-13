@@ -84,6 +84,6 @@ export class Clase {
   @OneToMany(() => Reserva, (reserva) => reserva.clase)
   reserva: Reserva[];
 
-  @OneToMany(()=> ClaseAula, (claseAula) => claseAula.clase)
+  @OneToMany(() => ClaseAula, (claseAula) => claseAula.clase)
   claseAula: ClaseAula[];
 }

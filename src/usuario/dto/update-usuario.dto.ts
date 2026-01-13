@@ -1,22 +1,20 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateUsuarioDto } from './create-usuario.dto';
 import { IsEmail, IsIn, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateUsuarioDto {
   @IsOptional()
   @IsString({ message: 'El campo nombres no puede estar vacío' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
   nombres?: string;
 
   @IsOptional()
   @IsString({ message: 'El campo apellidos no puede estar vacío' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
   apellidos?: string;
 
   @IsOptional()
   @IsString({ message: 'El campo numero_documento no puede estar vacío' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
   numero_documento?: string;
 
   @IsOptional()
@@ -45,5 +43,4 @@ export class UpdateUsuarioDto {
   @IsOptional()
   @IsString({ message: 'El campo direccion no puede estar vacío' })
   direccion?: string;
-
 }

@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { DetalleReservaService } from './detalle_reserva.service';
 import { CreateDetalleReservaDto } from './dto/create-detalle_reserva.dto';
 import { UpdateDetalleReservaDto } from './dto/update-detalle_reserva.dto';
@@ -34,7 +44,10 @@ export class DetalleReservaController {
 
   @Patch(':id')
   @Roles('ADMINISTRADOR')
-  update(@Param('id') id: string, @Body() updateDetalleReservaDto: UpdateDetalleReservaDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDetalleReservaDto: UpdateDetalleReservaDto,
+  ) {
     return this.detalleReservaService.update(+id, updateDetalleReservaDto);
   }
 

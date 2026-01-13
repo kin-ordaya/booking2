@@ -10,7 +10,13 @@ import { Periodo } from 'src/periodo/entities/periodo.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Clase, CursoModalidad, Recurso, RolUsuario, Periodo]),
+    TypeOrmModule.forFeature([
+      Clase,
+      CursoModalidad,
+      Recurso,
+      RolUsuario,
+      Periodo,
+    ]),
   ],
   controllers: [ClaseController],
   providers: [ClaseService],

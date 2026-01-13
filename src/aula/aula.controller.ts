@@ -26,7 +26,8 @@ export class AulaController {
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Crear aula',
-    description: 'Crea un nuevo registro de aula fisica en el sistema.\n\n**Roles permitidos:** ADMINISTRADOR',
+    description:
+      'Crea un nuevo registro de aula fisica en el sistema.\n\n**Roles permitidos:** ADMINISTRADOR',
   })
   create(@Body() createAulaDto: CreateAulaDto) {
     return this.aulaService.create(createAulaDto);
