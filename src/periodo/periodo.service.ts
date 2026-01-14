@@ -86,15 +86,11 @@ export class PeriodoService {
   }
 
   async findOneByNombre(nombre: string) {
-    try {
-      if (!nombre)
-        throw new BadRequestException(
-          'El nombre del periodo no puede estar vacío',
-        );
-      return await this.periodoRepository.findOneBy({ nombre });
-    } catch (error) {
-      throw error;
-    }
+    if (!nombre)
+      throw new BadRequestException(
+        'El nombre del periodo no puede estar vacío',
+      );
+    return await this.periodoRepository.findOneBy({ nombre });
   }
 
   async update(id: string, updatePeriodoDto: UpdatePeriodoDto) {
@@ -108,7 +104,7 @@ export class PeriodoService {
       if (!periodo)
         throw new NotFoundException(`Periodo con id ${id} no encontrado`);
 
-      const updateData: any = {};
+      const updateData: Partial<Periodo> = {};
 
       if (nombre !== undefined) {
         const periodoExists = await this.periodoRepository.existsBy({

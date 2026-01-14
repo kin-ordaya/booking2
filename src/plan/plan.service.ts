@@ -101,7 +101,7 @@ export class PlanService {
         throw new NotFoundException('Plan no encontrado');
       }
 
-      const updateData: any = {};
+      const updateData: Partial<Plan> = {};
 
       if (nombre !== undefined) {
         const nombreExists = await this.planRepository.existsBy({

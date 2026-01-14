@@ -14,7 +14,6 @@ import { RolUsuario } from './entities/rol_usuario.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
-import e from 'express';
 
 @Injectable()
 export class RolUsuarioService {

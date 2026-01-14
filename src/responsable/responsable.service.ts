@@ -7,7 +7,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateResponsableDto } from './dto/create-responsable.dto';
-import { UpdateResponsableDto } from './dto/update-responsable.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Responsable } from './entities/responsable.entity';
 import { Repository } from 'typeorm';
@@ -49,7 +48,6 @@ export class ResponsableService {
         curso_modalidad_id,
         campus_id,
       } = createResponsableDto;
-      console.log(createResponsableDto);
 
       // 1. Validar que solo se envíe un campo opcional
       const optionalFields = [
@@ -199,7 +197,13 @@ export class ResponsableService {
 
       return await this.responsableRepository.save(responsable);
     } catch (error) {
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 

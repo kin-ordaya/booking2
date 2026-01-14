@@ -1,4 +1,3 @@
-// log/log.service.ts
 import { GetLogsDto } from './dto/get-log.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { join } from 'path';
@@ -105,7 +104,7 @@ export class LogService {
         filters,
       );
     } catch (error) {
-      throw new BadRequestException('Error al leer los logs');
+      throw error;
     }
   }
 
@@ -118,6 +117,7 @@ export class LogService {
         .sort()
         .reverse();
     } catch (error) {
+      console.log(error);
       return [];
     }
   }
@@ -137,6 +137,7 @@ export class LogService {
         })
         .filter((log): log is InternalLogEntry => log !== null);
     } catch (error) {
+      console.log(error);
       return [];
     }
   }

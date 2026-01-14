@@ -1,4 +1,3 @@
-// log/dto/log-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LogEntryResponseDto {
@@ -24,7 +23,7 @@ export class LogEntryResponseDto {
   userAgent?: string;
 
   static fromLogEntry(entry: any): LogEntryResponseDto {
-    const dto = new LogEntryResponseDto();
+    const dto: LogEntryResponseDto = new LogEntryResponseDto();
     dto.level = entry.level;
     dto.levelName = LogEntryResponseDto.getLevelName(entry.level);
     dto.message = entry.message;

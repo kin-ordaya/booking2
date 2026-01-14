@@ -92,7 +92,7 @@ export class RolService {
       if (!rol) {
         throw new NotFoundException('Rol no encontrado');
       }
-      const updateData: any = {};
+      const updateData: Partial<Rol> = {};
 
       if (nombre !== undefined) {
         const nombreExists = await this.rolRepository.existsBy({

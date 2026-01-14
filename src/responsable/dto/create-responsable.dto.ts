@@ -11,16 +11,24 @@ export class CreateResponsableDto {
 
   @IsOptional()
   @IsUUID('4', { message: 'El campo clase_id debe ser de tipo uuid' })
-  @ValidateIf((o) => !o.recurso_id && !o.curso_modalidad_id && !o.campus_id)
+  @ValidateIf(
+    (o: CreateResponsableDto) =>
+      !o.recurso_id && !o.curso_modalidad_id && !o.campus_id,
+  )
   clase_id?: string;
 
   @IsOptional()
   @IsUUID('4', { message: 'El campo curso_modalidad_id debe ser de tipo uuid' })
-  @ValidateIf((o) => !o.recurso_id && !o.clase_id && !o.campus_id)
+  @ValidateIf(
+    (o: CreateResponsableDto) => !o.recurso_id && !o.clase_id && !o.campus_id,
+  )
   curso_modalidad_id?: string;
 
   @IsOptional()
   @IsUUID('4', { message: 'El campo campus_id debe ser de tipo uuid' })
-  @ValidateIf((o) => !o.recurso_id && !o.clase_id && !o.curso_modalidad_id)
+  @ValidateIf(
+    (o: CreateResponsableDto) =>
+      !o.recurso_id && !o.clase_id && !o.curso_modalidad_id,
+  )
   campus_id?: string;
 }

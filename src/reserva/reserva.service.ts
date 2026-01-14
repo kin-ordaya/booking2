@@ -25,7 +25,6 @@ import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-g
 import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';
 import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
 import { CreateReservaMixtoMultipleDto } from './dto/multiple/create-reserva-mixto-multiple.dto';
-import { create } from 'domain';
 import { CreateReservaMantenimientoMixtoMultipleDto } from './dto/multiple/create-reserva-mantenimiento-mixto-multiple.dto';
 
 @Injectable()

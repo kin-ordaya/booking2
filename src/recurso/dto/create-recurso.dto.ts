@@ -13,7 +13,7 @@ import {
 export class CreateRecursoDto {
   @IsNotEmpty()
   @IsString({ message: 'El campo nombre debe ser de tipo string' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value.trim())
   nombre: string;
 
   @IsOptional()

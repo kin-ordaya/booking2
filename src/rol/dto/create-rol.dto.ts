@@ -4,6 +4,6 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class CreateRolDto {
   @IsNotEmpty()
   @IsString({ message: 'El campo nombre debe ser de tipo string' })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value.trim())
   nombre: string;
 }

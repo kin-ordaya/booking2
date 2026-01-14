@@ -1,5 +1,4 @@
-// log/log.controller.ts
-import { Controller, Get, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Delete, Query } from '@nestjs/common';
 import { LogService } from './log.service';
 import { GetLogsDto } from './dto/get-log.dto';
 import { LogsResponseDto } from './dto/log-response.dto';

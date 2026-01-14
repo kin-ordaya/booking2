@@ -114,48 +114,72 @@ export class LaboratorioService {
 
       // Validaciones para código y campus_id
       if (codigo !== undefined || campus_id !== undefined) {
-        const whereConditions: any[] = [];
-
-        // Excluir el laboratorio actual de la validación
-        whereConditions.push({ id: Not(id) });
-
-        if (codigo !== undefined) {
-          whereConditions.push({ codigo });
-        }
-
+        // Verificar si el campus existe si se proporciona campus_id
         if (campus_id !== undefined) {
-          // Verificar primero si el campus existe
           const campusExists = await this.campusRepository.existsBy({
             id: campus_id,
           });
           if (!campusExists) {
             throw new ConflictException('No existe un campus con ese id');
           }
-          whereConditions.push({ campus: { id: campus_id } });
         }
 
-        // Construir la condición WHERE combinando con OR según sea necesario
-        const existingLab = await this.laboratorioRepository.findOne({
-          where: whereConditions,
-        });
+        // Si se proporciona tanto código como campus_id, verificar la combinación única
+        if (codigo !== undefined && campus_id !== undefined) {
+          const existingLab = await this.laboratorioRepository.findOne({
+            where: {
+              codigo,
+              campus: { id: campus_id },
+              id: Not(id),
+            },
+            relations: ['campus'],
+          });
 
-        if (existingLab) {
-          let errorMessage = '';
-          if (codigo !== undefined && campus_id !== undefined) {
-            errorMessage =
-              'Ya existe un laboratorio con el mismo código y campus';
-          } else if (codigo !== undefined) {
-            errorMessage = 'Ya existe un laboratorio con el mismo código';
-          } else if (campus_id !== undefined) {
-            errorMessage =
-              'Ya existe un laboratorio en el mismo campus (mismo código implícito)';
+          if (existingLab) {
+            throw new ConflictException(
+              'Ya existe un laboratorio con el mismo código en este campus',
+            );
           }
-          throw new ConflictException(errorMessage);
+        }
+        // Verificar solo código si se proporciona
+        else if (codigo !== undefined) {
+          const existingLab = await this.laboratorioRepository.findOne({
+            where: {
+              codigo,
+              id: Not(id),
+            },
+          });
+
+          if (existingLab) {
+            throw new ConflictException(
+              'Ya existe un laboratorio con el mismo código',
+            );
+          }
+        }
+        // Verificar solo campus si se proporciona (si tu lógica lo requiere)
+        else if (campus_id !== undefined) {
+          // Esta validación depende de tus reglas de negocio
+          // Si no quieres permitir múltiples laboratorios en el mismo campus
+          // con el mismo código, aquí deberías verificar junto con el código actual
+          const existingLab = await this.laboratorioRepository.findOne({
+            where: {
+              campus: { id: campus_id },
+              codigo: laboratorio.codigo, // Usar el código actual
+              id: Not(id),
+            },
+            relations: ['campus'],
+          });
+
+          if (existingLab) {
+            throw new ConflictException(
+              'Ya existe un laboratorio con el mismo código en este campus',
+            );
+          }
         }
       }
 
       // Preparar datos para actualización
-      const updateData: Partial<Laboratorio> & { campus?: { id: string } } = {};
+      const updateData: Partial<Laboratorio> & { campus?: any } = {};
       if (nombre !== undefined) {
         updateData.nombre = nombre;
       }
@@ -163,7 +187,7 @@ export class LaboratorioService {
         updateData.codigo = codigo;
       }
       if (campus_id !== undefined) {
-        updateData.campus = { id: campus_id } as any;
+        updateData.campus = { id: campus_id };
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -171,7 +195,12 @@ export class LaboratorioService {
       }
 
       await this.laboratorioRepository.update(id, updateData);
-      return await this.laboratorioRepository.findOneBy({ id });
+
+      // Recargar el laboratorio con sus relaciones si es necesario
+      return await this.laboratorioRepository.findOne({
+        where: { id },
+        relations: ['campus'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -180,6 +209,7 @@ export class LaboratorioService {
       ) {
         throw error;
       }
+      console.error('Error actualizando laboratorio:', error);
       throw new InternalServerErrorException('Error inesperado');
     }
   }

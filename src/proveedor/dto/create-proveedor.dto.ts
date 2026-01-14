@@ -13,7 +13,7 @@ export class CreateProveedorDto {
   @MaxLength(50, {
     message: 'El campo nombre no puede tener mas de 50 caracteres',
   })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value.trim())
   nombre: string;
 
   @IsNotEmpty()

@@ -2,7 +2,6 @@ import { SearchDto } from './../common/dtos/search.dto';
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -96,7 +95,7 @@ export class ProveedorService {
         throw new NotFoundException('Proveedor no encontrado');
       }
 
-      const updateData: any = {};
+      const updateData: Partial<Proveedor> = {};
 
       if (ruc !== undefined) {
         const rucExists = await this.proveedorRepository.existsBy({

@@ -104,7 +104,7 @@ export class ModalidadService {
         throw new NotFoundException('Modalidad no encontrado');
       }
 
-      const updateData: any = {};
+      const updateData: Partial<Modalidad> = {};
 
       if (nombre !== undefined) {
         const nombreExists = await this.modalidadRepository.existsBy({

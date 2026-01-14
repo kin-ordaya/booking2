@@ -17,6 +17,24 @@ import { PaginationRecursoDto } from './dto/pagination-recurso.dto';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 
+interface RawRecursoResult {
+  recurso_id: number;
+  recurso_nombre: string;
+  recurso_link_declaracion: string | null;
+  recurso_creacion: Date;
+  recurso_estado: number;
+  recurso_capacidad: number | null;
+  recurso_cantidad_credenciales: string;
+  tipoRecurso_nombre: string;
+  proveedor_nombre: string;
+  tipoAcceso_id: number;
+  tipoAcceso_nombre: string;
+}
+
+interface CountResult {
+  count: string;
+}
+
 @Injectable()
 export class RecursoService {
   constructor(
@@ -220,7 +238,7 @@ export class RecursoService {
       // Ejecutar queries
       const [rawResults, totalCountResult] = await Promise.all([
         query.getRawMany(),
-        countQuery.getRawOne(),
+        countQuery.getRawOne() as Promise<CountResult>,
       ]);
 
       const totalCount = parseInt(totalCountResult.count, 10);
@@ -305,15 +323,11 @@ export class RecursoService {
   }
 
   async findOneByNombre(nombre: string) {
-    try {
-      if (!nombre)
-        throw new BadRequestException(
-          'El nombre del recurso no puede estar vacío',
-        );
-      return await this.recursoRepository.findOneBy({ nombre });
-    } catch (error) {
-      throw error;
-    }
+    if (!nombre)
+      throw new BadRequestException(
+        'El nombre del recurso no puede estar vacío',
+      );
+    return await this.recursoRepository.findOneBy({ nombre });
   }
 
   //   async getRecursosByDocente(rol_usuario_id: string) {

@@ -7,6 +7,6 @@ export class CreateModalidadDto {
   @MaxLength(50, {
     message: 'El campo nombrae no puede tener mas de 50 caracteres',
   })
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
   nombre: string;
 }

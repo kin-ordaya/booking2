@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -144,7 +143,7 @@ export class PabellonService {
         }
       }
 
-      const updateData: any = {};
+      const updateData: Partial<Pabellon> & { campus?: any } = {};
       if (nombre !== undefined) {
         updateData.nombre = nombre;
       }
