@@ -1,13 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateRecursoCursoPeriodoDto } from './dto/create-recurso_curso_periodo.dto';
-import { UpdateRecursoCursoPeriodoDto } from './dto/update-recurso_curso_periodo.dto';
 import { Repository } from 'typeorm';
 import { RecursoCursoPeriodo } from './entities/recurso_curso_periodo.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
 import { GetRecursoCursoPeriodoDto } from './dto/get-recurso_curso_periodo.dto';
-import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 
 @Injectable()
 export class RecursoCursoPeriodoService {
@@ -56,7 +58,10 @@ export class RecursoCursoPeriodoService {
 
       return await this.recursoCursoPeriodoRepository.save(recursoCursoPeriodo);
     } catch (error) {
-      throw error;
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -83,7 +88,10 @@ export class RecursoCursoPeriodoService {
 
       return await queryBuilder.getMany();
     } catch (error) {
-      throw error;
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 }

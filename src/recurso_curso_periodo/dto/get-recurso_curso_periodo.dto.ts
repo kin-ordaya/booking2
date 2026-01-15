@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsUUID } from 'class-validator';
 
 export class GetRecursoCursoPeriodoDto {
   @IsUUID('4', { message: 'El campo recurso_id debe ser de tipo uuid' })
