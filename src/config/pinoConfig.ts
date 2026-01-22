@@ -20,7 +20,8 @@ export const pinoConfig: Params = {
             messageKey: 'message',
             colorize: true,
             translateTime: 'yyyy-mm-dd HH:MM:ss',
-            ignore: 'pid,hostname',
+            ignore: 'pid,hostname,context',
+            hideObject: true,
             singleLine: false,
           },
         },
@@ -60,9 +61,11 @@ export const pinoConfig: Params = {
     },
 
     customProps: (req: Request) => {
+      const userId = (req as any).user?.id || (req as any).user?.userId || 'anonymous';
       return {
         requestId: req.headers['x-correlation-id'],
         userAgent: req.headers['user-agent'],
+        userId,
         ip: req.ip,
       };
     },

@@ -16,6 +16,7 @@ interface InternalLogEntry {
   requestId?: string;
   userAgent?: string;
   ip?: string;
+  userId?: string;
   timestamp: string;
   [key: string]: any;
 }
