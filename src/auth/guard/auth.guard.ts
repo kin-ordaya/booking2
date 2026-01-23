@@ -6,9 +6,14 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
+import { PinoLogger } from 'nestjs-pino';
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly logger: PinoLogger
+  ) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractToken(request);
@@ -16,10 +21,13 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(`No token present`);
     }
     try {
-      const payload = this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET || 'abc123',
       });
+
       request.usuario = payload;
+      (request as any).userId = payload.usuario_id;
+
     } catch (error) {
       throw new UnauthorizedException(`Token no válido`);
     }
