@@ -1,9 +1,7 @@
 import { Controller, Get, Delete, Query } from '@nestjs/common';
 import { LogService } from './log.service';
-import { GetLogsDto } from './dto/get-log.dto';
-import { LogsResponseDto } from './dto/log-response.dto';
-import { LogStatisticsResponseDto } from './dto/log-statistics-response.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { GetLogsDto } from './dto/get-log.dto';
 
 @Controller('log')
 export class LogController {
@@ -11,19 +9,8 @@ export class LogController {
 
   @Get()
   @Roles('admin')
-  async getLogs(@Query() getLogsDto: GetLogsDto): Promise<LogsResponseDto> {
+  async getLogs(@Query() getLogsDto: GetLogsDto): Promise<any> {
     return this.logService.getLogs(getLogsDto);
   }
 
-  @Get('statistics')
-  @Roles('admin')
-  async getLogStatistics(): Promise<LogStatisticsResponseDto> {
-    return this.logService.getLogStatistics();
-  }
-
-  @Delete('cleanup')
-  @Roles('admin')
-  async cleanupLogs(@Query('daysToKeep') daysToKeep: number = 30) {
-    return this.logService.cleanupLogs(daysToKeep);
-  }
 }

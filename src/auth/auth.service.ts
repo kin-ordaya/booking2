@@ -2,10 +2,12 @@ import { LoginDto } from './dto/login.dto';
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
 
 import { OAuth2Client } from 'google-auth-library';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
@@ -25,12 +27,18 @@ export class AuthService {
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
   ) {
-    this.client = new OAuth2Client(process.env.CLIENT_ID);
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.JWT_SECRET) {
+      throw new InternalServerErrorException(
+        'Faltan datos de configuración para Google OAuth y JWT',
+      );
+    }
+    this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }
 
   async login(loginDto: LoginDto) {
     try {
       const { idToken } = loginDto;
+
       this.logger.info(
         {
           operation: 'login_started',
@@ -56,7 +64,7 @@ export class AuthService {
         where: { correo_institucional: emailGoogle },
       });
       if (!user) {
-        this.logger.error(
+        this.logger.warn(
           {
             operation: 'login_failed',
             entity: 'auth',
@@ -78,7 +86,6 @@ export class AuthService {
             operation: 'login_failed',
             entity: 'auth',
             reason: 'invalid_role',
-            userId: user.id || 'unknown',
           },
           'Rol de usuario no activo',
         );
@@ -87,22 +94,30 @@ export class AuthService {
           'Rol usuario no encontrado o rol usuario no activo',
         );
       }
+
       const jwtPayload = {
-        //correo_institucional: user.correo_institucional,
-        //nombres: user.nombres,
-        //apellidos: user.apellidos,
+        sub: user.id,
+        jti: randomUUID(),
         usuario_id: user.id,
         rol_usuario_id: rolUsuario.id,
         rol_nombre: rolUsuario.rol.nombre,
+        iss: 'booking2backend',
+        aud: 'booking2',
       };
+
       const token = await this.jwtService.signAsync(jwtPayload);
+
+      // Actualizar el contexto del logger con el usuario autenticado
+      this.logger.assign({
+        userId: user.id,
+        userRole: rolUsuario.rol.nombre,
+      });
+
       this.logger.info(
         {
           operation: 'login_success',
           entity: 'auth',
           reason: 'login_success',
-          userId: user.id || 'unknown',
-          role: rolUsuario.rol.nombre || 'unknown',
         },
         'Login exitoso',
       );
@@ -125,7 +140,7 @@ export class AuthService {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: process.env.CLIENT_ID,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
       if (payload) {

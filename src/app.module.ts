@@ -63,8 +63,8 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     }),
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET || 'abc123',
-      signOptions: { expiresIn: process.env.JWT_EXPIRATION || '1h' },
+      secret: process.env.JWT_SECRET ,
+      signOptions: { expiresIn: process.env.JWT_EXPIRATION },
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',

@@ -61,15 +61,16 @@ export const pinoConfig: Params = {
     },
 
     customProps: (req: Request) => {
-      // const usuario = (req as any).usuario;
-      // const userId = usuario?.usuario_id || 'anonymous';
       const userId = (req as any).userId || 'anonymous';
+      const userRole = (req as any).userRole || 'anonymous';
 
       return {
         requestId: req.headers['x-correlation-id'],
         userAgent: req.headers['user-agent'],
-        userId: userId,
+        // userId: userId,
+        // userRole: userRole,
         ip: req.ip,
+        env: process.env.NODE_ENV,
       };
     },
 

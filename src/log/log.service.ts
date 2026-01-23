@@ -1,31 +1,15 @@
-import { GetLogsDto } from './dto/get-log.dto';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { join } from 'path';
-import { readdir, readFile, stat } from 'fs/promises';
-import { LogsResponseDto } from './dto/log-response.dto';
-import { LogStatisticsResponseDto } from './dto/log-statistics-response.dto';
 
-// Mover la interfaz a un archivo separado o hacerla interna con tipo any
-interface InternalLogEntry {
-  level: number;
-  time: number;
-  pid: number;
-  hostname: string;
-  message: string;
-  correlationId?: string;
-  requestId?: string;
-  userAgent?: string;
-  ip?: string;
-  userId?: string;
-  timestamp: string;
-  [key: string]: any;
-}
+import { Injectable } from '@nestjs/common';
+import { join } from 'path';
+import { readdir, readFile} from 'fs/promises';
+import { GetLogsDto } from './dto/get-log.dto';
+
 
 @Injectable()
 export class LogService {
   private readonly logsDir = join(process.cwd(), 'logs');
 
-  async getLogs(getLogsDto: GetLogsDto): Promise<LogsResponseDto> {
+  async getLogs(getLogsDto: GetLogsDto): Promise<any> {
     try {
       const page = getLogsDto.page ?? 1;
       const limit = getLogsDto.limit ?? 50;
@@ -35,7 +19,7 @@ export class LogService {
       const skip = (page - 1) * limit;
 
       const files = await this.getLogFiles();
-      let allLogs: InternalLogEntry[] = [];
+      let allLogs: any[] = [];
 
       for (const file of files) {
         const fileLogs = await this.readLogFile(file);
@@ -97,13 +81,13 @@ export class LogService {
         endDate: endDate || undefined,
       };
 
-      return LogsResponseDto.fromLogs(
+      return {
         paginatedLogs,
         page,
         limit,
         total,
         filters,
-      );
+      }
     } catch (error) {
       throw error;
     }
@@ -123,7 +107,7 @@ export class LogService {
     }
   }
 
-  private async readLogFile(filePath: string): Promise<InternalLogEntry[]> {
+  private async readLogFile(filePath: string): Promise<any[]> {
     try {
       const content = await readFile(filePath, 'utf-8');
       const lines = content.split('\n').filter((line) => line.trim());
@@ -136,7 +120,7 @@ export class LogService {
             return null;
           }
         })
-        .filter((log): log is InternalLogEntry => log !== null);
+        .filter((log): log is any => log !== null);
     } catch (error) {
       console.log(error);
       return [];
@@ -155,60 +139,4 @@ export class LogService {
     return levels[level] || 'unknown';
   }
 
-  async cleanupLogs(
-    daysToKeep: number = 30,
-  ): Promise<{ deletedCount: number; message: string }> {
-    try {
-      const files = await this.getLogFiles();
-      const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
-
-      let deletedCount = 0;
-
-      for (const file of files) {
-        const fileStat = await stat(file);
-        if (fileStat.mtimeMs < cutoffTime) {
-          deletedCount++;
-        }
-      }
-
-      return {
-        deletedCount,
-        message: `Se eliminarían ${deletedCount} archivos de log antiguos (manteniendo ${daysToKeep} días)`,
-      };
-    } catch (error) {
-      throw new BadRequestException('Error al limpiar logs');
-    }
-  }
-
-  async getLogStatistics(): Promise<LogStatisticsResponseDto> {
-    try {
-      const files = await this.getLogFiles();
-      let totalLogs = 0;
-      const levelCounts: { [key: string]: number } = {};
-      const recentErrors: InternalLogEntry[] = [];
-
-      for (const file of files.slice(0, 5)) {
-        const logs = await this.readLogFile(file);
-        totalLogs += logs.length;
-
-        logs.forEach((log) => {
-          const level = this.getLevelName(log.level);
-          levelCounts[level] = (levelCounts[level] || 0) + 1;
-
-          if (level === 'error' && recentErrors.length < 10) {
-            recentErrors.push(log);
-          }
-        });
-      }
-
-      return LogStatisticsResponseDto.fromData(
-        totalLogs,
-        levelCounts,
-        recentErrors,
-        files.length,
-      );
-    } catch (error) {
-      throw new BadRequestException('Error al generar estadísticas de logs');
-    }
-  }
 }
