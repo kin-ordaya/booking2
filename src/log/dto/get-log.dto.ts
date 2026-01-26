@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Min, Max } from 'class-validator';
 
 export class GetLogsDto {
   @IsOptional()
@@ -12,7 +12,7 @@ export class GetLogsDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Min(10)
+  @Max(1000)  // Añade un máximo para evitar sobrecarga
   limit?: number = 50;
 
   @IsOptional()
@@ -21,6 +21,7 @@ export class GetLogsDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
   level?: string;
 
   @IsOptional()

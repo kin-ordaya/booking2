@@ -25,7 +25,7 @@ export const pinoConfig: Params = {
             singleLine: false,
           },
         },
-        // Archivo principal SIN rotación automática
+        // Archivo principal con TODOS los logs
         {
           target: 'pino/file',
           level: 'debug',
@@ -34,10 +34,10 @@ export const pinoConfig: Params = {
             mkdir: true,
           },
         },
-        // Archivo de errores separado
+        // Archivo SOLO para errores (nivel error y fatal)
         {
           target: 'pino/file',
-          level: 'error',
+          level: 'error', // Solo niveles 50 (error) y 60 (fatal)
           options: {
             destination: join(process.cwd(), 'logs', 'error.log'),
             mkdir: true,
@@ -54,7 +54,6 @@ export const pinoConfig: Params = {
       const correlationId = incomingCorrelationId ?? randomUUID();
 
       req.headers['x-correlation-id'] = correlationId;
-      req[CORRELATION_ID_HEADER] = correlationId;
       res.setHeader('X-Correlation-Id', correlationId);
 
       return correlationId;
@@ -67,8 +66,8 @@ export const pinoConfig: Params = {
       return {
         requestId: req.headers['x-correlation-id'],
         userAgent: req.headers['user-agent'],
-        // userId: userId,
-        // userRole: userRole,
+        userId: userId,
+        userRole: userRole,
         ip: req.ip,
         env: process.env.NODE_ENV,
       };
