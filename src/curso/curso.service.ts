@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -13,10 +14,13 @@ import { Not, Repository } from 'typeorm';
 import { PaginationCursoDto } from './dto/pagination.dto';
 import { Eap } from 'src/eap/entities/eap.entity';
 import { Plan } from 'src/plan/entities/plan.entity';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class CursoService {
   constructor(
+    @InjectPinoLogger(CursoService.name)
+    private readonly logger: PinoLogger,
     @InjectRepository(Curso)
     private readonly cursoRepository: Repository<Curso>,
     @InjectRepository(Eap)
@@ -29,19 +33,58 @@ export class CursoService {
     try {
       const { codigo, eap_id, plan_id } = createCursoDto;
 
+      this.logger.info(
+        {
+          operation: 'create_started',
+          entity: 'curso',
+        },
+        'Iniciando creación de curso',
+      );
+
       const [codigoExiste, planExiste, eapExiste] = await Promise.all([
         this.cursoRepository.existsBy({ codigo }),
         this.planRepository.existsBy({ id: plan_id }),
         eap_id ? this.eapRepository.existsBy({ id: eap_id }) : true,
       ]);
 
-      if (codigoExiste)
+      if (codigoExiste) {
+        this.logger.error(
+          {
+            operation: 'create_failed',
+            entity: 'curso',
+            reason: 'curso_codigo_exists',
+            cursoCodigo: codigo || 'unknown',
+          },
+          'Ya existe un curso con ese código',
+        );
         throw new ConflictException(`Curso con código: ${codigo} ya existe`);
+      }
 
-      if (!planExiste) throw new NotFoundException('Plan no encontrado');
+      if (!planExiste) {
+        this.logger.error(
+          {
+            operation: 'create_failed',
+            entity: 'curso',
+            reason: 'plan_not_found',
+            planId: plan_id || 'unknown',
+          },
+          'No existe un plan con ese id',
+        );
+        throw new NotFoundException('Plan no encontrado');
+      }
 
-      if (eap_id && !eapExiste)
+      if (eap_id && !eapExiste) {
+        this.logger.error(
+          {
+            operation: 'create_failed',
+            entity: 'curso',
+            reason: 'eap_not_found',
+            eapId: eap_id || 'unknown',
+          },
+          'No existe un EAP con ese id',
+        );
         throw new NotFoundException('EAP no encontrado');
+      }
 
       // Creación del curso
       const curso = this.cursoRepository.create({
@@ -50,11 +93,29 @@ export class CursoService {
         plan: { id: plan_id },
       });
 
+      this.logger.info(
+        {
+          operation: 'create_success',
+          entity: 'curso',
+          reason: 'create_success',
+          cursoId: curso.id || 'unknown',
+        },
+        'Curso creado exitosamente',
+      );
+
       return await this.cursoRepository.save(curso);
     } catch (error) {
+      this.logger.error(
+        {
+          operation: 'create_error',
+          entity: 'curso',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de creación de curso',
+      );
       if (
         error instanceof NotFoundException ||
-        error instanceof ConflictException
+        error instanceof ConflictException || error instanceof HttpException
       ) {
         throw error;
       }
@@ -65,6 +126,14 @@ export class CursoService {
   async findAll(paginationCursoDto: PaginationCursoDto) {
     try {
       const { page, limit, sort_name, sort_state, search } = paginationCursoDto;
+
+      this.logger.info(
+        {
+          operation: 'find_all_started',
+          entity: 'curso',
+        },
+        'Iniciando búsqueda de cursos',
+      );
 
       const query = this.cursoRepository
         .createQueryBuilder('curso')
@@ -109,6 +178,14 @@ export class CursoService {
         .take(limit)
         .getManyAndCount();
 
+      this.logger.info(
+        {
+          operation: 'find_all_success',
+          entity: 'curso',
+        },
+        'Cursos encontrados exitosamente',
+      );
+
       return {
         results,
         meta: {
@@ -119,9 +196,19 @@ export class CursoService {
         },
       };
     } catch (error) {
+      this.logger.error(
+        {
+          operation: 'find_all_error',
+          entity: 'curso',
+          error: error.message || error || 'unknown',
+        },
+        'Error en proceso de búsqueda de cursos',
+      );
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Ocurrió un error al recuperar las Cursos',
-        { cause: error },
       );
     }
   }

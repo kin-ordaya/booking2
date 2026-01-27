@@ -36,22 +36,30 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    const operation = 'login';
+    const startTime = Date.now();
     try {
       const { idToken } = loginDto;
 
       this.logger.info(
         {
-          operation: 'login_started',
+          operation,
           entity: 'auth',
+          phase: 'start',
+          reason: 'login_started',
+          id_token: idToken,
+
         },
         'Iniciando proceso de login',
       );
 
       const googleUser = await this.verifyIdToken(idToken);
       if (!googleUser) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'login_failed',
+            operation,
+            entity: 'auth',
+            phase: 'validation_failed',
             reason: 'invalid_google_token',
           },
           'Token de Google no válido',
@@ -66,10 +74,10 @@ export class AuthService {
       if (!user) {
         this.logger.warn(
           {
-            operation: 'login_failed',
+            operation,
             entity: 'auth',
+            phase: 'validation_failed',
             reason: 'user_not_found',
-            email: googleUser.email || 'unknown',
           },
           'Usuario no encontrado',
         );
@@ -81,11 +89,12 @@ export class AuthService {
         relations: ['rol'],
       });
       if (!rolUsuario) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'login_failed',
+            operation,
             entity: 'auth',
-            reason: 'invalid_role',
+            phase: 'validation_failed',
+            reason: 'user_not_active',
           },
           'Rol de usuario no activo',
         );
@@ -113,26 +122,40 @@ export class AuthService {
         userRole: rolUsuario.rol.nombre,
       });
 
+      const duration = Date.now() - startTime;
+
       this.logger.info(
         {
-          operation: 'login_success',
+          operation,
           entity: 'auth',
+          phase: 'success',
           reason: 'login_success',
+          duration
         },
         'Login exitoso',
       );
 
       return { token };
     } catch (error) {
+      const duration = Date.now() - startTime;
       this.logger.error(
         {
-          operation: 'login_error',
+          operation,
           entity: 'auth',
-          error: error.message || error || 'unknown',
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de login',
+        `Error en proceso de login: ${error.message}`,
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al realizar login');
     }
   }
 
@@ -149,8 +172,9 @@ export class AuthService {
         throw new BadRequestException('Token de Google no válido');
       }
     } catch (error) {
-      //console.log(error);
-      throw error;
+      if(error instanceof BadRequestException) {
+      throw error;}
+      throw new InternalServerErrorException('Error al verificar token de Google');
     }
   }
 

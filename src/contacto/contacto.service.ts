@@ -26,14 +26,18 @@ export class ContactoService {
   ) {}
 
   async create(createContactoDto: CreateContactoDto): Promise<Contacto> {
+    const operation = 'create_contacto';
+    const startTime = Date.now();
     try {
       const { nombres, apellidos, telefono, correo, proveedor_id } =
         createContactoDto;
 
       this.logger.info(
         {
-          operation: 'create_started',
+          operation,
           entity: 'contacto',
+          phase: 'start',
+          reason: 'create_started',
         },
         'Iniciando creación de contacto',
       );
@@ -47,42 +51,46 @@ export class ContactoService {
       );
 
       if (!proveedorExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'contacto',
+            phase: 'validation_failed',
             reason: 'proveedor_not_found',
+            proveedor_id,
           },
-          'No existe un proveedor con ese id',
+          'No existe un proveedor con ese id ' + proveedor_id,
         );
 
-        throw new NotFoundException('No existe un proveedor con ese id');
+        throw new NotFoundException('No existe un proveedor con ese id ' + proveedor_id);
       }
 
       if (telefonoExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'contacto',
+            phase: 'validation_failed',
             reason: 'contacto_exists',
           },
-          'Ya existe un contacto con ese telefono',
+          'Ya existe un contacto con ese telefono ' + telefono,
         );
 
-        throw new ConflictException('Ya existe un contacto con ese telefono');
+        throw new ConflictException('Ya existe un contacto con ese telefono ' + telefono);
       }
 
       if (correoExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'contacto',
+            phase: 'validation_failed',
             reason: 'contacto_exists',
           },
-          'Ya existe un contacto con ese correo',
+          'Ya existe un contacto con ese correo ' + correo,
         );
 
-        throw new ConflictException('Ya existe un contacto con ese correo');
+        throw new ConflictException('Ya existe un contacto con ese correo ' + correo);
       }
 
       const contacto = this.contactoRepository.create({
@@ -93,31 +101,46 @@ export class ContactoService {
         proveedor: { id: proveedor_id },
       });
 
+      const duration = Date.now() - startTime;
+
       this.logger.info(
         {
-          operation: 'create_success',
+          operation,
           entity: 'contacto',
+          phase: 'success',
           reason: 'create_success',
-          contactoId: contacto.id || 'unknown',
+          contacto_id: contacto.id,
+          duration
         },
         'Contacto creado exitosamente',
       );
 
       return await this.contactoRepository.save(contacto);
     } catch (error) {
+      const duration = Date.now() - startTime;
       this.logger.error(
         {
-          operation: 'create_error',
+          operation,
           entity: 'contacto',
-          error: error.message || error || 'unknown',
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          stack_trace:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          duration,
+          timestamp: new Date().toISOString(),
         },
         'Error en proceso de creación de contacto',
       );
-      throw error;
+      if(error instanceof ConflictException || error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al crear contacto');
     }
   }
 
   async findAll(paginationContactoDto: PaginationContactoDto) {
+    const operation = 'find_all_contactos';
     try {
       const { page, limit, sort, search } = paginationContactoDto;
 
@@ -153,6 +176,16 @@ export class ContactoService {
         .take(limit)
         .getManyAndCount();
 
+
+        this.logger.debug(
+          {
+            operation,
+            entity: 'contacto',
+            count: count,
+          },
+          'Contactos encontrados exitosamente',
+        );
+
       return {
         results,
         meta: {
@@ -165,43 +198,47 @@ export class ContactoService {
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_all_error',
+          operation,
           entity: 'contacto',
-          error: error.message || error || 'unknown',
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
         'Error en proceso de búsqueda de contactos',
       );
-      throw error;
+
+      throw new InternalServerErrorException('Error al recuperar contactos');
     }
   }
 
   async findOne(id: string) {
+    const operation = 'find_one_contacto';
     try {
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'contacto',
-            reason: 'contacto_id_empty',
-            contactoId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del contacto no puede estar vacío',
+          'El ID del contacto vacío',
         );
 
         throw new BadRequestException(
-          'El ID del contacto no puede estar vacío',
+          'El ID del contacto vacío',
         );
       }
 
       const contacto = await this.contactoRepository.findOneBy({ id });
 
       if (!contacto) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'contacto',
+            phase: 'validation_failed',
             reason: 'contacto_not_found',
-            contactoId: id || 'unknown',
+            contacto_id: id,
           },
           `Contacto con id ${id} no encontrado`,
         );
@@ -209,11 +246,11 @@ export class ContactoService {
         throw new NotFoundException('Contacto no encontrado');
       }
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_one_success',
+          operation,
           entity: 'contacto',
-          contactoId: id || 'unknown',
+          contacto_id: id,
         },
         'Contacto encontrado exitosamente',
       );
@@ -222,60 +259,74 @@ export class ContactoService {
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_one_error',
+          operation,
           entity: 'contacto',
-          error: error.message || error || 'unknown',
+          contacto_id: id,
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error en proceso de búsqueda de contacto',
+        'Error al recuperar contacto ' + id,
       );
-      throw error;
+      if(error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al recuperar contacto');
     }
   }
 
   async update(id: string, updateContactoDto: UpdateContactoDto) {
+    const operation = 'update_contacto';
+    const startTime = Date.now();
+
     try {
       const { nombres, apellidos, telefono, correo, proveedor_id } =
         updateContactoDto;
 
       this.logger.info(
         {
-          operation: 'update_started',
+          operation,
           entity: 'contacto',
-          contactoId: id || 'unknown',
+          phase: 'start',
+          reason: 'update_started',
+          contacto_id: id,
+          update_fields: Object.keys(updateContactoDto).filter(
+            (key) => updateContactoDto[key] !== undefined,
+          ),
         },
         'Iniciando actualización de contacto',
       );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'contacto',
-            reason: 'contacto_id_empty',
-            contactoId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del contacto no puede estar vacío',
+          'El ID del contacto vacío',
         );
 
         throw new BadRequestException(
-          'El ID del contacto no puede estar vacío',
+          'El ID del contacto vacío',
         );
       }
 
       const contacto = await this.contactoRepository.findOneBy({ id });
 
       if (!contacto) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'contacto',
-            reason: 'contacto_not_found',
-            contactoId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            contacto_id: id,
           },
           `Contacto con id ${id} no encontrado`,
         );
 
-        throw new NotFoundException('Contacto no encontrado');
+        throw new NotFoundException(`Contacto con id ${id} no encontrado`);
       }
 
       const updateData: any = {};
@@ -293,17 +344,19 @@ export class ContactoService {
         });
 
         if (telefonoExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'contacto',
-              reason: 'contacto_exists',
-              contactoId: id || 'unknown',
+              phase: 'validation_failed',
+              reason: 'duplicate_telefono',
+              contacto_id: id,
+              telefono,
             },
-            'Ya existe un contacto con ese telefono',
+            'Ya existe un contacto con ese telefono ' + telefono,
           );
 
-          throw new ConflictException('Ya existe un contacto con ese telefono');
+          throw new ConflictException('Ya existe un contacto con ese telefono ' + telefono);
         }
 
         updateData.telefono = telefono;
@@ -315,17 +368,19 @@ export class ContactoService {
         });
 
         if (correoExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'contacto',
-              reason: 'contacto_exists',
-              contactoId: id || 'unknown',
+              phase: 'validation_failed',
+              reason: 'duplicate_correo',
+              contacto_id: id,
+              correo,
             },
-            'Ya existe un contacto con ese correo',
+            'Ya existe un contacto con ese correo ' + correo,
           );
 
-          throw new ConflictException('Ya existe un contacto con ese correo');
+          throw new ConflictException('Ya existe un contacto con ese correo ' + correo);
         }
         updateData.correo = correo;
       }
@@ -336,17 +391,18 @@ export class ContactoService {
         });
 
         if (!proveedorExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'contacto',
+              phase: 'validation_failed',
               reason: 'proveedor_not_found',
-              contactoId: id || 'unknown',
+              contacto_id: id,
             },
-            'No existe un proveedor con ese id',
+            'No existe un proveedor con id ' + proveedor_id,
           );
 
-          throw new NotFoundException('No existe un proveedor con ese id');
+          throw new NotFoundException('No existe un proveedor con id ' + proveedor_id);
         }
 
         updateData.proveedor = { id: proveedor_id };
@@ -357,55 +413,69 @@ export class ContactoService {
       }
 
       await this.contactoRepository.update(id, updateData);
-
+      const duration = Date.now() - startTime;
       this.logger.info(
         {
-          operation: 'update_success',
+          operation,
           entity: 'contacto',
+          phase: 'success',
           reason: 'update_success',
-          contactoId: id || 'unknown',
+          contacto_id: id,
+          updated_fields: Object.keys(updateData),
+          duration,
         },
         'Contacto actualizado exitosamente',
       );
 
       return await this.contactoRepository.findOneBy({ id });
     } catch (error) {
+      const duration = Date.now() - startTime;
       this.logger.error(
         {
-          operation: 'update_error',
+          operation,
           entity: 'contacto',
-          error: error.message || error || 'unknown',
+          contacto_id: id,
+          phase: 'error',
+          reason: 'update_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de actualización de contacto',
+        `Error actualizando contacto ${id}: ${error.message}`,
       );
       throw error;
     }
   }
 
   async remove(id: string) {
+    const operation = 'remove_contacto';
+    const startTime = Date.now();
+
     try {
-      this.logger.info(
+      this.logger.warn(
         {
-          operation: 'remove_started',
+          operation,
           entity: 'contacto',
-          contactoId: id || 'unknown',
+          phase: 'start',
+          reason: 'remove_started',
+          contacto_id: id,
         },
         'Iniciando eliminación de contacto',
       );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'contacto',
-            reason: 'contacto_id_empty',
-            contactoId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del contacto no puede estar vacío',
+          'El ID del contacto vacío',
         );
 
         throw new BadRequestException(
-          'El ID del contacto no puede estar vacío',
+          'El ID del contacto vacío',
         );
       }
 
@@ -419,36 +489,54 @@ export class ContactoService {
       if (result.affected === 0) {
         this.logger.error(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'contacto',
+            phase: 'no_affected',
             reason: 'contacto_not_found',
-            contactoId: id || 'unknown',
+            contacto_id: id,
           },
           `Contacto con id ${id} no encontrado`,
         );
-        throw new NotFoundException('Contacto no encontrado');
+        throw new NotFoundException(`Contacto con id ${id} no encontrado`);
       }
+      const duration = Date.now() - startTime;
 
-      this.logger.info(
+      this.logger.warn(
         {
-          operation: 'remove_success',
+          operation,
           entity: 'contacto',
-          contactoId: id || 'unknown',
+          phase: 'success',
+          reason: 'remove_success',
+          contacto_id: id,
+          duration,
         },
-        'Contacto eliminado exitosamente',
+        `Contacto eliminado exitosamente ${id}`,
       );
 
       return this.contactoRepository.findOneBy({ id });
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'remove_error',
+          operation,
           entity: 'contacto',
-          error: error.message || error || 'unknown',
+          contacto_id: id,
+          phase: 'error',
+          reason: 'remove_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de eliminación de contacto',
+         `Error eliminando contacto ${id}: ${error.message}`,
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al eliminar contacto');
     }
   }
 }

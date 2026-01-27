@@ -10,7 +10,6 @@ import { UpdateAulaDto } from './dto/update-aula.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Aula } from './entities/aula.entity';
 import { Not, Repository } from 'typeorm';
-
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
@@ -26,143 +25,171 @@ export class AulaService {
   ) {}
 
   async create(createAulaDto: CreateAulaDto) {
+    const operation = 'create_aula';
+    const startTime = Date.now();
+
     try {
       const { nombre, codigo, pabellon_id } = createAulaDto;
 
       this.logger.info(
         {
-          operation: 'create_started',
+          operation,
           entity: 'aula',
+          phase: 'validation',
+          nombre,
+          codigo,
+          pabellon_id,
         },
-        'Creando aula',
+        'Validando datos para creación de aula',
       );
 
+      // Validación 1: Aula existe
       const aulaExists = await this.aulaRepository.findOne({
         where: { nombre, pabellon: { id: pabellon_id } },
         relations: ['pabellon'],
       });
 
       if (aulaExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'aula',
+            phase: 'validation_failed',
             reason: 'aula_exists',
-            aulaId: aulaExists.id || 'unknown',
+            existing_aula_id: aulaExists.id,
+            nombre,
+            pabellon_id,
           },
-          'Ya existe un aula con ese nombre y pabellon',
+          'Ya existe un aula con ese nombre y pabellón',
         );
-
         throw new ConflictException(
-          'Ya existe un aula con ese nombre y pabellon',
+          'Ya existe un aula con ese nombre y pabellón',
         );
       }
 
+      // Validación 2: Pabellón existe
       const pabellonExists = await this.pabellonRepository.existsBy({
         id: pabellon_id,
       });
 
       if (!pabellonExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'aula',
+            phase: 'validation_failed',
             reason: 'pabellon_not_found',
-            pabellonId: pabellon_id || 'unknown',
+            pabellon_id,
           },
-          'No existe un campus con ese id',
+          'No existe un pabellón con ese ID',
         );
-
-        throw new NotFoundException('No existe un campus con ese id');
+        throw new NotFoundException('No existe un pabellón con ese ID');
       }
 
+      // Creación
       const aula = this.aulaRepository.create({
         codigo,
         nombre,
         pabellon: { id: pabellon_id },
       });
 
+      const savedAula = await this.aulaRepository.save(aula);
+      const duration = Date.now() - startTime;
+
       this.logger.info(
         {
-          operation: 'create_success',
+          operation,
           entity: 'aula',
-          reason: 'create_success',
-          aulaId: aula.id || 'unknown',
+          phase: 'success',
+          aula_id: savedAula.id,
+          nombre: savedAula.nombre,
+          codigo: savedAula.codigo,
+          pabellon_id: savedAula.pabellon.id,
+          duration,
         },
         'Aula creada exitosamente',
       );
 
-      return await this.aulaRepository.save(aula);
+      return savedAula;
     } catch (error) {
+      const duration = Date.now() - startTime;
+
+      // Log de error estructurado
       this.logger.error(
         {
-          operation: 'create_error',
+          operation,
           entity: 'aula',
-          error: error.message || error || 'unknown',
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          stack_trace:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          duration,
+          timestamp: new Date().toISOString(),
         },
-        'Error en proceso de creación de aula',
+        `Error en creación de aula: ${error.message}`,
       );
-      throw error;
+
+      // Re-lanzar excepciones HTTP conocidas
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Error al crear aula');
     }
   }
 
   async findAll() {
-    try {
-      this.logger.info(
-        {
-          operation: 'find_all_started',
-          entity: 'aula',
-        },
-        'Iniciando búsqueda de aulas',
-      );
+    const operation = 'find_all_aulas';
 
-      const query = await this.aulaRepository.find({
+    try {
+      const aulas = await this.aulaRepository.find({
         order: { nombre: 'ASC' },
       });
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_all_success',
+          operation,
           entity: 'aula',
+          count: aulas.length,
         },
-        'Aulas encontradas exitosamente',
+        'Aulas recuperadas exitosamente',
       );
 
-      return query;
+      return aulas;
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_all_error',
+          operation,
           entity: 'aula',
-          error: error.message || error || 'unknown',
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error en proceso de búsqueda de aulas',
+        'Error al recuperar aulas',
       );
-      throw error;
+
+      throw new InternalServerErrorException('Error al recuperar aulas');
     }
   }
 
   async findOne(id: string) {
-    try {
-      this.logger.info(
-        {
-          operation: 'find_one_started',
-          entity: 'aula',
-          aulaId: id || 'unknown',
-        },
-        'Iniciando búsqueda de aula',
-      );
-      if (!id) {
-        this.logger.error(
-          {
-            operation: 'find_one_failed',
-            entity: 'aula',
-            reason: 'aula_id_empty',
-            aulaId: id || 'unknown',
-          },
-          'El ID del aula no puede estar vacío',
-        );
+    const operation = 'find_one_aula';
 
+    try {
+      if (!id) {
+        this.logger.warn(
+          {
+            operation,
+            entity: 'aula',
+            phase: 'validation_failed',
+            reason: 'empty_id',
+          },
+          'ID de aula vacío',
+        );
         throw new BadRequestException('El ID del aula no puede estar vacío');
       }
 
@@ -172,67 +199,82 @@ export class AulaService {
       });
 
       if (!aula) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'aula',
-            reason: 'aula_not_found',
-            aulaId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            aula_id: id,
           },
-          `Aula con id ${id} no encontrado`,
+          `Aula con ID ${id} no encontrada`,
         );
-        throw new NotFoundException(`Aula con id ${id} no encontrado`);
+        throw new NotFoundException(`Aula con id ${id} no encontrada`);
       }
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_one_success',
+          operation,
           entity: 'aula',
-          aulaId: id || 'unknown',
+          aula_id: aula.id,
         },
-        'Aula encontrada exitosamente',
+        'Aula recuperada exitosamente',
       );
 
       return aula;
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_one_error',
+          operation,
           entity: 'aula',
-          error: error.message || error || 'unknown',
+          aula_id: id,
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error en proceso de búsqueda de aula',
+        `Error al recuperar aula ${id}`,
       );
-      throw error;
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Error al recuperar aula');
     }
   }
 
-  //TODO: agregar validaciones de campus_id, nombre si se envia uno o ambos parametros
   async update(id: string, updateAulaDto: UpdateAulaDto) {
-    try {
-      const { nombre, codigo, pabellon_id } = updateAulaDto;
+    const operation = 'update_aula';
+    const startTime = Date.now();
 
+    try {
       this.logger.info(
         {
-          operation: 'update_started',
+          operation,
           entity: 'aula',
-          aulaId: id || 'unknown',
+          phase: 'start',
+          reason: 'update_started',
+          aula_id: id,
+          update_fields: Object.keys(updateAulaDto).filter(
+            (key) => updateAulaDto[key] !== undefined,
+          ),
         },
         'Iniciando actualización de aula',
       );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'aula',
-            reason: 'aula_id_empty',
-            aulaId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del aula no puede estar vacío',
+          'ID de aula vacío',
         );
-
-        throw new BadRequestException('El ID del aula no puede estar vacío');
+        throw new BadRequestException('El ID del aula vacío');
       }
 
       const aula = await this.aulaRepository.findOne({
@@ -241,25 +283,23 @@ export class AulaService {
       });
 
       if (!aula) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'aula',
-            reason: 'aula_not_found',
-            aulaId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            aula_id: id,
           },
-          `Aula con id ${id} no encontrado`,
+          `Aula con ID ${id} no encontrada`,
         );
-
-        throw new NotFoundException(`Aula con id ${id} no encontrado`);
+        throw new NotFoundException(`Aula con id ${id} no encontrada`);
       }
 
+      const { nombre, codigo, pabellon_id } = updateAulaDto;
       const updateData: any = {};
 
-      if (nombre !== undefined) {
-        updateData.nombre = nombre;
-      }
-
+      // Validación: Código único (si se actualiza)
       if (codigo !== undefined) {
         const codigoExists = await this.aulaRepository.existsBy({
           id: Not(id),
@@ -267,93 +307,138 @@ export class AulaService {
         });
 
         if (codigoExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'aula',
-              reason: 'aula_codigo_exists',
-              aulaId: id || 'unknown',
+              phase: 'validation_failed',
+              reason: 'duplicate_codigo',
+              aula_id: id,
+              codigo,
             },
-            'Ya existe un aula con ese codigo',
+            'Ya existe un aula con ese código ' + codigo,
           );
-
-          throw new ConflictException('Ya existe un aula con ese codigo');
+          throw new ConflictException('Ya existe un aula con ese código ' + codigo);
         }
         updateData.codigo = codigo;
       }
 
+      // Validación: Pabellón existe (si se actualiza)
       if (pabellon_id !== undefined) {
         const pabellonExists = await this.pabellonRepository.existsBy({
           id: pabellon_id,
         });
 
         if (!pabellonExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'aula',
+              phase: 'validation_failed',
               reason: 'pabellon_not_found',
-              aulaId: id || 'unknown',
+              pabellon_id,
             },
-            'No existe un campus con ese id',
+            'No existe un pabellón con ese ID ' + pabellon_id,
           );
-
-          throw new NotFoundException('No existe un campus con ese id');
+          throw new NotFoundException('No existe un pabellón con ese ID ' + pabellon_id);
         }
         updateData.pabellon = { id: pabellon_id };
       }
 
+      if (nombre !== undefined) {
+        updateData.nombre = nombre;
+      }
+
+      // Si no hay cambios, retornar sin hacer nada
       if (Object.keys(updateData).length === 0) {
+        this.logger.debug(
+          {
+            operation,
+            entity: 'aula',
+            aula_id: id,
+            phase: 'validation_failed',
+            reason: 'no_changes',
+          },
+          'No hay cambios para actualizar',
+        );
         return aula;
       }
 
       await this.aulaRepository.update(id, updateData);
+      const duration = Date.now() - startTime;
 
       this.logger.info(
         {
-          operation: 'update_success',
+          operation,
           entity: 'aula',
-          aulaId: id || 'unknown',
+          phase: 'success',
+          reason: 'update_success',
+          aula_id: id,
+          updated_fields: Object.keys(updateData),
+          duration,
         },
         'Aula actualizada exitosamente',
       );
 
-      return await this.aulaRepository.findOneBy({ id });
+      return await this.aulaRepository.findOne({
+        where: { id },
+        relations: ['pabellon'],
+      });
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'update_error',
+          operation,
           entity: 'aula',
-          error: error.message || error || 'unknown',
+          aula_id: id,
+          phase: 'error',
+          reason: 'update_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de actualización de aula',
+        `Error actualizando aula ${id}: ${error.message}`,
       );
-      throw error;
+
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Error al actualizar aula');
     }
   }
 
   async remove(id: string) {
+    const operation = 'remove_aula';
+    const startTime = Date.now();
+
     try {
-      this.logger.info(
+      this.logger.warn(
         {
-          operation: 'remove_started',
+          operation,
           entity: 'aula',
-          aulaId: id || 'unknown',
+          phase: 'start',
+          reason: 'remove_started',
+          aula_id: id,
         },
-        'Iniciando eliminación de aula',
+        'Iniciando eliminación/desactivación de aula',
       );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'aula',
-            reason: 'aula_id_empty',
-            aulaId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del aula no puede estar vacío',
+          'ID de aula vacío',
         );
-
         throw new BadRequestException('El ID del aula no puede estar vacío');
       }
 
@@ -363,17 +448,17 @@ export class AulaService {
       });
 
       if (!aula) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'aula',
-            reason: 'aula_not_found',
-            aulaId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            aula_id: id,
           },
-          `Aula con id ${id} no encontrado`,
+          `Aula con ID ${id} no encontrada`,
         );
-
-        throw new NotFoundException(`Aula con id ${id} no encontrado`);
+        throw new NotFoundException(`Aula con id ${id} no encontrada`);
       }
 
       const result = await this.aulaRepository
@@ -386,37 +471,58 @@ export class AulaService {
       if (result.affected === 0) {
         this.logger.error(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'aula',
-            reason: 'aula_not_found',
-            aulaId: id || 'unknown',
+            phase: 'no_affected',
+            aula_id: id,
           },
-          `Aula con id ${id} no encontrado`,
+          'No se afectaron registros al cambiar estado',
         );
-
-        throw new NotFoundException('Aula no encontrado');
+        throw new NotFoundException('Aula no encontrada');
       }
 
-      this.logger.info(
+      const duration = Date.now() - startTime;
+      const newEstado = aula.estado === 1 ? 0 : 1;
+
+      this.logger.warn(
         {
-          operation: 'remove_success',
+          operation,
           entity: 'aula',
-          aulaId: id || 'unknown',
+          phase: 'success',
+          aula_id: id,
+          previous_estado: aula.estado,
+          new_estado: newEstado,
+          action: aula.estado === 1 ? 'desactivada' : 'reactivada',
+          duration,
         },
-        'Aula eliminada exitosamente',
+        `Aula ${aula.estado === 1 ? 'desactivada' : 'reactivada'} exitosamente`,
       );
 
-      return this.aulaRepository.findOneBy({ id });
+      return await this.aulaRepository.findOneBy({ id });
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'remove_error',
+          operation,
           entity: 'aula',
-          error: error.message || error || 'unknown',
+          aula_id: id,
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de eliminación de aula',
+        `Error eliminando aula ${id}: ${error.message}`,
       );
-      throw error;
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Error al eliminar aula');
     }
   }
 }

@@ -35,6 +35,8 @@ export class ClaseService {
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
+    const operation = 'create_clase';
+    const startTime = Date.now();
     try {
       const {
         nrc,
@@ -50,8 +52,13 @@ export class ClaseService {
 
       this.logger.info(
         {
-          operation: 'create_started',
+          operation,
           entity: 'clase',
+          phase: 'validation',
+          reason: 'create_started',
+          nrc,
+          curso_modalidad_id,
+          periodo_id,
         },
         'Iniciando creación de clase',
       );
@@ -61,17 +68,18 @@ export class ClaseService {
       );
 
       if (!cursoModalidadExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'clase',
+            phase: 'validation_failed',
             reason: 'curso_modalidad_not_found',
-            curso_modalidad_id: curso_modalidad_id || 'unknown',
+            curso_modalidad_id,
           },
-          'No existe un curso modalidad con ese id',
+          'No existe un curso modalidad con id ' + curso_modalidad_id,
         );
 
-        throw new NotFoundException('No existe un curso modalidad con ese id');
+        throw new NotFoundException('No existe un curso modalidad con id ' + curso_modalidad_id);
       }
 
       const periodoExists = await this.periodoRepository.existsBy({
@@ -81,10 +89,11 @@ export class ClaseService {
       if (!periodoExists) {
         this.logger.error(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'clase',
+            phase: 'validation_failed',
             reason: 'periodo_not_found',
-            periodo_id: periodo_id || 'unknown',
+            periodo_id,
           },
           'No existe un periodo con ese id',
         );
@@ -102,7 +111,9 @@ export class ClaseService {
             operation: 'create_failed',
             entity: 'clase',
             reason: 'clase_exists',
-            claseId: claseExists.id || 'unknown',
+            existing_clase_id: claseExists.id,
+            nrc,
+            periodo_id,
           },
           'Ya existe una clase con ese nrc en el mismo periodo',
         );
@@ -122,84 +133,91 @@ export class ClaseService {
         cursoModalidad: { id: curso_modalidad_id },
         periodo: { id: periodo_id },
       });
+      const duration = Date.now() - startTime;
 
       this.logger.info(
         {
-          operation: 'create_success',
+          operation,
           entity: 'clase',
+          phase: 'success',
           reason: 'create_success',
-          claseId: clase.id || 'unknown',
+          clase_id: clase.id,
         },
         'Clase creada exitosamente',
       );
 
       return await this.claseRepository.save(clase);
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'create_error',
+          operation,
           entity: 'clase',
-          error: error.message || error || 'unknown',
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          stack_trace:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          duration,
+          timestamp: new Date().toISOString(),
         },
         'Error en proceso de creación de clase',
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al crear clase');
     }
   }
 
   async findAll() {
-    try {
-      this.logger.info(
-        {
-          operation: 'find_all_started',
-          entity: 'clase',
-        },
-        'Iniciando búsqueda de clases',
-      );
+    const operation = 'find_all_clases';
 
+    try {
       const query = await this.claseRepository.find({ order: { nrc: 'ASC' } });
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_all_success',
+          operation,
           entity: 'clase',
+          count: query.length,
         },
-        'Clases encontradas exitosamente',
+        'Clases recuperadas exitosamente',
       );
+
       return query;
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_all_error',
+          operation,
           entity: 'clase',
-          error: error.message || error || 'unknown',
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
         'Error en proceso de búsqueda de clases',
       );
-      throw error;
+      throw new InternalServerErrorException('Error al recuperar clases');
     }
   }
 
   async findOne(id: string) {
-    try {
-      this.logger.info(
-        {
-          operation: 'find_one_started',
-          entity: 'clase',
-          claseId: id || 'unknown',
-        },
-        'Iniciando búsqueda de clase',
-      );
+    const operation = 'find_one_clase';
 
+    try {
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'clase',
-            reason: 'clase_id_empty',
-            claseId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID de la clase no puede estar vacío',
+          'El ID de la clase vacío',
         );
 
         throw new BadRequestException('El ID de la clase no puede estar vacío');
@@ -211,23 +229,23 @@ export class ClaseService {
       });
 
       if (!clase) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'clase',
             reason: 'clase_not_found',
-            claseId: id || 'unknown',
+            clase_id: id,
           },
           `Clase con id ${id} no encontrado`,
         );
         throw new NotFoundException(`Clase con id ${id} no encontrado`);
       }
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_one_success',
+          operation,
           entity: 'clase',
-          claseId: id || 'unknown',
+          clase_id: id,
         },
         'Clase encontrada exitosamente',
       );
@@ -235,29 +253,32 @@ export class ClaseService {
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_one_error',
+          operation,
           entity: 'clase',
-          error: error.message || error || 'unknown',
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error en proceso de búsqueda de clase',
+        `Error al recuperar clase ${id}`,
       );
-      throw error;
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Error al recuperar clase');
     }
   }
 
   async getClasesByRecursoDocente(
     recursoDocenteClaseDto: RecursoDocenteClaseDto,
   ) {
+    const operation = 'get_clases_by_recurso_docente';
     try {
       const { recurso_id, rol_usuario_id } = recursoDocenteClaseDto;
 
-      this.logger.info(
-        {
-          operation: 'get_clases_by_recurso_docente_started',
-          entity: 'clase',
-        },
-        'Iniciando búsqueda de clases por recurso docente',
-      );
       // 1. Verificaciones iniciales
       const [recursoExists, rolUsuarioExists] = await Promise.all([
         this.recursoRepository.existsBy({ id: recurso_id }),
@@ -268,26 +289,27 @@ export class ClaseService {
       ]);
 
       if (!recursoExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'get_clases_by_recurso_docente_failed',
+            operation,
             entity: 'clase',
+            phase: 'validation_failed',
             reason: 'recurso_not_found',
-            recursoId: recurso_id || 'unknown',
+            recurso_id,
           },
           'No existe un recurso con ese id',
         );
-
         throw new NotFoundException('No existe un recurso con ese id');
       }
 
       if (!rolUsuarioExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'get_clases_by_recurso_docente_failed',
+            operation,
             entity: 'clase',
+            phase: 'validation_failed',
             reason: 'rol_usuario_not_found',
-            rolUsuarioId: rol_usuario_id || 'unknown',
+            rol_usuario_id,
           },
           'No existe un docente con ese id',
         );
@@ -296,12 +318,13 @@ export class ClaseService {
       }
 
       if (rolUsuarioExists.rol.nombre !== 'DOCENTE') {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'get_clases_by_recurso_docente_failed',
+            operation,
             entity: 'clase',
+            phase: 'validation_failed',
             reason: 'rol_usuario_not_docente',
-            rolUsuarioId: rol_usuario_id || 'unknown',
+            rol_usuario_id,
           },
           'El usuario no tiene rol de DOCENTE',
         );
@@ -360,25 +383,24 @@ export class ClaseService {
       return clases.map((clase) => {
         // Verificar que las relaciones existen
         if (!clase.cursoModalidad || !clase.cursoModalidad.curso) {
-          this.logger.error({
-            operation: 'get_clases_by_recurso_docente_failed',
+          this.logger.warn({
+            operation,
             entity: 'clase',
+            phase: 'validation_failed',
             reason: 'curso_not_found',
-            cursoId: clase.cursoModalidad.id || 'unknown',
+            curso_modalidad_id: clase.cursoModalidad.id,
           });
 
-          throw new InternalServerErrorException(
-            'Error al cargar la información del curso',
-          );
+          throw new NotFoundException('No existe un curso con ese id');
         }
 
-        this.logger.info(
+        this.logger.debug(
           {
-            operation: 'get_clases_by_recurso_docente_success',
+            operation,
             entity: 'clase',
-            claseId: clase.id || 'unknown',
+            clase_id: clase.id,
           },
-          'Clase cargada exitosamente',
+          'Clase recuperada exitosamente',
         );
 
         return {
@@ -394,13 +416,21 @@ export class ClaseService {
     } catch (error) {
       this.logger.error(
         {
-          operation: 'get_clases_by_recurso_docente_error',
+          operation,
           entity: 'clase',
-          error: error.message || error || 'unknown',
+          rol_usuario_id: recursoDocenteClaseDto.rol_usuario_id,
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error al obtener las clases del docente',
+        `Error al recuperar las clases del docente ${recursoDocenteClaseDto.rol_usuario_id}`,
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al recuperar clases');
     }
   }
 
@@ -410,11 +440,19 @@ export class ClaseService {
         throw new BadRequestException('El ID del recurso no puede estar vacío');
       return await this.claseRepository.findOneBy({ nrc });
     } catch (error) {
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al recuperar clase');
     }
   }
 
   async update(id: string, updateClaseDto: UpdateClaseDto) {
+    const operation = 'update_clase';
+    const startTime = Date.now();
     try {
       const {
         nrc,
@@ -427,19 +465,27 @@ export class ClaseService {
         curso_modalidad_id,
         periodo_id,
       } = updateClaseDto;
-      this.logger.info({
-        operation: 'update_started',
-        entity: 'clase',
-        claseId: id || 'unknown',
-      });
+
+      this.logger.info(
+        {
+          operation,
+          entity: 'clase',
+          phase: 'start',
+          claseId: id,
+          update_fields: Object.keys(updateClaseDto).filter(
+            (key) => updateClaseDto[key] !== undefined,
+          ),
+        },
+        'Iniciando actualización de clase',
+      );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'clase',
-            reason: 'clase_id_empty',
-            claseId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
           'El ID de la clase no puede estar vacío',
         );
@@ -453,12 +499,13 @@ export class ClaseService {
       });
 
       if (!clase) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'clase',
-            reason: 'clase_not_found',
-            claseId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            clase_id: id,
           },
           `Clase con id ${id} no encontrado`,
         );
@@ -489,12 +536,15 @@ export class ClaseService {
         });
 
         if (claseExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'clase',
+              phase: 'validation_failed',
               reason: 'clase_exists',
-              claseId: id || 'unknown',
+              clase_id: id,
+              nrc,
+              periodo_id,
             },
             'Ya existe una clase con esa combinación de NRC y periodo',
           );
@@ -537,12 +587,13 @@ export class ClaseService {
           fin !== undefined ? new Date(fin) : new Date(clase.fin);
 
         if (fechaInicio >= fechaFin) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'clase',
-              reason: 'clase_invalid_dates',
-              claseId: id || 'unknown',
+              phase: 'validation_failed',
+              reason: 'invalid_dates',
+              clase_id: id,
             },
             'La fecha de inicio debe ser anterior a la fecha de fin',
           );
@@ -563,12 +614,13 @@ export class ClaseService {
           });
 
         if (!cursoModalidadExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'clase',
+              phase: 'validation_failed',
               reason: 'curso_modalidad_not_found',
-              curso_modalidad_id: curso_modalidad_id || 'unknown',
+              curso_modalidad_id: curso_modalidad_id,
             },
             'No existe un curso modalidad con ese id',
           );
@@ -582,16 +634,29 @@ export class ClaseService {
       }
 
       if (Object.keys(updateData).length === 0) {
+        this.logger.debug(
+          {
+            operation,
+            entity: 'clase',
+            clase_id: id,
+            phase: 'no_changes',
+          },
+          'No hay cambios para actualizar',
+        );
         return clase;
       }
 
       await this.claseRepository.update(id, updateData);
+      const duration = Date.now() - startTime;
 
       this.logger.info(
         {
-          operation: 'update_success',
+          operation,
           entity: 'clase',
-          claseId: id || 'unknown',
+          phase: 'success',
+          clase_id: id,
+          updated_fields: Object.keys(updateData),
+          duration,
         },
         'Clase actualizada exitosamente',
       );
@@ -601,27 +666,52 @@ export class ClaseService {
         relations: ['cursoModalidad'],
       });
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'update_error',
+          operation,
           entity: 'clase',
-          error: error.message || error || 'unknown',
+          clase_id: id,
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
         'Error en proceso de actualización de clase',
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al actualizar clase');
     }
   }
 
   async remove(id: string) {
+    const operation = 'remove_clase';
+    const startTime = Date.now();
     try {
+      this.logger.warn(
+        {
+          operation,
+          entity: 'clase',
+          phase: 'start',
+          clase_id: id,
+        },
+        'Iniciando eliminación de clase',
+      );
+
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'clase',
-            reason: 'clase_id_empty',
-            claseId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
           'El ID de la clase no puede estar vacío',
         );
@@ -638,37 +728,52 @@ export class ClaseService {
       if (result.affected === 0) {
         this.logger.error(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'clase',
-            reason: 'clase_not_found',
-            claseId: id || 'unknown',
+            phase: 'not_affected',
+            clase_id: id,
           },
-          `Clase con id ${id} no encontrado`,
+          'No se afectaron registros al eliminar clase',
         );
 
-        throw new NotFoundException('Clase no encontrado');
+        throw new NotFoundException('Clase no encontrada');
       }
 
-      this.logger.info(
+      const duration = Date.now() - startTime;
+
+      this.logger.warn(
         {
-          operation: 'remove_success',
+          operation,
           entity: 'clase',
-          claseId: id || 'unknown',
+          phase: 'success',
+          clase_id: id,
+          duration,
         },
         'Clase eliminada exitosamente',
       );
 
       return this.claseRepository.findOneBy({ id });
     } catch (error) {
+      const duration = Date.now() - startTime;
       this.logger.error(
         {
-          operation: 'remove_error',
+          operation,
           entity: 'clase',
-          error: error.message || error || 'unknown',
+          clase_id: id,
+          phase: 'error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de eliminación de clase',
+        `Error eliminando clase ${id}: ${error.message}`,
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al eliminar clase');
     }
   }
 }
