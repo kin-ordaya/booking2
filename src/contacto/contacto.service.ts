@@ -38,6 +38,11 @@ export class ContactoService {
           entity: 'contacto',
           phase: 'start',
           reason: 'create_started',
+          nombres,
+          apellidos,
+          telefono,
+          correo,
+          proveedor_id,
         },
         'Iniciando creación de contacto',
       );
@@ -101,6 +106,7 @@ export class ContactoService {
         proveedor: { id: proveedor_id },
       });
 
+      const savedContacto = await this.contactoRepository.save(contacto);
       const duration = Date.now() - startTime;
 
       this.logger.info(
@@ -109,13 +115,18 @@ export class ContactoService {
           entity: 'contacto',
           phase: 'success',
           reason: 'create_success',
-          contacto_id: contacto.id,
+          contacto_id: savedContacto.id,
+          nombres,
+          apellidos,
+          telefono,
+          correo,
+          proveedor_id,
           duration
         },
         'Contacto creado exitosamente',
       );
 
-      return await this.contactoRepository.save(contacto);
+      return savedContacto;
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.error(

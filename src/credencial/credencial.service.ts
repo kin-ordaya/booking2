@@ -32,12 +32,22 @@ export class CredencialService {
   ) {}
 
   async create(createCredencialDto: CreateCredencialDto) {
+    const operation = 'create_credencial';
+    const startTime = Date.now();
+
     try {
       const { usuario, clave, recurso_id, rol_id } = createCredencialDto;
+
       this.logger.info(
         {
-          operation: 'create_started',
+          operation,
           entity: 'credencial',
+          phase: 'start',
+          reason: 'create_started',
+          usuario,
+          clave,
+          recurso_id,
+          rol_id,
         },
         'Iniciando creación de credencial',
       );
@@ -51,31 +61,33 @@ export class CredencialService {
       ]);
 
       if (!recursoExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'credencial',
+            phase: 'validation_failed',
             reason: 'recurso_not_found',
-            recursoId: recurso_id || 'unknown',
+            recurso_id,
           },
-          'No existe un recurso con ese id',
+          'No existe un recurso con id ' + recurso_id,
         );
 
-        throw new NotFoundException('No existe un recurso con ese id');
+        throw new NotFoundException('No existe un recurso con id ' + recurso_id);
       }
 
       if (!rolExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'credencial',
+            phase: 'validation_failed',
             reason: 'rol_not_found',
-            rolId: rol_id || 'unknown',
+            rol_id,
           },
-          'No existe un rol con ese id',
+          'No existe un rol con id ' + rol_id,
         );
 
-        throw new NotFoundException('No existe un rol con ese id');
+        throw new NotFoundException('No existe un rol con id ' + rol_id);
       }
 
       const tipoAcceso = recursoExists.tipoAcceso.nombre;
@@ -83,19 +95,18 @@ export class CredencialService {
       // Validación según tipo de acceso
       if (tipoAcceso === 'USERPASS') {
         if (!usuario || !clave) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'create_failed',
+              operation,
               entity: 'credencial',
+              phase: 'validation_failed',
               reason: 'usuario_clave_empty',
-              usuario,
-              clave,
             },
-            'Para recursos de tipo USERPASS, debe ingresar usuario y clave',
+            'Campos usuario y clave vacíos',
           );
 
           throw new BadRequestException(
-            'Para recursos de tipo USERPASS, debe ingresar usuario y clave',
+            'Campos usuario y clave vacíos',
           );
         }
         const credencialExists = await this.credencialRepository.findOne({
@@ -103,35 +114,36 @@ export class CredencialService {
         });
 
         if (credencialExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'create_failed',
+              operation,
               entity: 'credencial',
+              phase: 'validation_failed',
               reason: 'credencial_exists',
               usuario,
               clave,
             },
-            'Ya existe una credencial con ese usuario y clave en el recurso',
+            'Ya existe una credencial con usuario y clave ' + usuario + ' y ' + clave + ' en el recurso ' + recurso_id,
           );
 
           throw new ConflictException(
-            'Ya existe una credencial con ese usuario y clave en el recurso',
+            'Ya existe una credencial con usuario y clave ' + usuario + ' y ' + clave + ' en el recurso ' + recurso_id,
           );
         }
       } else if (tipoAcceso === 'KEY') {
         if (!clave) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'create_failed',
+              operation,
               entity: 'credencial',
+              phase: 'validation_failed',
               reason: 'clave_empty',
-              clave,
             },
-            'Para recursos de tipo KEY, debe ingresar la clave',
+            'Campo clave vacío',
           );
 
           throw new BadRequestException(
-            'Para recursos de tipo KEY, debe ingresar la clave',
+            'Campo clave vacío',
           );
         }
         const credencialExists = await this.credencialRepository.findOne({
@@ -139,48 +151,75 @@ export class CredencialService {
         });
 
         if (credencialExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'create_failed',
+              operation,
               entity: 'credencial',
+              phase: 'validation_failed',
               reason: 'credencial_exists',
               clave,
             },
-            'Ya existe una credencial con ese clave en el recurso',
+            'Ya existe una credencial con clave ' + clave + ' en el recurso ' + recurso_id,
           );
 
           throw new ConflictException(
-            'Ya existe una credencial con ese clave en el recurso',
+            'Ya existe una credencial con clave ' + clave + ' en el recurso ' + recurso_id,
           );
         }
       } else {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'credencial',
-            reason: 'tipo_acceso_invalido',
+            phase: 'validation_failed',
+            reason: 'tipo_acceso_invalid',
             tipoAcceso,
           },
-          'Tipo de acceso no válido',
+          'Tipo de acceso no válido ' + tipoAcceso,
         );
 
-        throw new BadRequestException('Tipo de acceso no válido');
+        throw new BadRequestException('Tipo de acceso no válido ' + tipoAcceso);
       }
 
-      // Construcción dinámica del objeto
-      const credencialData: any = {
+      // // Construcción dinámica del objeto
+      // const credencialData: Credencial = {
+      //   clave,
+      //   recurso: { id: recurso_id },
+      //   rol: { id: rol_id },
+      // };
+
+      // // Solo agregamos 'usuario' si es USERPASS
+      // if (tipoAcceso === 'USERPASS') {
+      //   credencialData.usuario = usuario;
+      // }
+
+      const credencial = this.credencialRepository.create({
+        usuario,
         clave,
         recurso: { id: recurso_id },
-        rol: { id: rol_id },
-      };
+        rol: { id: rol_id }
+      });
 
-      // Solo agregamos 'usuario' si es USERPASS
-      if (tipoAcceso === 'USERPASS') {
-        credencialData.usuario = usuario;
-      }
+      const savedCredencial = await this.credencialRepository.save(credencial);
+      const duration = Date.now() - startTime;
 
-      const credencial = this.credencialRepository.create(credencialData);
-      return await this.credencialRepository.save(credencial);
+      this.logger.info(
+        {
+          operation,
+          entity: 'credencial',
+          phase: 'success',
+          reason: 'create_success',
+          usuario,
+          clave,
+          recurso_id: savedCredencial.recurso.id,
+          rol_id:savedCredencial.rol.id,
+          credencial_id: savedCredencial.id,
+          duration,
+        },
+        'Credencial creada exitosamente',
+      );
+
+      return savedCredencial;
     } catch (error) {
       this.logger.error(
         {

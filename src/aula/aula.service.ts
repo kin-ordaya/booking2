@@ -35,12 +35,13 @@ export class AulaService {
         {
           operation,
           entity: 'aula',
-          phase: 'validation',
+          phase: 'start',
+          reason: 'create_validation',
           nombre,
           codigo,
           pabellon_id,
         },
-        'Validando datos para creación de aula',
+        'Iniciando creación de aula',
       );
 
       // Validación 1: Aula existe
@@ -60,10 +61,10 @@ export class AulaService {
             nombre,
             pabellon_id,
           },
-          'Ya existe un aula con ese nombre y pabellón',
+          'Ya existe un aula con nombre y pabellón ' + nombre + ' y ' + pabellon_id,
         );
         throw new ConflictException(
-          'Ya existe un aula con ese nombre y pabellón',
+          'Ya existe un aula con nombre y pabellón ' + nombre + ' y ' + pabellon_id,
         );
       }
 

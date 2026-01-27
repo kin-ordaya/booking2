@@ -48,6 +48,7 @@ import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
 import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso_periodo.module';
 import { plainToInstance } from 'class-transformer';
 import { EnvSchema } from './config/env.schema';
+import { PowerbiModule } from './powerbi/powerbi.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -129,6 +130,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
+    PowerbiModule,
   ],
 })
 export class AppModule {

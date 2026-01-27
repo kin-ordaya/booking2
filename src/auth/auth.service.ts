@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
@@ -14,10 +15,12 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { Repository } from 'typeorm';
+import { validate } from 'class-validator';
 
 @Injectable()
 export class AuthService {
   private client: OAuth2Client;
+  private readonly apiKeyService;
   constructor(
     @InjectPinoLogger(AuthService.name)
     private readonly logger: PinoLogger,
@@ -26,7 +29,9 @@ export class AuthService {
     private readonly usuarioRepository: Repository<Usuario>,
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
+    private readonly configService: ConfigService
   ) {
+    this.apiKeyService = configService.get('API_KEY');
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.JWT_SECRET) {
       throw new InternalServerErrorException(
         'Faltan datos de configuración para Google OAuth y JWT',
@@ -176,6 +181,10 @@ export class AuthService {
       throw error;}
       throw new InternalServerErrorException('Error al verificar token de Google');
     }
+  }
+
+  validateApiKey(apiKey: string) {
+    return this.apiKeyService.includes(apiKey);
   }
 
   // private getCorrelationId(): string {
