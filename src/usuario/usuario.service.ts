@@ -184,6 +184,24 @@ export class UsuarioService {
     }
   }
 
+  async findOneByCorreo(correo: string) {
+    try {
+      if (!correo)
+        throw new BadRequestException('El correo del usuario no puede estar vacío');
+      const usuario = await this.usuarioRepository.findOne({
+        where: { correo_institucional: correo },
+      });
+      if (!usuario) throw new NotFoundException('Usuario no encontrado');
+      return usuario;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      throw new InternalServerErrorException('Error inesperado');
+    }
+  }
   // async findOneByNumeroDocumento(
   //   numero_documento: string,
   //   tipo_documento: string,
