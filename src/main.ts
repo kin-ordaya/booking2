@@ -54,7 +54,7 @@ async function bootstrap() {
   });
   
   const configService = app.get(ConfigService);
-  const port = configService.get('EXTERNAL_PORT');
+  const port = configService.get('PORT');
   await app.listen(port);
 
   // console.log(`Server started on port ${process.env.PORT}`);

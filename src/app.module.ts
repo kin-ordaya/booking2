@@ -84,7 +84,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: false,
-        migrations:['src/migrations/*.ts'],
+        // migrations:['src/migrations/*.ts'],
         logging: config.get('NODE_ENV') === 'development', // Solo en desarrollo
         extra: {
           options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
