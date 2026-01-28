@@ -57,7 +57,6 @@ export class UsuarioController {
         errores: result.errores,
       };
     } catch (error) {
-      console.error('Error al procesar el archivo Excel', error);
       throw new HttpException(
         'Hubo un error al procesar el archivo Excel',
         HttpStatus.INTERNAL_SERVER_ERROR,

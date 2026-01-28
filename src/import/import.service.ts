@@ -29,11 +29,10 @@ import { RecursoCursoService } from '../recurso_curso/recurso_curso.service';
 import { CreateResponsableDto } from 'src/responsable/dto/create-responsable.dto';
 import { ResponsableService } from 'src/responsable/responsable.service';
 import { CampusService } from 'src/campus/campus.service';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class ImportService {
-  private readonly logger = new Logger(ImportService.name);
-
   // COLUMNAS ESPECÍFICAS POR TIPO
   private readonly COLUMNAS_USUARIOS_ROLES = {
     obligatorias: [
@@ -101,12 +100,14 @@ export class ImportService {
     private readonly rolService: RolService,
     private readonly rolUsuarioService: RolUsuarioService,
     private readonly usuarioService: UsuarioService,
+    @InjectPinoLogger(CampusService.name)
+    private readonly logger: PinoLogger,
   ) {}
 
   async procesarExcel(fileBuffer: Buffer, queryImportDto: QueryImportDto) {
     const { tipo, hoja } = queryImportDto;
 
-    this.logger.log(`Iniciando importación de tipo: ${tipo}`);
+    this.logger.info(`Iniciando importación de tipo: ${tipo}`);
 
     const workbook = XLSX.read(fileBuffer);
 
@@ -128,7 +129,7 @@ export class ImportService {
 
     // Obtener columnas según el tipo
     let columnasConfig;
-    console.log(tipo);
+    this.logger.info(tipo);
     switch (tipo) {
       case 'usuarios':
         columnasConfig = this.COLUMNAS_USUARIOS_ROLES;
@@ -175,11 +176,11 @@ export class ImportService {
    * Procesa usuarios y sus roles
    */
   private async procesarUsuarios(data: any[]): Promise<any> {
-    this.logger.log(`Procesando ${data.length} filas para usuarios`);
+    this.logger.info(`Procesando ${data.length} filas para usuarios`);
 
     // Filtrar usuarios únicos
     const usuariosUnicos = this.filtrarUsuariosUnicos(data);
-    this.logger.log(`Filtrados a ${usuariosUnicos.length} usuarios únicos`);
+    this.logger.info(`Filtrados a ${usuariosUnicos.length} usuarios únicos`);
 
     const resultados_usuarios: ImportResultDto = {
       exitosos: 0,
@@ -245,11 +246,11 @@ export class ImportService {
    * Procesa cursos
    */
   private async procesarCursos(data: any[]): Promise<any> {
-    this.logger.log(`Procesando ${data.length} filas para cursos`);
+    this.logger.info(`Procesando ${data.length} filas para cursos`);
 
     // Filtrar cursos únicos
     const cursosUnicos = this.filtrarCursosUnicos(data);
-    this.logger.log(`Filtrados a ${cursosUnicos.length} cursos únicos`);
+    this.logger.info(`Filtrados a ${cursosUnicos.length} cursos únicos`);
 
     const resultados_cursos: ImportResultDto = {
       exitosos: 0,
@@ -331,8 +332,8 @@ export class ImportService {
       const numeroFila = index + 2;
 
       try {
-        console.log('Procesando fila: ' + numeroFila);
-        console.log(row);
+        this.logger.info('Procesando fila: ' + numeroFila);
+        this.logger.info(row);
         // Validar que tenga datos mínimos de curso
         if (
           !row.nrc ||
@@ -365,9 +366,6 @@ export class ImportService {
       const numeroFila = index + 2;
 
       try {
-        // console.log('Procesando fila: ' + numeroFila);
-        // console.log(row);
-        // Validar que tenga datos mínimos de curso
         if (!row.recurso || !row.codigo_curso) {
           throw new BadRequestException(
             `Fila ${numeroFila}: Faltan datos obligatorios para crear recurso de curso`,
@@ -388,7 +386,7 @@ export class ImportService {
     //procesar responsables
     for (const [index, row] of data.entries()) {
       const numeroFila = index + 2;
-      console.log(row);
+      this.logger.info(row);
       try {
         if (
           !row.correo_institucional ||
@@ -425,8 +423,6 @@ export class ImportService {
   }
 
   private async procesarResponsable(row: any): Promise<any> {
-    // console.log('Procesando responsable');
-    // console.log(row);
     const rol = await this.rolService.findOneByNombre(row.rol);
     if (!rol) throw new NotFoundException('Rol no encontrado');
 
@@ -478,25 +474,25 @@ export class ImportService {
     const campus = await this.campusService.findOneByNombre(row.campus);
     if (!campus) throw new NotFoundException('Campus no encontrado');
 
-    console.log('Procesando responsable');
-    console.log(row);
+    this.logger.info('Procesando responsable');
+    this.logger.info(row);
 
     // Crear DTO para usuario
     const createResponsableDto = new CreateResponsableDto();
     createResponsableDto.rol_usuario_id = rolUsuarioExistente.id;
     createResponsableDto.clase_id = clase.id;
 
-    console.log(createResponsableDto);
+    this.logger.info(createResponsableDto);
 
     return await this.responsableService.create(createResponsableDto);
   }
 
   private async procesarRecursoCurso(row: any): Promise<any> {
-    // console.log('Procesando recurso de curso');
-    // console.log(row);
+    this.logger.info('Procesando recurso de curso');
+    this.logger.info(row);
     const recurso = await this.recursoService.findOneByNombre(row.recurso);
     if (!recurso) throw new NotFoundException('Recurso no encontrado');
-    console.log(row.codigo_curso);
+    this.logger.info(row.codigo_curso);
     const curso = await this.cursoService.findOneByCodigo(row.codigo_curso);
     if (!curso) throw new NotFoundException('Curso no encontrado');
 
@@ -507,7 +503,7 @@ export class ImportService {
   }
 
   private async procesarCredenciales(data: any[]): Promise<any> {
-    this.logger.log(`Procesando ${data.length} filas para credenciales`);
+    this.logger.info(`Procesando ${data.length} filas para credenciales`);
 
     const resultados: ImportResultDto = {
       exitosos: 0,
@@ -541,13 +537,11 @@ export class ImportService {
   }
 
   private async procesarCredencial(row: any): Promise<any> {
-    // console.log('Procesando credencial');
-    // console.log(row);
     const recurso = await this.recursoService.findOneByNombre(
       row.nombre_recurso,
     );
     if (!recurso) throw new NotFoundException('Recurso no encontrado');
-    // console.log(row.rol);
+    
     const rol = await this.rolService.findOneByNombre(row.rol);
     if (!rol) throw new NotFoundException('Rol no encontrado');
 

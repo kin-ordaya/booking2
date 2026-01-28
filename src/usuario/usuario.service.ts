@@ -49,7 +49,7 @@ export class UsuarioService {
             Usuario,
             {
               where: [
-                ...(correo_institucional ? [{ correo_institucional }] : []),
+                { correo_institucional },
                 ...(telefono_institucional ? [{ telefono_institucional }] : []),
               ],
             },
@@ -240,8 +240,7 @@ export class UsuarioService {
         throw new BadRequestException('El ID del usuario no puede estar vacío');
 
       const usuario = await this.usuarioRepository.findOne({
-        where: { id },
-        relations: ['correo_institucional'],
+        where: { id }
       });
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');
@@ -315,7 +314,6 @@ export class UsuarioService {
       )
         throw error;
       throw new InternalServerErrorException('Error inesperado');
-      //throw error;
     }
   }
 

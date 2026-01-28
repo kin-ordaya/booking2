@@ -175,10 +175,6 @@ export class ReservaService {
       })
       .getOne();
 
-    // console.log(`[RESERVA EXISTENTE] Rango: ${inicio} - ${fin}`);
-    // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio}, Fin: ${reservaExistente?.fin}`);
-    // console.log(`[RESERVA EXISTENTE] Inicio: ${reservaExistente?.inicio.toISOString()}, Fin: ${reservaExistente?.fin.toISOString()}`);
-
     if (reservaExistente) {
       throw new ConflictException(
         `La clase ya tiene una reserva activa en este recurso para el horario seleccionado. ` +
@@ -300,10 +296,6 @@ export class ReservaService {
     docenteId?: string,
     recurso?: Recurso,
   ) {
-    // console.log('[DISPONIBILIDAD] Validando y asignando credenciales...');
-
-    // console.log('[Ver rango]', inicio, fin);
-
     const reservasSolapadas = await this.reservaRepository
       .createQueryBuilder('reserva')
       .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
@@ -316,14 +308,6 @@ export class ReservaService {
       .andWhere('reserva.estado = :estado', { estado: 1 })
       .getMany();
 
-    // console.log(
-    //   `[DISPONIBILIDAD] Reservas solapadas: ${reservasSolapadas.length}`,
-    // );
-
-    // console.log(
-    //   `[CREDENCIALES SOLAPADAS] Total reservas encontradas: ${reservasSolapadas}`,
-    // );
-
     const credencialesOcupadas = new Set<string>();
     reservasSolapadas.forEach((reserva) => {
       reserva.detalle_reserva.forEach((detalle) => {
@@ -332,10 +316,6 @@ export class ReservaService {
         }
       });
     });
-
-    // console.log(
-    //   `[DISPONIBILIDAD] Credenciales ocupadas: ${credencialesOcupadas.size}`,
-    // );
 
     const generalesDisponibles = credencialesGenerales.filter(
       (c) => !credencialesOcupadas.has(c.id),
@@ -357,11 +337,6 @@ export class ReservaService {
 
     if (aplicaPreferencial) {
       try {
-        // console.log(
-        //   '[PREFERENCIAL] Aplicando lógica de preferencia para docente:',
-        //   docenteId,
-        // );
-
         // Obtener preferencias para DOCENTES
         const credencialesDocentesPreferidas =
           await this.obtenerCredencialesPreferidasPorTipo(
@@ -379,10 +354,6 @@ export class ReservaService {
             'ESTUDIANTE',
           );
         estudiantesOrdenados = credencialesEstudiantesPreferidas;
-
-        // console.log(
-        //   `[PREFERENCIAL] Docentes ordenados: ${docentesOrdenados.length}, Estudiantes ordenados: ${estudiantesOrdenados.length}`,
-        // );
       } catch (error) {
         console.warn(
           'Error al obtener preferencias, usando orden normal:',
@@ -390,13 +361,6 @@ export class ReservaService {
         );
       }
     }
-    // else {
-    // console.log('[PREFERENCIAL] No aplica asignación preferencial');
-    // }
-
-    // console.log(
-    //   `[DISPONIBILIDAD] Generales/Estudiantes disponibles: ${generalesDisponibles.length}, Docentes disponibles: ${docentesDisponibles.length}`,
-    // );
 
     const necesariasGenerales = Math.ceil(
       cantidadGeneral / capacidadPorCredencial,
@@ -404,10 +368,6 @@ export class ReservaService {
     const necesariasDocentes = Math.ceil(
       cantidadDocente / capacidadPorCredencial,
     );
-
-    // console.log(
-    //   `[DISPONIBILIDAD] Necesarias: Generales/Estudiantes=${necesariasGenerales}, Docentes=${necesariasDocentes}`,
-    // );
 
     if (generalesDisponibles.length < necesariasGenerales) {
       const accesosDisponibles =
@@ -1106,11 +1066,6 @@ export class ReservaService {
       // Guardar usando el mismo queryRunner para mantener la transacción
       const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
 
-      console.log(
-        '✅ GrupoReserva general multiple creado:',
-        grupoReservaGuardado.id,
-      ); // ← DEBUG
-
       // 2. Validar credenciales del recurso (común para todos los rangos)
       const credenciales = await this.credencialRepository.find({
         where: { recurso: { id: recurso_id } },
@@ -1204,11 +1159,6 @@ export class ReservaService {
             reservaValida.credencialesGeneralesAsignar,
           );
 
-          console.log('✅ Reserva general multiple creada con grupo:', {
-            reservaId: reservaGuardada.id,
-            grupoId: grupoReservaGuardado.id,
-          }); // ← DEBUG
-
           return reservaGuardada;
         }),
       );
@@ -1287,11 +1237,6 @@ export class ReservaService {
 
       // Guardar usando el mismo queryRunner para mantener la transacción
       const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
-
-      console.log(
-        '✅ GrupoReserva general multiple mantenimiento creado:',
-        grupoReservaGuardado.id,
-      ); // ← DEBUG
 
       // 2. Validar credenciales del recurso
       const credenciales = await this.credencialRepository.find({
@@ -1383,14 +1328,6 @@ export class ReservaService {
             },
             reservaValida.credencialesGeneralesAsignar,
           );
-
-          console.log(
-            '✅ Reserva general multiple de mantenimiento creada con grupo:',
-            {
-              reservaId: reservaGuardada.id,
-              grupoId: grupoReservaGuardado.id,
-            },
-          ); // ← DEBUG
 
           return reservaGuardada;
         }),
@@ -1491,11 +1428,6 @@ export class ReservaService {
 
       // Guardar usando el mismo queryRunner para mantener la transacción
       const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
-
-      console.log(
-        '✅ GrupoReserva mixto multiple creado:',
-        grupoReservaGuardado.id,
-      );
 
       // 2. Validar credenciales del recurso (común para todos los rangos)
       const credenciales = await this.credencialRepository.find({
@@ -1614,11 +1546,6 @@ export class ReservaService {
             reservaValida.credencialesDocentesAsignar,
           );
 
-          console.log('✅ Reserva mixto multiple creada con grupo:', {
-            reservaId: reservaGuardada.id,
-            grupoId: grupoReservaGuardado.id,
-          }); // ← DEBUG
-
           return reservaGuardada;
         }),
       );
@@ -1704,11 +1631,6 @@ export class ReservaService {
 
       // Guardar usando el mismo queryRunner para mantener la transacción
       const grupoReservaGuardado = await queryRunner.manager.save(grupoReserva);
-
-      console.log(
-        '✅ GrupoReserva mantenimiento mixto multiple creado:',
-        grupoReservaGuardado.id,
-      ); // ← DEBUG
 
       // 2. Validar credenciales del recurso
       const credenciales = await this.credencialRepository.find({
@@ -1822,11 +1744,6 @@ export class ReservaService {
             reservaValida.credencialesEstudiantesAsignar,
             reservaValida.credencialesDocentesAsignar,
           );
-
-          console.log('✅ Reserva mixto de mantenimiento creada con grupo:', {
-            reservaId: reservaGuardada.id,
-            grupoId: grupoReservaGuardado.id,
-          });
 
           return reservaGuardada;
         }),
@@ -1942,11 +1859,7 @@ export class ReservaService {
         .leftJoinAndSelect('cursoModalidad.curso', 'curso')
         .leftJoinAndSelect('reserva.autor', 'autor')
         .leftJoinAndSelect('autor.rol', 'rolAutor')
-        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });
-
-      // // Para debugging: obtener count sin paginación
-      // const totalCounts = await query.getCount();
-      // console.log('Total reservas encontradas:', totalCounts);
+        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });;
 
       if (docente_id) {
         const docente = await this.rolUsuarioRepository.findOne({
@@ -1991,8 +1904,7 @@ export class ReservaService {
       // Filtro por reservas expiradas/no expiradas
       if (sort_expired) {
         const now = new Date();
-        // console.log(`FECHA ACTUAL: ${now}`);
-        // console.log(`FECHA ACTUAL ISO: ${now.toISOString()}`);
+
         if (sort_expired === 1) {
           // Expiradas
           query.andWhere('reserva.fin < :now', { now });
@@ -2032,18 +1944,6 @@ export class ReservaService {
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
-
-      // console.log('Reservas después de filtros:', totalCount);
-
-      // console.log('Filtros aplicados:', {
-      //   recurso_id,
-      //   docente_id,
-      //   inicio,
-      //   fin,
-      //   sort_state,
-      //   sort_expired,
-      //   search,
-      // });
 
       // Mapeo de resultados con los nuevos campos
       const results = reservas.map((reserva) => ({
@@ -2104,14 +2004,11 @@ export class ReservaService {
       }
 
       const capacidadPorCredencial = recurso.capacidad || 1;
-      // console.log(`[CAPACIDAD] Por credencial: ${capacidadPorCredencial}`);
 
       // 2. Obtener todas las credenciales del recurso
       const totalCredenciales = await this.credencialRepository.count({
         where: { recurso: { id: recurso_id } },
       });
-
-      // console.log(`[CREDENCIALES TOTALES] ${totalCredenciales}`);
 
       // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
       const reservasEnRango = await this.reservaRepository
@@ -2130,9 +2027,6 @@ export class ReservaService {
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
 
-      // console.log(
-      //   `[RESERVAS EN RANGO] Total reservas encontradas: ${reservasEnRango.length}`,
-      // );
 
       // 4. Calcular credenciales ocupadas en el rango de fechas
       const credencialesOcupadas = new Set<string>();
@@ -2143,10 +2037,6 @@ export class ReservaService {
           }
         });
       });
-
-      // console.log(
-      //   `[CREDENCIALES OCUPADAS] Total: ${credencialesOcupadas.size}`,
-      // );
 
       // 6. Procesar cada reserva para calcular disponibilidad específica
       const reservasConDisponibilidad = reservasEnRango.map((reserva) => {
@@ -2216,15 +2106,9 @@ export class ReservaService {
   ) {
     try {
       const { recurso_id, inicio, fin } = credencialesDisponiblesDto;
-      // console.log(
-      //   `[countCredencialesDisponibles] Inicio - recurso_id: ${recurso_id}, inicio: ${inicio}, fin: ${fin}`,
-      // );
 
       // 1. Validar fechas
       if (fin <= inicio) {
-        console.error(
-          `[VALIDACIÓN FECHAS] Error: fin (${fin}) <= inicio (${inicio})`,
-        );
         throw new BadRequestException(
           'La fecha de fin debe ser posterior a la de inicio',
         );
@@ -2236,17 +2120,10 @@ export class ReservaService {
         relations: ['recurso', 'rol'],
       });
 
-      // console.log(`[CREDENCIALES] Total encontradas: ${credenciales.length}`);
-      // credenciales.forEach((c, i) => {
-      //   console.log(
-      //     `[CREDENCIAL ${i}] ID: ${c.id}, Rol: ${c.rol?.nombre || 'Ninguno'}`,
-      //   );
-      // });
-
       const totalCredenciales = credenciales.length;
 
       if (totalCredenciales === 0) {
-        // console.log('[SIN CREDENCIALES] No hay credenciales para este recurso');
+
         return {
           credenciales_disponibles: {
             total: 0,
@@ -2284,59 +2161,25 @@ export class ReservaService {
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
 
-      // console.log(
-      //   `[RESERVAS EN RANGO] Total reservas encontradas: ${reservasEnRango.length}`,
-      // );
 
-      // reservasEnRango.forEach((reserva, i) => {
-      // console.log(
-      //   `[RESERVA ${i}] ID: ${reserva.id}, Inicio: ${reserva.inicio}, Fin: ${reserva.fin}`,
-      // );
-      // console.log(
-      //   `[DETALLES RESERVA ${i}] Total credenciales usadas: ${reserva.detalle_reserva.length}`,
-      // );
-      //   reserva.detalle_reserva.forEach((detalle, j) => {
-      //     console.log(
-      //       `[DETALLE ${i}-${j}] Credencial ID: ${detalle.credencial?.id || 'N/A'}`,
-      //     );
-      //   });
-      // });
 
       // 4. Calcular credenciales ocupadas en el rango de fechas
       const credencialesOcupadas = new Set<string>();
       reservasEnRango.forEach((reserva) => {
         reserva.detalle_reserva.forEach((detalle) => {
           if (detalle.credencial) {
-            // console.log(
-            //   `[CREDENCIAL OCUPADA] Agregando credencial ID: ${detalle.credencial.id} de reserva ID: ${reserva.id}`,
-            // );
             credencialesOcupadas.add(detalle.credencial.id);
           }
         });
       });
 
-      // console.log(`[TOTAL CREDENCIALES OCUPADAS] ${credencialesOcupadas.size}`);
-      // console.log(
-      //   '[CREDENCIALES OCUPADAS IDs]:',
-      //   Array.from(credencialesOcupadas),
-      // );
 
       // 5. Filtrar disponibilidad por tipo
       const capacidadPorCredencial = credenciales[0].recurso.capacidad;
-      // console.log(`[CAPACIDAD] Por credencial: ${capacidadPorCredencial}`);
 
       const credencialesDisponibles = credenciales.filter(
         (c) => !credencialesOcupadas.has(c.id),
       );
-
-      // console.log(
-      //   `[CREDENCIALES DISPONIBLES] Total: ${credencialesDisponibles.length}`,
-      // );
-      // credencialesDisponibles.forEach((c, i) => {
-      //   console.log(
-      //     `[DISPONIBLE ${i}] ID: ${c.id}, Rol: ${c.rol?.nombre || 'Ninguno'}`,
-      //   );
-      // });
 
       const generalDisponibles = credencialesDisponibles.filter(
         (c) => !c.rol || c.rol.nombre !== 'DOCENTE',
@@ -2346,9 +2189,6 @@ export class ReservaService {
         (c) => c.rol?.nombre === 'DOCENTE',
       ).length;
 
-      // console.log(
-      //   `[RESULTADO FINAL] General disponibles: ${generalDisponibles}, Docente disponibles: ${docenteDisponibles}`,
-      // );
 
       const resultado = {
         credenciales_disponibles: {
@@ -2363,10 +2203,8 @@ export class ReservaService {
         },
       };
 
-      // console.log('[RESULTADO COMPLETO]:', JSON.stringify(resultado, null, 2));
       return resultado;
     } catch (error) {
-      console.error('[ERROR]', error);
       if (error instanceof BadRequestException) {
         throw error;
       }

@@ -271,7 +271,6 @@ export class RecursoService {
         },
       };
     } catch (error) {
-      console.error('Error en findAll:', error);
       throw new InternalServerErrorException('Error inesperado');
     }
   }

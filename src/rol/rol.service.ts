@@ -66,7 +66,6 @@ export class RolService {
 
   async findOneByNombre(nombre: string) {
     try {
-      // console.log(nombre);
       if (!nombre)
         throw new BadRequestException('El nombre del rol no puede estar vacío');
       const rol = await this.rolRepository.findOne({ where: { nombre } });

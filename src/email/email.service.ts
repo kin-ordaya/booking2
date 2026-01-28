@@ -32,11 +32,6 @@ export class EmailService {
   ) {}
 
   emailTransport() {
-    // console.log('Config SMTP:', {
-    //   host: this.configService.get('EMAIL_HOST'),
-    //   port: this.configService.get('EMAIL_PORT'),
-    //   user: this.configService.get('EMAIL_USER'),
-    // });
     const transporter = nodemailer.createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
       port: this.configService.get<number>('EMAIL_PORT'),
@@ -143,7 +138,6 @@ export class EmailService {
         },
       };
     } catch (error) {
-      console.error('Error al obtener credenciales: ', error);
       throw error;
     }
   }
@@ -154,7 +148,6 @@ export class EmailService {
 
     try {
       const reservaData = await this.getCredencialesReserva(reserva_id);
-      //console.log(reservaData);
 
       const recurso = await this.recursoRepository.findOne({
         where: { id: reservaData.recurso.id },
@@ -174,23 +167,17 @@ export class EmailService {
 
       if (reservaData.reserva.mantenimiento == 0) {
         if (reservaData.docente) {
-          // console.log(' Mantenimiento 0 - Docente');
           docente = await this.rolUsuarioRepository.findOne({
             where: { id: reservaData.docente.id, rol: { nombre: 'DOCENTE' } },
             relations: ['usuario', 'rol'],
           });
 
-          //console.log('ID de Autor: '+ reservaData.autor.id);
           autor = await this.rolUsuarioRepository.findOne({
             where: {
               id: reservaData.autor.id,
             },
             relations: ['usuario'],
           });
-
-          //console.log('Autor: '+ autor);
-
-          //console.log('Docente:', docente);
 
           if (!docente) {
             throw new NotFoundException(
@@ -219,15 +206,13 @@ export class EmailService {
           destinatarioPrincipal = docente.usuario.correo_institucional;
           destinatariosSecundarios.push(autor.usuario.correo_institucional);
         } else {
-          // console.log(' Mantenimiento 0 - Autor');
           destinatarioPrincipal = reservaData.autor.correo;
         }
       } else {
-        // console.log(' Mantenimiento 1 - Autor');
         destinatarioPrincipal = reservaData.autor.correo;
       }
       destinatariosSecundarios.push('nespinoza@continental.edu.pe');
-      // console.log('Destinatario:', destinatario);
+
 
       destinatariosSecundarios.push(reservaData.responsable?.correo || '');
 
@@ -315,7 +300,6 @@ export class EmailService {
       await transport.sendMail(options);
       return { message: 'Email enviado correctamente' };
     } catch (error) {
-      console.error('Error al enviar mail:', error);
       if (error instanceof NotFoundException) {
         throw error;
       }
@@ -468,7 +452,6 @@ export class EmailService {
         credenciales: todasCredencialesUnidas, // Credenciales combinadas
       };
     } catch (error) {
-      console.error('Error al obtener reservas por grupo: ', error);
       throw error;
     }
   }
@@ -713,7 +696,6 @@ export class EmailService {
         // destinatarios_cc: destinatariosSecundarios
       };
     } catch (error) {
-      console.error('Error al enviar mail de grupo:', error);
       if (error instanceof NotFoundException) {
         throw error;
       }

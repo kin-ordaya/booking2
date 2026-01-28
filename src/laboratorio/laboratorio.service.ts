@@ -209,7 +209,6 @@ export class LaboratorioService {
       ) {
         throw error;
       }
-      console.error('Error actualizando laboratorio:', error);
       throw new InternalServerErrorException('Error inesperado');
     }
   }
