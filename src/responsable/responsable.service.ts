@@ -224,7 +224,6 @@ export class ResponsableService {
           'usuario.estado',
           'usuario.nombres',
           'usuario.apellidos',
-          'usuario.numero_documento',
           'usuario.correo_institucional',
           'rolUsuario.id',
           'rolUsuario.asignacion',
@@ -235,7 +234,7 @@ export class ResponsableService {
 
       if (search) {
         query.where(
-          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR UPPER(usuario.numero_documento) LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
+          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }

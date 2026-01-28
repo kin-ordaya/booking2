@@ -22,36 +22,36 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 export class EstudianteController {
   constructor(private readonly estudianteService: EstudianteService) {}
 
-  @Post()
-  @Roles('ADMINISTRADOR')
-  create(@Body() createEstudianteDto: CreateEstudianteDto) {
-    return this.estudianteService.create(createEstudianteDto);
-  }
+  // @Post()
+  // @Roles('ADMINISTRADOR')
+  // create(@Body() createEstudianteDto: CreateEstudianteDto) {
+  //   return this.estudianteService.create(createEstudianteDto);
+  // }
 
-  @Get()
-  @Roles('ADMINISTRADOR')
-  findAll() {
-    return this.estudianteService.findAll();
-  }
+  // @Get()
+  // @Roles('ADMINISTRADOR')
+  // findAll() {
+  //   return this.estudianteService.findAll();
+  // }
 
-  @Get(':id')
-  @Roles('ADMINISTRADOR')
-  findOne(@Param('id') id: string) {
-    return this.estudianteService.findOne(+id);
-  }
+  // @Get(':id')
+  // @Roles('ADMINISTRADOR')
+  // findOne(@Param('id') id: string) {
+  //   return this.estudianteService.findOne(+id);
+  // }
 
-  @Patch(':id')
-  @Roles('ADMINISTRADOR')
-  update(
-    @Param('id') id: string,
-    @Body() updateEstudianteDto: UpdateEstudianteDto,
-  ) {
-    return this.estudianteService.update(+id, updateEstudianteDto);
-  }
+  // @Patch(':id')
+  // @Roles('ADMINISTRADOR')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateEstudianteDto: UpdateEstudianteDto,
+  // ) {
+  //   return this.estudianteService.update(+id, updateEstudianteDto);
+  // }
 
-  @Delete(':id')
-  @Roles('ADMINISTRADOR')
-  remove(@Param('id') id: string) {
-    return this.estudianteService.remove(+id);
-  }
+  // @Delete(':id')
+  // @Roles('ADMINISTRADOR')
+  // remove(@Param('id') id: string) {
+  //   return this.estudianteService.remove(+id);
+  // }
 }

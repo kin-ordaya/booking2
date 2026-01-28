@@ -85,7 +85,6 @@ export class RolUsuarioService {
           'usuario.estado',
           'usuario.nombres',
           'usuario.apellidos',
-          'usuario.numero_documento',
           'usuario.correo_institucional',
           'rol.id',
           'rol.nombre',
@@ -115,7 +114,7 @@ export class RolUsuarioService {
 
       if (search) {
         query.where(
-          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR UPPER(usuario.numero_documento) LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
+          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }
@@ -166,8 +165,7 @@ export class RolUsuarioService {
         .innerJoin('curso.recurso_curso', 'recursoCurso')
         .innerJoin('recursoCurso.recurso', 'recurso')
         .innerJoin('rolUsuario.rol', 'rol')
-        .innerJoin('rolUsuario.usuario', 'usuario') // Agregado para obtener datos del usuario
-        .innerJoin('usuario.documento_identidad', 'documentoIdentidad')
+        .innerJoin('rolUsuario.usuario', 'usuario')
         .select([
           'rolUsuario.id',
           // 'rolUsuario.asignacion',
@@ -175,10 +173,7 @@ export class RolUsuarioService {
           // 'rol.nombre', // Nombre del rol
           'usuario.nombres', // Nombres del usuario
           'usuario.apellidos',
-          'usuario.numero_documento',
           'usuario.correo_institucional',
-          'documentoIdentidad.id',
-          'documentoIdentidad.nombre',
         ])
         .where('recurso.id = :recursoId', { recursoId: recurso_id })
         .andWhere('rol.nombre = :rolNombre', { rolNombre: 'DOCENTE' })

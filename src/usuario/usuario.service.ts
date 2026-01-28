@@ -30,7 +30,6 @@ export class UsuarioService {
       return await this.dataSource.transaction(
         async (transactionalEntityManager) => {
           const {
-            numero_documento,
             correo_institucional,
             telefono_institucional,
             rol_id,
@@ -50,9 +49,6 @@ export class UsuarioService {
             Usuario,
             {
               where: [
-                {
-                  numero_documento,
-                },
                 ...(correo_institucional ? [{ correo_institucional }] : []),
                 ...(telefono_institucional ? [{ telefono_institucional }] : []),
               ],
@@ -60,11 +56,6 @@ export class UsuarioService {
           );
 
           if (usuarioExistente) {
-            if (usuarioExistente.numero_documento === numero_documento) {
-              throw new ConflictException(
-                'Ya existe un usuario con ese número de documento',
-              );
-            }
             if (
               usuarioExistente.correo_institucional === correo_institucional
             ) {
@@ -129,19 +120,16 @@ export class UsuarioService {
       // Paso 1: Obtener usuarios paginados
       const query = this.usuarioRepository
         .createQueryBuilder('usuario')
-        .leftJoinAndSelect('usuario.documento_identidad', 'documento_identidad')
         .select([
           'usuario.id',
           'usuario.nombres',
           'usuario.apellidos',
-          'usuario.numero_documento',
-          'usuario.correo_institucional',
-          'documento_identidad.nombre',
+          'usuario.correo_institucional'
         ]);
 
       if (search) {
         query.where(
-          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR UPPER(usuario.numero_documento) LIKE UPPER(:search)',
+          'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }
@@ -240,7 +228,6 @@ export class UsuarioService {
       const {
         nombres,
         apellidos,
-        numero_documento,
         correo_institucional,
         telefono_institucional,
         correo_personal,
@@ -254,7 +241,7 @@ export class UsuarioService {
 
       const usuario = await this.usuarioRepository.findOne({
         where: { id },
-        relations: ['documento_identidad'],
+        relations: ['correo_institucional'],
       });
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');
@@ -311,7 +298,6 @@ export class UsuarioService {
       await this.usuarioRepository.update(id, {
         nombres,
         apellidos,
-        numero_documento,
         correo_institucional,
         telefono_institucional,
         correo_personal,

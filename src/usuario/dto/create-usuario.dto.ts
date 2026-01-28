@@ -27,13 +27,13 @@ export class CreateUsuarioDto {
   )
   apellidos: string;
 
-  @IsNotEmpty()
-  @Transform(({ value }) =>
-    typeof value === 'string'
-      ? value.toUpperCase().trim()
-      : String(value).toUpperCase().trim(),
-  )
-  numero_documento: string;
+  // @IsNotEmpty()
+  // @Transform(({ value }) =>
+  //   typeof value === 'string'
+  //     ? value.toUpperCase().trim()
+  //     : String(value).toUpperCase().trim(),
+  // )
+  // numero_documento: string;
 
   @IsNotEmpty()
   @IsEmail(

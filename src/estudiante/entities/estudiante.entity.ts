@@ -3,8 +3,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -24,9 +22,6 @@ export class Estudiante {
 
   @Column({ type: 'varchar', length: 100 })
   apellidos: string;
-
-  @Column({ type: 'varchar', length: 100 })
-  numero_documento: string;
 
   @Column({ type: 'varchar', length: 100 })
   correo: string;

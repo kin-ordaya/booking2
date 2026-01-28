@@ -12,10 +12,10 @@ export class UpdateUsuarioDto {
   @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
   apellidos?: string;
 
-  @IsOptional()
-  @IsString({ message: 'El campo numero_documento no puede estar vacío' })
-  @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
-  numero_documento?: string;
+  // @IsOptional()
+  // @IsString({ message: 'El campo numero_documento no puede estar vacío' })
+  // @Transform(({ value }: { value: string }) => value?.toUpperCase().trim())
+  // numero_documento?: string;
 
   @IsOptional()
   @IsEmail(

@@ -26,9 +26,6 @@ export class Usuario {
   apellidos: string;
 
   @Column({ type: 'varchar', length: 100 })
-  numero_documento: string;
-
-  @Column({ type: 'varchar', length: 100 })
   correo_institucional: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
