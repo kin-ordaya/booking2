@@ -15,7 +15,6 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { Repository } from 'typeorm';
-import { validate } from 'class-validator';
 
 @Injectable()
 export class AuthService {
@@ -29,15 +28,16 @@ export class AuthService {
     private readonly usuarioRepository: Repository<Usuario>,
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly config: ConfigService
   ) {
     this.apiKeyService = configService.get('API_KEY');
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.JWT_SECRET) {
+    if (!config.get('GOOGLE_CLIENT_ID') || !config.get('JWT_SECRET')) {
       throw new InternalServerErrorException(
         'Faltan datos de configuración para Google OAuth y JWT',
       );
     }
-    this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    this.client = new OAuth2Client(config.get('GOOGLE_CLIENT_ID'));
   }
 
   async login(loginDto: LoginDto) {
@@ -168,7 +168,7 @@ export class AuthService {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: this.config.get('GOOGLE_CLIENT_ID'),
       });
       const payload = ticket.getPayload();
       if (payload) {
@@ -192,3 +192,7 @@ export class AuthService {
   //    return (this.request as any)[CORRELATION_ID_HEADER] || 'unknown';
   // }
 }
+function InjectConfig(): (target: typeof AuthService, propertyKey: undefined, parameterIndex: 5) => void {
+  throw new Error('Function not implemented.');
+}
+

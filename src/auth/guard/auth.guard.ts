@@ -7,12 +7,14 @@ import {
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     @InjectPinoLogger(AuthGuard.name) // Inyectar logger aquí también
     private readonly logger: PinoLogger,
+    private readonly config: ConfigService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -41,7 +43,7 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET,
+        secret: this.config.get('JWT_SECRET'),
       });
 
       request.usuario = payload;
@@ -67,3 +69,7 @@ export class AuthGuard implements CanActivate {
     return type === 'Bearer' ? token : null;
   }
 }
+function InjectConfig(): (target: typeof AuthGuard, propertyKey: undefined, parameterIndex: 2) => void {
+  throw new Error('Function not implemented.');
+}
+

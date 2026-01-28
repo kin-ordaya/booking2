@@ -3,12 +3,13 @@ import { Params } from 'nestjs-pino';
 import { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { join } from 'path';
+import { ConfigService } from '@nestjs/config';
 
 export const CORRELATION_ID_HEADER = 'X-Correlation-Id';
 
-export const pinoConfig: Params = {
+export const pinoConfig = (configService: ConfigService): Params => ({
   pinoHttp: {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    level: configService.get('NODE_ENV') === 'development' ? 'debug' : 'info',
 
     transport: {
       targets: [
@@ -69,7 +70,7 @@ export const pinoConfig: Params = {
         userId: userId,
         userRole: userRole,
         ip: req.ip,
-        env: process.env.NODE_ENV,
+        env: configService.get('NODE_ENV'),
       };
     },
 
@@ -99,4 +100,4 @@ export const pinoConfig: Params = {
       },
     },
   },
-};
+});

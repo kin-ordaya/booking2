@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(helmet());
@@ -51,10 +52,12 @@ async function bootstrap() {
       },
     ],
   });
+  
+  const configService = app.get(ConfigService);
+  const port = configService.get('EXTERNAL_PORT');
+  await app.listen(port);
 
-  await app.listen(process.env.PORT ?? 3000);
-
-  console.log(`Server started on port ${process.env.PORT}`);
+  // console.log(`Server started on port ${process.env.PORT}`);
 }
 bootstrap().catch((err) => {
   console.error(`Error during bootstrap`, err);

@@ -1,6 +1,6 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CursoModule } from './curso/curso.module';
 import { FacultadModule } from './facultad/facultad.module';
 import { EapModule } from './eap/eap.module';
@@ -42,12 +42,9 @@ import { ImportModule } from './import/import.module';
 import { HealthModule } from './health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from './config/pinoConfig';
-// import { CorrelationIdMiddleware } from './config/correlation-id.middleware';
 import { LogModule } from './log/log.module';
 import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
 import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso_periodo.module';
-import { plainToInstance } from 'class-transformer';
-import { EnvSchema } from './config/env.schema';
 import { PowerbiModule } from './powerbi/powerbi.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
@@ -56,39 +53,54 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
 
 @Module({
   imports: [
-    LoggerModule.forRoot(pinoConfig),
     ConfigModule.forRoot({
       isGlobal: true,
-      validate: (config) =>
-        plainToInstance(EnvSchema, config, { enableImplicitConversion: true }),
+      cache:true
     }),
-    JwtModule.register({
+
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) =>
+        pinoConfig(configService),
+    }),
+
+    JwtModule.registerAsync({
       global: true,
-      secret: process.env.JWT_SECRET ,
-      signOptions: { expiresIn: process.env.JWT_EXPIRATION },
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET'),
+        signOptions: { expiresIn: config.get('JWT_EXPIRATION') },
+      }),
+      inject: [ConfigService],
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      database: process.env.DB_NAME,
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
-      logging: process.env.NODE_ENV !== 'production', // Solo en desarrollo
-      extra: {
-        options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
-        // types: {
-        //   getTypeParser: (oid) => (val) => {
-        //     if (oid === 1114 || oid === 1184) {
-        //       // timestamp/timestamptz
-        //       return new Date(val + 'Z'); // Fuerza interpretación UTC
-        //     }
-        //     return val;
-        //   },
-        // },
-      },
+
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get('DB_HOST'),
+        port: config.get('DB_PORT'),
+        username: config.get('DB_USER'),
+        password: config.get('DB_PASS'),
+        database: config.get('DB_NAME'),
+        autoLoadEntities: true,
+
+        synchronize: false, // Deshabilita la sincronización de la base de datos
+        logging: config.get('NODE_ENV'), // Solo en desarrollo
+        extra: {
+          options: '-c timezone=UTC', // 👈 Fuerza UTC enla conexión
+          // types: {
+          //   getTypeParser: (oid) => (val) => {
+          //     if (oid === 1114 || oid === 1184) {
+          //       // timestamp/timestamptz
+          //       return new Date(val + 'Z'); // Fuerza interpretación UTC
+          //     }
+          //     return val;
+          //   },
+          // },
+        },
+      }),
+      inject: [ConfigService],
     }),
     AulaModule,
     AuthModule,

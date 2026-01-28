@@ -13,6 +13,7 @@ import { Contacto } from './entities/contacto.entity';
 import { Not, Repository } from 'typeorm';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ContactoService {
@@ -23,6 +24,7 @@ export class ContactoService {
     private readonly contactoRepository: Repository<Contacto>,
     @InjectRepository(Proveedor)
     private readonly proveedorRepository: Repository<Proveedor>,
+    private readonly config: ConfigService,
   ) {}
 
   async create(createContactoDto: CreateContactoDto): Promise<Contacto> {
@@ -137,7 +139,7 @@ export class ContactoService {
           error_type: error.constructor.name,
           error_message: error.message,
           stack_trace:
-            process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            this.config.get('NODE_ENV') === 'development' ? error.stack : undefined,
           duration,
           timestamp: new Date().toISOString(),
         },

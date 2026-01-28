@@ -16,6 +16,7 @@ import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ClaseService {
@@ -32,6 +33,7 @@ export class ClaseService {
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
     @InjectRepository(Periodo)
     private readonly periodoRepository: Repository<Periodo>,
+    private readonly config: ConfigService,
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
@@ -158,7 +160,7 @@ export class ClaseService {
           error_type: error.constructor.name,
           error_message: error.message,
           stack_trace:
-            process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            this.config.get('NODE_ENV') === 'development' ? error.stack : undefined,
           duration,
           timestamp: new Date().toISOString(),
         },

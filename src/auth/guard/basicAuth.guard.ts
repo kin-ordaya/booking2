@@ -1,11 +1,30 @@
 // Versión simplificada sin ConfigService
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BasicAuthGuard implements CanActivate {
-  // Credenciales fijas desde variables de entorno
-  private readonly validUsername = process.env.POWERBI_USERNAME || 'powerbi';
-  private readonly validPassword = process.env.POWERBI_PASSWORD;
+  private validUsername: string;
+  private validPassword: string;
+
+  constructor(private readonly config: ConfigService) {
+    const username = this.config.get('POWERBI_USERNAME');
+    const password = this.config.get('POWERBI_PASSWORD');
+
+    if (!username || !password) {
+      throw new Error(
+        'POWERBI_USERNAME and POWERBI_PASSWORD must be set in environment variables',
+      );
+    }
+
+    this.validUsername = username;
+    this.validPassword = password;
+  }
 
   canActivate(context: ExecutionContext): boolean {
     if (!this.validPassword) {
@@ -20,7 +39,9 @@ export class BasicAuthGuard implements CanActivate {
     }
 
     const base64Credentials = authHeader.substring(6);
-    const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+    const credentials = Buffer.from(base64Credentials, 'base64').toString(
+      'utf-8',
+    );
     const [username, password] = credentials.split(':');
 
     if (username !== this.validUsername || password !== this.validPassword) {

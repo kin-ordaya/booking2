@@ -12,10 +12,12 @@ import { Aula } from './entities/aula.entity';
 import { Not, Repository } from 'typeorm';
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AulaService {
   constructor(
+    private readonly config: ConfigService,
     @InjectPinoLogger(AulaService.name)
     private readonly logger: PinoLogger,
     @InjectRepository(Aula)
@@ -124,7 +126,7 @@ export class AulaService {
           error_type: error.constructor.name,
           error_message: error.message,
           stack_trace:
-            process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            this.config.get('NODE_ENV') === 'development' ? error.stack : undefined,
           duration,
           timestamp: new Date().toISOString(),
         },
@@ -527,3 +529,7 @@ export class AulaService {
     }
   }
 }
+function InjectConfig(): (target: typeof AulaService, propertyKey: undefined, parameterIndex: 0) => void {
+  throw new Error('Function not implemented.');
+}
+
