@@ -1,4 +1,3 @@
-import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
 import { MatriculaClase } from 'src/matricula_clase/entities/matricula_clase.entity';
 import {
   Column,
@@ -44,15 +43,15 @@ export class Estudiante {
   @Column({ type: 'varchar', length: 50, nullable: true })
   estado_civil?: string;
 
-  @ManyToOne(
-    () => DocumentoIdentidad,
-    (documentoIdentidad) => documentoIdentidad.usuario,
-    {
-      nullable: false,
-    },
-  )
-  @JoinColumn({ name: 'documento_identidad_id' })
-  documento_identidad: DocumentoIdentidad;
+  // @ManyToOne(
+  //   () => DocumentoIdentidad,
+  //   (documentoIdentidad) => documentoIdentidad.usuario,
+  //   {
+  //     nullable: false,
+  //   },
+  // )
+  // @JoinColumn({ name: 'documento_identidad_id' })
+  // documento_identidad: DocumentoIdentidad;
 
   @OneToMany(
     () => MatriculaClase,

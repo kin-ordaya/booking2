@@ -271,7 +271,35 @@ npm install
 - El sistema utiliza `synchronize: true` en desarrollo
 - En producción, usa migraciones de TypeORM
 - Configura el timezone UTC en la conexión a la base de datos
+## Migracion en Local/Desarrollo:
+# 1. Creas/modificas una entidad
+#    src/usuarios/entities/usuario.entity.ts
 
+# 2. Compilas
+npm run build
+
+# 3. Generas migración (detecta cambios vs DB)
+npm run migration:generate --name=AddEmailToUsuario
+
+# 4. Se crea: src/migrations/123456789-AddEmailToUsuario.ts
+#    Este archivo se COMMITEa a Git
+
+# 5. Probamos localmente
+npm run migration:run:dev
+
+## En servidor/producción:
+# 1. Pull del código (incluye nueva migración)
+git pull origin main
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Compilar proyecto
+npm run build
+
+# 4. Ejecutar migraciones PENDIENTES
+#    TypeORM lleva registro en tabla 'migrations'
+npm run migration:run:prod
 ## 🔒 Seguridad
 
 - Autenticación JWT con tokens seguros

@@ -2,30 +2,38 @@
 import { DataSource } from "typeorm";
 import * as dotenv from "dotenv";
 import * as path from "path";
+import { glob } from "glob";
 
-// 👇 Usar ruta ABSOLUTA desde la raíz del proyecto
-const envPath = path.resolve(process.cwd(), '.env');
-console.log("Buscando .env en:", envPath);
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-dotenv.config({ path: envPath });
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Verificar después de cargar
-console.log("DB_HOST:", process.env.DB_HOST);
-console.log("DB_PORT:", process.env.DB_PORT);
-console.log("DB_USER:", process.env.DB_USER);
-console.log("DB_PASS:", process.env.DB_PASS ? "******" : "undefined");
-console.log("DB_NAME:", process.env.DB_NAME);
+// Función para cargar rutas de entidades
+const getEntityPaths = () => {
+  if (isProduction) {
+    return ['dist/**/*.entity.js'];
+  }
+  
+  // En desarrollo, encontrar todos los archivos .entity.ts
+  const entityFiles = glob.sync('src/**/*.entity.ts');
+  return entityFiles;
+};
 
 export default new DataSource({
     type: 'postgres',
-    host: process.env.DB_HOST || 'localhost', // valor por defecto
+    host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASS || '',
-    database: process.env.DB_NAME || 'test',
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
     synchronize: false,
-    migrations: ['src/migrations/*.ts'],
-    entities: ['dist/**/*.entity.ts'],
+    
+    entities: getEntityPaths(),
+    
+    migrations: isProduction
+        ? ['dist/migrations/*.js']
+        : ['src/migrations/*.ts'],
+    
     logging: process.env.NODE_ENV === 'development',
     extra: {
         options: '-c timezone=UTC'

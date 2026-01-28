@@ -11,7 +11,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Not, Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { plainToInstance } from 'class-transformer';
@@ -23,16 +22,6 @@ export class UsuarioService {
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
 
-    @InjectRepository(DocumentoIdentidad)
-    private readonly documentoIdentidadRepository: Repository<DocumentoIdentidad>,
-
-    @InjectRepository(Rol)
-    private readonly rolRepository: Repository<Rol>,
-
-    @InjectRepository(RolUsuario)
-    private readonly rolUsuarioRepository: Repository<RolUsuario>,
-
-    //dataSource
     private readonly dataSource: DataSource,
   ) {}
 
@@ -44,18 +33,17 @@ export class UsuarioService {
             numero_documento,
             correo_institucional,
             telefono_institucional,
-            documento_identidad_id,
             rol_id,
           } = createUsuarioDto;
 
-          // 1. Verificar documento_identidad
-          const documento_identidad =
-            await transactionalEntityManager.findOneBy(DocumentoIdentidad, {
-              id: documento_identidad_id,
-            });
-          if (!documento_identidad) {
-            throw new NotFoundException('Documento de identidad no encontrado');
-          }
+          // // 1. Verificar documento_identidad
+          // const documento_identidad =
+          //   await transactionalEntityManager.findOneBy(DocumentoIdentidad, {
+          //     id: documento_identidad_id,
+          //   });
+          // if (!documento_identidad) {
+          //   throw new NotFoundException('Documento de identidad no encontrado');
+          // }
 
           // 2. Verificar duplicados
           const usuarioExistente = await transactionalEntityManager.findOne(
@@ -63,7 +51,6 @@ export class UsuarioService {
             {
               where: [
                 {
-                  documento_identidad: { id: documento_identidad_id },
                   numero_documento,
                 },
                 ...(correo_institucional ? [{ correo_institucional }] : []),
@@ -96,8 +83,7 @@ export class UsuarioService {
 
           // 3. Crear usuario
           const usuario = transactionalEntityManager.create(Usuario, {
-            ...createUsuarioDto,
-            documento_identidad,
+            ...createUsuarioDto
           });
           await transactionalEntityManager.save(usuario);
 
@@ -198,38 +184,38 @@ export class UsuarioService {
     }
   }
 
-  async findOneByNumeroDocumento(
-    numero_documento: string,
-    tipo_documento: string,
-  ) {
-    try {
-      console.log('Buscando usuario por numero de documento');
-      console.log(`tipo_documento: ${tipo_documento}`);
-      console.log(`numero_documento: ` + numero_documento);
+  // async findOneByNumeroDocumento(
+  //   numero_documento: string,
+  //   tipo_documento: string,
+  // ) {
+  //   try {
+  //     console.log('Buscando usuario por numero de documento');
+  //     console.log(`tipo_documento: ${tipo_documento}`);
+  //     console.log(`numero_documento: ` + numero_documento);
 
-      const tipoDocumento = await this.documentoIdentidadRepository.findOne({
-        where: { nombre: tipo_documento },
-      });
-      console.log(tipoDocumento);
+  //     const tipoDocumento = await this.documentoIdentidadRepository.findOne({
+  //       where: { nombre: tipo_documento },
+  //     });
+  //     console.log(tipoDocumento);
 
-      if (!tipoDocumento)
-        throw new NotFoundException('Tipo de documento no encontrado');
+  //     if (!tipoDocumento)
+  //       throw new NotFoundException('Tipo de documento no encontrado');
 
-      return await this.usuarioRepository.findOne({
-        where: {
-          numero_documento,
-          documento_identidad: { id: tipoDocumento.id },
-        },
-      });
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      )
-        throw error;
-      throw new InternalServerErrorException('Error inesperado');
-    }
-  }
+  //     return await this.usuarioRepository.findOne({
+  //       where: {
+  //         numero_documento,
+  //         documento_identidad: { id: tipoDocumento.id },
+  //       },
+  //     });
+  //   } catch (error) {
+  //     if (
+  //       error instanceof NotFoundException ||
+  //       error instanceof BadRequestException
+  //     )
+  //       throw error;
+  //     throw new InternalServerErrorException('Error inesperado');
+  //   }
+  // }
 
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     try {
@@ -258,19 +244,19 @@ export class UsuarioService {
 
       // const updateData: any = {};
 
-      if (numero_documento) {
-        const numero_documentoExists = await this.usuarioRepository.existsBy({
-          id: Not(id),
-          numero_documento,
-          documento_identidad: { id: usuario.documento_identidad.id },
-        });
-        if (numero_documentoExists) {
-          throw new ConflictException(
-            'Ya existe un usuario con ese número de documento y ese documento identidad',
-          );
-        }
-        // updateData.numero_documento = numero_documento;
-      }
+      // if (numero_documento) {
+      //   const numero_documentoExists = await this.usuarioRepository.existsBy({
+      //     id: Not(id),
+      //     numero_documento,
+      //     documento_identidad: { id: usuario.documento_identidad.id },
+      //   });
+      //   if (numero_documentoExists) {
+      //     throw new ConflictException(
+      //       'Ya existe un usuario con ese número de documento y ese documento identidad',
+      //     );
+      //   }
+      //   // updateData.numero_documento = numero_documento;
+      // }
 
       if (correo_institucional) {
         const correo_institucionalExists =

@@ -1,4 +1,3 @@
-import { DocumentoIdentidad } from 'src/documento_identidad/entities/documento_identidad.entity';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import {
   Column,
@@ -47,18 +46,16 @@ export class Usuario {
   @Column({ type: 'varchar', length: 200, nullable: true })
   direccion?: string;
 
-  // @Column({ type: 'varchar', length: 50, nullable: true })
-  // estado_civil?: string;
 
-  @ManyToOne(
-    () => DocumentoIdentidad,
-    (documentoIdentidad) => documentoIdentidad.usuario,
-    {
-      nullable: false,
-    },
-  )
-  @JoinColumn({ name: 'documento_identidad_id' })
-  documento_identidad: DocumentoIdentidad;
+  // @ManyToOne(
+  //   () => DocumentoIdentidad,
+  //   (documentoIdentidad) => documentoIdentidad.usuario,
+  //   {
+  //     nullable: false,
+  //   },
+  // )
+  // @JoinColumn({ name: 'documento_identidad_id' })
+  // documento_identidad: DocumentoIdentidad;
 
   @OneToMany(() => RolUsuario, (rolUsuario) => rolUsuario.usuario)
   rol_usuario: RolUsuario[];

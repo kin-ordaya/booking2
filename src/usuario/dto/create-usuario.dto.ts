@@ -97,11 +97,11 @@ export class CreateUsuarioDto {
   )
   direccion?: string;
 
-  @IsNotEmpty()
-  @IsUUID('4', {
-    message: 'El campo documento_identidad_id debe ser de tipo uuid',
-  })
-  documento_identidad_id: string;
+  // @IsNotEmpty()
+  // @IsUUID('4', {
+  //   message: 'El campo documento_identidad_id debe ser de tipo uuid',
+  // })
+  // documento_identidad_id: string;
 
   @IsNotEmpty()
   @IsUUID('4', { message: 'El campo rol_id debe ser de tipo uuid' })

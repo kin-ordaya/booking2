@@ -14,7 +14,6 @@ import { CursoModalidadModule } from './curso_modalidad/curso_modalidad.module';
 import { RecursoCursoModule } from './recurso_curso/recurso_curso.module';
 import { UsuarioModule } from './usuario/usuario.module';
 import { RolModule } from './rol/rol.module';
-import { DocumentoIdentidadModule } from './documento_identidad/documento_identidad.module';
 import { CampusModule } from './campus/campus.module';
 import { RolUsuarioModule } from './rol_usuario/rol_usuario.module';
 import { ResponsableModule } from './responsable/responsable.module';
@@ -38,7 +37,7 @@ import { types } from 'pg';
 import { EmailModule } from './email/email.module';
 import { SeccionEmailModule } from './seccion_email/seccion_email.module';
 import { PeriodoModule } from './periodo/periodo.module';
-import { ImportModule } from './import/import.module';
+// import { ImportModule } from './import/import.module';
 import { HealthModule } from './health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from './config/pinoConfig';
@@ -113,7 +112,6 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     CursoModule,
     DeclaracionJuradaModule,
     DetalleReservaModule,
-    DocumentoIdentidadModule,
     EapModule,
     EmailModule,
     EstudianteModule,
@@ -121,7 +119,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     GrupoReservaModule,
     HealthModule,
     HorarioModule,
-    ImportModule,
+    // ImportModule,
     LaboratorioAulaModule,
     LaboratorioModule,
     LogModule,
