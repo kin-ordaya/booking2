@@ -1,7 +1,7 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Argumento para invalidar cache - cambiar este número fuerza rebuild
-ARG CACHEBUST=20260129005
+ARG CACHEBUST=20260129006
 
 WORKDIR /app
 
@@ -38,5 +38,5 @@ USER nestjs
 
 EXPOSE 3000
 
-# Usar node con --experimental-global-webcrypto para Alpine
-CMD ["dumb-init", "node", "--experimental-global-webcrypto", "dist/src/main.js"]
+# Usar script de inicio con polyfill de crypto
+CMD ["dumb-init", "node", "start.js"]
