@@ -1,5 +1,8 @@
 FROM node:18-alpine
 
+# Argumento para invalidar cache - cambiar este número fuerza rebuild
+ARG CACHEBUST=20260129003
+
 WORKDIR /app
 
 # Instalar herramientas necesarias
@@ -11,7 +14,7 @@ COPY package*.json ./
 # Instalar dependencias
 RUN npm ci && npm cache clean --force
 
-# Copiar código fuente - CACHE INVALIDATION 2026-01-29-v3
+# Copiar código fuente - CACHEBUST=${CACHEBUST}
 COPY . .
 
 # Build del proyecto con verificación
@@ -20,7 +23,7 @@ RUN echo "=== Iniciando build ===" && \
     echo "=== Contenido de dist/ ===" && \
     ls -laR dist/ && \
     echo "=== Verificando main.js ===" && \
-    test -f dist/main.js && echo "✓ main.js encontrado" || echo "✗ ERROR: main.js NO encontrado"
+    test -f dist/src/main.js && echo "✓ main.js encontrado en dist/src/" || echo "✗ ERROR: main.js NO encontrado"
 
 # Crear directorios necesarios
 RUN mkdir -p /app/logs /app/uploads /app/temp && \
@@ -35,4 +38,4 @@ USER nestjs
 
 EXPOSE 3000
 
-CMD ["dumb-init", "node", "dist/main.js"]
+CMD ["dumb-init", "node", "dist/src/main.js"]
