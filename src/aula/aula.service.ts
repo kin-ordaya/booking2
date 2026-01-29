@@ -277,7 +277,7 @@ export class AulaService {
           },
           'ID de aula vacío',
         );
-        throw new BadRequestException('El ID del aula vacío');
+        throw new BadRequestException('ID del aula vacío');
       }
 
       const aula = await this.aulaRepository.findOne({
@@ -529,7 +529,3 @@ export class AulaService {
     }
   }
 }
-function InjectConfig(): (target: typeof AulaService, propertyKey: undefined, parameterIndex: 0) => void {
-  throw new Error('Function not implemented.');
-}
-

@@ -1933,7 +1933,8 @@ export class ReservaService {
             qb.where('UPPER(clase.nrc) LIKE UPPER(:search)')
               .orWhere('UPPER(curso.nombre) LIKE UPPER(:search)')
               .orWhere('UPPER(usuario.nombres) LIKE UPPER(:search)')
-              .orWhere('UPPER(usuario.apellidos) LIKE UPPER(:search)');
+              .orWhere('UPPER(usuario.apellidos) LIKE UPPER(:search)')
+              .orWhere('UPPER(reserva.codigo) LIKE UPPER(:search)');
           }),
           { search: `%${search}%` },
         );
