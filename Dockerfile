@@ -11,6 +11,7 @@ RUN npm ci && npm cache clean --force
 
 COPY . .
 
+# Invalidar cache - rebuild 2026-01-29
 RUN npm run build
 
 # Etapa de producción
