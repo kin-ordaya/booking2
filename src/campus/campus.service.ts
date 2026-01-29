@@ -11,10 +11,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Campus } from './entities/campus.entity';
 import { Not, Repository } from 'typeorm';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CampusService {
   constructor(
+    private readonly config: ConfigService,
     @InjectPinoLogger(CampusService.name)
     private readonly logger: PinoLogger,
     @InjectRepository(Campus)
@@ -22,8 +24,9 @@ export class CampusService {
   ) {}
 
   async create(createCampusDto: CreateCampusDto) {
-    const operation = 'create_campus';
+    const operation = 'create';
     const startTime = Date.now();
+
     try {
       const { codigo } = createCampusDto;
 
@@ -44,126 +47,145 @@ export class CampusService {
       });
 
       if (campusExists) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'create_failed',
+            operation,
             entity: 'campus',
+            phase: 'validation_failed',
             reason: 'campus_exists',
-            campusId: campusExists.id || 'unknown',
+            campusId: campusExists.id,
+            codigo,
           },
-          'Ya existe un campus con ese codigo',
+          'Ya existe un campus con codigo ' + codigo,
         );
-        throw new ConflictException(' Ya existe un campus con ese codigo');
+        throw new ConflictException(
+          ' Ya existe un campus con codigo ' + codigo,
+        );
       }
 
       const campus = this.campusRepository.create(createCampusDto);
 
+      const savedCampus = await this.campusRepository.save(campus);
+      const duration = Date.now() - startTime;
+
       this.logger.info(
         {
-          operation: 'create_success',
+          operation,
           entity: 'campus',
+          phase: 'success',
           reason: 'create_success',
-          campusId: campus.id || 'unknown',
+          campus_id: campus.id,
+          nombre: campus.nombre,
+          codigo: campus.codigo,
+          duration,
         },
         'Campus creado exitosamente',
       );
 
-      return await this.campusRepository.save(campus);
+      return savedCampus;
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'create_error',
+          operation,
           entity: 'campus',
-          error: error.message || error || 'unknown',
+          phase: 'error',
+          reason: 'create_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          stack_trace:
+            this.config.get('NODE_ENV') === 'development'
+              ? error.stack
+              : undefined,
+          duration,
+          timestamp: new Date().toISOString(),
         },
-        'Error en proceso de creación de campus',
+        'Error en creación de campus: ' + error.message,
       );
-      throw error;
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al crear campus');
     }
   }
 
   async findAll() {
-    try {
-      this.logger.info(
-        {
-          operation: 'find_all_started',
-          entity: 'campus',
-        },
-        'Iniciando búsqueda de campus',
-      );
+    const operation = 'find_all';
 
+    try {
       const query = await this.campusRepository.find({
         order: { nombre: 'ASC' },
       });
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_all_success',
+          operation,
           entity: 'campus',
+          count: query.length,
         },
-        'Campus encontrado exitosamente',
+        'Campus recuperados exitosamente',
       );
 
       return query;
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_all_error',
+          operation,
           entity: 'campus',
-          error: error.message || error || 'unknown',
+          phase: 'error',
+          reason: 'find_all_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error en proceso de búsqueda de campus',
+        'Error al recuperar campus',
       );
-      throw error;
+      throw new InternalServerErrorException('Error al recuperar campus');
     }
   }
 
   async findOne(id: string) {
+    const operation = 'find_one';
+
     try {
-      this.logger.info(
-        {
-          operation: 'find_one_started',
-          entity: 'campus',
-          campusId: id || 'unknown',
-        },
-        'Iniciando búsqueda de campus',
-      );
-
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'campus',
-            reason: 'campus_id_empty',
-            campusId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del campus no puede estar vacío',
+          'ID del campus vacío',
         );
-
-        throw new BadRequestException('Campus id no puede estar vacío');
+        throw new BadRequestException('ID del campus vacío');
       }
 
       const campus = await this.campusRepository.findOneBy({ id });
 
       if (!campus) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'find_one_failed',
+            operation,
             entity: 'campus',
-            reason: 'campus_not_found',
-            campusId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            campus_id: id,
           },
           `Campus con id ${id} no encontrado`,
         );
-
         throw new NotFoundException(`Campus con id ${id} no encontrado`);
       }
 
-      this.logger.info(
+      this.logger.debug(
         {
-          operation: 'find_one_success',
+          operation,
           entity: 'campus',
-          campusId: id || 'unknown',
+          campus_id: id,
         },
         'Campus encontrado exitosamente',
       );
@@ -172,13 +194,23 @@ export class CampusService {
     } catch (error) {
       this.logger.error(
         {
-          operation: 'find_one_error',
+          operation,
           entity: 'campus',
-          error: error.message || error || 'unknown',
+          campus_id: id,
+          phase: 'error',
+          reason: 'find_one_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
         },
-        'Error en proceso de búsqueda de campus',
+        'Error al recuperar campus ' + id,
       );
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al recuperar campus');
     }
   }
 
@@ -190,51 +222,65 @@ export class CampusService {
         );
       return await this.campusRepository.findOneBy({ nombre });
     } catch (error) {
-      throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al recuperar campus');
     }
   }
 
   async update(id: string, updateCampusDto: UpdateCampusDto) {
+    const operation = 'update';
+    const startTime = Date.now();
+
     try {
       const { nombre, codigo } = updateCampusDto;
 
       this.logger.info(
         {
-          operation: 'update_started',
+          operation,
           entity: 'campus',
-          campusId: id || 'unknown',
+          phase: 'start',
+          reason: 'update_started',
+          campus_id: id,
+          update_fields: Object.keys(updateCampusDto).filter(
+            (key) => updateCampusDto[key] !== undefined,
+          ),
         },
         'Iniciando actualización de campus',
       );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'campus',
-            reason: 'campus_id_empty',
-            campusId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del campus no puede estar vacío',
+          'ID del campus vacío',
         );
-
-        throw new BadRequestException('Campus id no puede estar vacío');
+        throw new BadRequestException('ID del campus vacío');
       }
 
       const campus = await this.campusRepository.findOneBy({ id });
 
       if (!campus) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'update_failed',
+            operation,
             entity: 'campus',
+            phase: 'validation_failed',
             reason: 'campus_not_found',
-            campusId: id || 'unknown',
+            campus_id: id,
           },
-          `Campus con id ${id} no encontrado`,
+          `Campus con ID ${id} no encontrado`,
         );
 
-        throw new NotFoundException(`Campus con id ${id} no encontrado`);
+        throw new NotFoundException(`Campus con ID ${id} no encontrado`);
       }
 
       const updateData: any = {};
@@ -250,38 +296,72 @@ export class CampusService {
         });
 
         if (codigoExists) {
-          this.logger.error(
+          this.logger.warn(
             {
-              operation: 'update_failed',
+              operation,
               entity: 'campus',
-              reason: 'campus_codigo_exists',
-              campusId: id || 'unknown',
+              phase: 'validation_failed',
+              reason: 'campus_exists',
+              campus_id: id,
+              codigo,
             },
-            'Ya existe un campus con ese codigo',
+            'Ya existe un campus con codigo ' + codigo,
           );
 
-          throw new ConflictException('Ya existe un campus con ese codigo');
+          throw new ConflictException(
+            'Ya existe un campus con ese codigo ' + codigo,
+          );
         }
         updateData.codigo = codigo;
       }
 
       if (Object.keys(updateData).length === 0) {
+        this.logger.debug(
+          {
+            operation,
+            entity: 'campus',
+            campus_id: id,
+            phase: 'validation_failed',
+            reason: 'no_changes',
+          },
+          'No hay cambios para actualizar',
+        );
         return campus;
       }
 
       await this.campusRepository.update(id, updateData);
+      const duration = Date.now() - startTime;
 
       this.logger.info(
         {
-          operation: 'update_success',
+          operation,
           entity: 'campus',
-          campusId: id || 'unknown',
+          phase: 'success',
+          reason: 'update_success',
+          campus_id: id,
+          updated_fields: Object.keys(updateData),
+          duration,
         },
         'Campus actualizado exitosamente',
       );
 
       return await this.campusRepository.findOneBy({ id });
     } catch (error) {
+      const duration = Date.now() - startTime;
+
+      this.logger.error(
+        {
+          operation,
+          entity: 'campus',
+          campus_id: id,
+          phase: 'error',
+          reason: 'update_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
+        },
+        `Error actualizando campus ${id}: ${error.message}`,
+      );
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException ||
@@ -289,36 +369,54 @@ export class CampusService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException({
-        message: 'Ocurrio un error inesperado',
-        details: error.message,
-      });
+      throw new InternalServerErrorException('Error al actualizar campus');
     }
   }
 
   async remove(id: string) {
+    const operation = 'remove';
+    const startTime = Date.now();
+
     try {
-      this.logger.info(
+      this.logger.warn(
         {
-          operation: 'remove_started',
+          operation,
           entity: 'campus',
-          campusId: id || 'unknown',
+          phase: 'start',
+          reason: 'remove_started',
+          campus_id: id,
         },
-        'Iniciando eliminación de campus',
+        'Iniciando deshabilitación/habilitación de campus',
       );
 
       if (!id) {
-        this.logger.error(
+        this.logger.warn(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'campus',
-            reason: 'campus_id_empty',
-            campusId: id || 'unknown',
+            phase: 'validation_failed',
+            reason: 'empty_id',
           },
-          'El ID del campus no puede estar vacío',
+          'ID del campus vacío',
         );
 
-        throw new BadRequestException('El ID del campus no puede estar vacío');
+        throw new BadRequestException('ID del campus vacío');
+      }
+
+      const campus = await this.campusRepository.findOneBy({ id });
+
+      if (!campus) {
+        this.logger.warn(
+          {
+            operation,
+            entity: 'campus',
+            phase: 'validation_failed',
+            reason: 'not_found',
+            campus_id: id,
+          },
+          `Campus con ID ${id} no encontrado`,
+        );
+        throw new NotFoundException(`Campus con ID ${id} no encontrado`);
       }
 
       const result = await this.campusRepository
@@ -327,40 +425,63 @@ export class CampusService {
         .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
         .where('id = :id', { id })
         .execute();
+
       if (result.affected === 0) {
         this.logger.error(
           {
-            operation: 'remove_failed',
+            operation,
             entity: 'campus',
-            reason: 'campus_not_found',
-            campusId: id || 'unknown',
+            phase: 'no_affected',
+            reason: 'not_found',
+            campus_id: id,
           },
-          `Campus con id ${id} no encontrado`,
+          `No se afectaron registros al cambiar estado`,
         );
 
-        throw new NotFoundException('Campus no encontrado');
+        throw new NotFoundException('No se afectaron registros al cambiar estado');
       }
 
-      this.logger.info(
+      const duration = Date.now() - startTime;
+
+      this.logger.warn(
         {
-          operation: 'remove_success',
+          operation,
           entity: 'campus',
-          campusId: id || 'unknown',
+          phase: 'success',
+          reason: 'remove_success',
+          campus_id: id,
+          previous_estado: campus.estado,
+          action: campus.estado === 1 ? 'desactivada' : 'reactivada',
+          duration,
         },
-        'Campus eliminado exitosamente',
+        `Campus ${campus.estado === 1 ? 'desactivada' : 'reactivada'} exitosamente`,
       );
 
       return this.campusRepository.findOneBy({ id });
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'remove_error',
+          operation,
           entity: 'campus',
-          error: error.message || error || 'unknown',
+          campus_id: id,
+          phase: 'error',
+          reason: 'remove_error',
+          error_type: error.constructor.name,
+          error_message: error.message,
+          duration,
         },
-        'Error en proceso de eliminación de campus',
+        `Error eliminando campus ${id}: ${error.message}`,
       );
-      throw error;
+      
+      if(
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ){
+        throw error;
+      }
+      throw new InternalServerErrorException('Error en la deshabilitación/habilitación de campus');
     }
   }
 }

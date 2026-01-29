@@ -18,16 +18,19 @@ import { ConfigService } from '@nestjs/config';
 export class AulaService {
   constructor(
     private readonly config: ConfigService,
+
     @InjectPinoLogger(AulaService.name)
     private readonly logger: PinoLogger,
+
     @InjectRepository(Aula)
     private readonly aulaRepository: Repository<Aula>,
+
     @InjectRepository(Pabellon)
     private readonly pabellonRepository: Repository<Pabellon>,
   ) {}
 
   async create(createAulaDto: CreateAulaDto) {
-    const operation = 'create_aula';
+    const operation = 'create';
     const startTime = Date.now();
 
     try {
@@ -84,9 +87,9 @@ export class AulaService {
             reason: 'pabellon_not_found',
             pabellon_id,
           },
-          'No existe un pabellón con ese ID',
+          'No existe un pabellón con ese ID ' + pabellon_id,
         );
-        throw new NotFoundException('No existe un pabellón con ese ID');
+        throw new NotFoundException('No existe un pabellón con ese ID ' + pabellon_id);
       }
 
       // Creación
@@ -104,6 +107,7 @@ export class AulaService {
           operation,
           entity: 'aula',
           phase: 'success',
+          reason: 'create_success',
           aula_id: savedAula.id,
           nombre: savedAula.nombre,
           codigo: savedAula.codigo,
@@ -117,12 +121,12 @@ export class AulaService {
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      // Log de error estructurado
       this.logger.error(
         {
           operation,
           entity: 'aula',
           phase: 'error',
+          reason: 'create_error',
           error_type: error.constructor.name,
           error_message: error.message,
           stack_trace:
@@ -133,7 +137,6 @@ export class AulaService {
         `Error en creación de aula: ${error.message}`,
       );
 
-      // Re-lanzar excepciones HTTP conocidas
       if (
         error instanceof ConflictException ||
         error instanceof NotFoundException ||
@@ -147,7 +150,7 @@ export class AulaService {
   }
 
   async findAll() {
-    const operation = 'find_all_aulas';
+    const operation = 'find_all';
 
     try {
       const aulas = await this.aulaRepository.find({
@@ -169,6 +172,8 @@ export class AulaService {
         {
           operation,
           entity: 'aula',
+          phase: 'error',
+          reason: 'find_all_error',
           error_type: error.constructor.name,
           error_message: error.message,
         },
@@ -180,7 +185,7 @@ export class AulaService {
   }
 
   async findOne(id: string) {
-    const operation = 'find_one_aula';
+    const operation = 'find_one';
 
     try {
       if (!id) {
@@ -212,7 +217,7 @@ export class AulaService {
           },
           `Aula con ID ${id} no encontrada`,
         );
-        throw new NotFoundException(`Aula con id ${id} no encontrada`);
+        throw new NotFoundException(`Aula con ID ${id} no encontrada`);
       }
 
       this.logger.debug(
@@ -231,6 +236,8 @@ export class AulaService {
           operation,
           entity: 'aula',
           aula_id: id,
+          phase: 'error',
+          reason: 'find_one_error',
           error_type: error.constructor.name,
           error_message: error.message,
         },
@@ -249,7 +256,7 @@ export class AulaService {
   }
 
   async update(id: string, updateAulaDto: UpdateAulaDto) {
-    const operation = 'update_aula';
+    const operation = 'update';
     const startTime = Date.now();
 
     try {
@@ -296,7 +303,7 @@ export class AulaService {
           },
           `Aula con ID ${id} no encontrada`,
         );
-        throw new NotFoundException(`Aula con id ${id} no encontrada`);
+        throw new NotFoundException(`Aula con ID ${id} no encontrada`);
       }
 
       const { nombre, codigo, pabellon_id } = updateAulaDto;
@@ -315,13 +322,13 @@ export class AulaService {
               operation,
               entity: 'aula',
               phase: 'validation_failed',
-              reason: 'duplicate_codigo',
+              reason: 'aula_exists',
               aula_id: id,
               codigo,
             },
-            'Ya existe un aula con ese código ' + codigo,
+            'Ya existe un aula con código ' + codigo,
           );
-          throw new ConflictException('Ya existe un aula con ese código ' + codigo);
+          throw new ConflictException('Ya existe un aula con código ' + codigo);
         }
         updateData.codigo = codigo;
       }
@@ -403,7 +410,6 @@ export class AulaService {
         },
         `Error actualizando aula ${id}: ${error.message}`,
       );
-
       if (
         error instanceof ConflictException ||
         error instanceof NotFoundException ||
@@ -417,7 +423,7 @@ export class AulaService {
   }
 
   async remove(id: string) {
-    const operation = 'remove_aula';
+    const operation = 'remove';
     const startTime = Date.now();
 
     try {
@@ -429,7 +435,7 @@ export class AulaService {
           reason: 'remove_started',
           aula_id: id,
         },
-        'Iniciando eliminación/desactivación de aula',
+        'Iniciando deshabilitación/habilitación de aula',
       );
 
       if (!id) {
@@ -442,7 +448,7 @@ export class AulaService {
           },
           'ID de aula vacío',
         );
-        throw new BadRequestException('El ID del aula no puede estar vacío');
+        throw new BadRequestException('ID del aula vacío');
       }
 
       const aula = await this.aulaRepository.findOne({
@@ -477,24 +483,24 @@ export class AulaService {
             operation,
             entity: 'aula',
             phase: 'no_affected',
+            reason: 'not_found',
             aula_id: id,
           },
           'No se afectaron registros al cambiar estado',
         );
-        throw new NotFoundException('Aula no encontrada');
+        throw new NotFoundException('No se afectaron registros al cambiar estado ');
       }
 
       const duration = Date.now() - startTime;
-      const newEstado = aula.estado === 1 ? 0 : 1;
 
       this.logger.warn(
         {
           operation,
           entity: 'aula',
           phase: 'success',
+          reason: 'remove_success',
           aula_id: id,
           previous_estado: aula.estado,
-          new_estado: newEstado,
           action: aula.estado === 1 ? 'desactivada' : 'reactivada',
           duration,
         },
@@ -511,6 +517,7 @@ export class AulaService {
           entity: 'aula',
           aula_id: id,
           phase: 'error',
+          reason: 'remove_error',
           error_type: error.constructor.name,
           error_message: error.message,
           duration,
@@ -525,7 +532,7 @@ export class AulaService {
         throw error;
       }
 
-      throw new InternalServerErrorException('Error al eliminar aula');
+      throw new InternalServerErrorException('Error en la deshabilitación/habilitación de aula');
     }
   }
 }

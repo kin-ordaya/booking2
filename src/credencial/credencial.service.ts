@@ -35,7 +35,7 @@ export class CredencialService {
   ) {}
 
   async create(createCredencialDto: CreateCredencialDto) {
-    const operation = 'create_credencial';
+    const operation = 'create';
     const startTime = Date.now();
 
     try {
@@ -72,11 +72,11 @@ export class CredencialService {
             reason: 'recurso_not_found',
             recurso_id,
           },
-          'No existe un recurso con id ' + recurso_id,
+          'No existe recurso con ID ' + recurso_id,
         );
 
         throw new NotFoundException(
-          'No existe un recurso con id ' + recurso_id,
+          'No existe recurso con ID ' + recurso_id,
         );
       }
 
@@ -89,10 +89,10 @@ export class CredencialService {
             reason: 'rol_not_found',
             rol_id,
           },
-          'No existe un rol con id ' + rol_id,
+          'No existe rol con ID ' + rol_id,
         );
 
-        throw new NotFoundException('No existe un rol con id ' + rol_id);
+        throw new NotFoundException('No existe rol con ID ' + rol_id);
       }
 
       const tipoAcceso = recursoExists.tipoAcceso.nombre;
@@ -226,11 +226,11 @@ export class CredencialService {
           entity: 'credencial',
           phase: 'success',
           reason: 'create_success',
+          credencial_id: savedCredencial.id,
           usuario,
           clave,
           recurso_id: savedCredencial.recurso.id,
           rol_id: savedCredencial.rol.id,
-          credencial_id: savedCredencial.id,
           duration,
         },
         'Credencial creada exitosamente',
@@ -239,10 +239,13 @@ export class CredencialService {
       return savedCredencial;
     } catch (error) {
       const duration = Date.now() - startTime;
+
       this.logger.error(
         {
-          operation: 'create_error',
+          operation,
           entity: 'credencial',
+          phase: 'error',
+          reason: 'create_error',
           error_type: error.constructor.name,
           error_message: error.message,
           stack_trace:
@@ -261,7 +264,7 @@ export class CredencialService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear credencial');
     }
   }
 
@@ -284,11 +287,11 @@ export class CredencialService {
             reason: 'not_found',
             recursoId: recurso_id,
           },
-          'No existe un recurso con id ' + recurso_id,
+          'No existe recurso con ID ' + recurso_id,
         );
 
         throw new NotFoundException(
-          'No existe un recurso con ese id ' + recurso_id,
+          'No existe recurso con ID ' + recurso_id,
         );
       }
 
@@ -345,7 +348,7 @@ export class CredencialService {
           entity: 'credencial',
           count: count,
         },
-        'Credencials recuperadas exitosamente',
+        'Credenciales recuperadas exitosamente',
       );
 
       return {
@@ -362,10 +365,12 @@ export class CredencialService {
         {
           operation,
           entity: 'credencial',
+          phase: 'error',
+          reason: 'find_all_error',
           error_type: error.constructor.name,
           error_message: error.message,
         },
-        'Error al recuperar credencials',
+        'Error al recuperar credenciales',
       );
       if (
         error instanceof NotFoundException ||
@@ -373,7 +378,7 @@ export class CredencialService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al recuperar credenciales');
     }
   }
 
