@@ -22,10 +22,23 @@ async function bootstrap() {
     .setDescription('Booking 2 API description Despliegue')
     .setVersion('1.0')
     .addBearerAuth()
+    .addBasicAuth(
+      {
+        type: 'http',
+        scheme: 'basic',
+        name: 'basic-auth',
+        description: 'Ingrese usuario y contraseña para PowerBI',
+      },
+      'basic-auth', // Nombre específico para este esquema
+    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  const document = SwaggerModule.createDocument(app, config,);
+  SwaggerModule.setup('docs', app, document,{
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   app.enableCors({
     origin: [
@@ -52,7 +65,7 @@ async function bootstrap() {
       },
     ],
   });
-  
+
   const configService = app.get(ConfigService);
   const port = configService.get('PORT');
   await app.listen(port);

@@ -22,12 +22,22 @@ export class CampusService {
   ) {}
 
   async create(createCampusDto: CreateCampusDto) {
+    const operation = 'create_campus';
+    const startTime = Date.now();
     try {
       const { codigo } = createCampusDto;
-      this.logger.info({
-        operation: 'create_started',
-        entity: 'campus',
-      });
+
+      this.logger.info(
+        {
+          operation,
+          entity: 'campus',
+          phase: 'start',
+          reason: 'create_started',
+          nombre: createCampusDto.nombre,
+          codigo,
+        },
+        'Iniciando creación de campus',
+      );
 
       const campusExists = await this.campusRepository.findOne({
         where: { codigo },
