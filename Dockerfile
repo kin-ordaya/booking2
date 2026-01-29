@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # Argumento para invalidar cache - cambiar este número fuerza rebuild
-ARG CACHEBUST=20260129006
+ARG CACHEBUST=20260129007
 
 WORKDIR /app
 
@@ -18,7 +18,9 @@ RUN npm ci && npm cache clean --force
 COPY . .
 
 # Build del proyecto con verificación
-RUN echo "=== Iniciando build ===" && \
+RUN echo "=== Node.js version ===" && \
+    node --version && \
+    echo "=== Iniciando build ===" && \
     npm run build && \
     echo "=== Contenido de dist/ ===" && \
     ls -laR dist/ && \
