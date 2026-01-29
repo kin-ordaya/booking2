@@ -29,14 +29,17 @@ RUN mkdir -p /app/logs /app/uploads /app/temp && \
     chown -R nestjs:nodejs /app && \
     chmod -R 755 /app/logs /app/uploads /app/temp
 
+# Copiar package.json para tener la info de dependencias
+COPY --chown=nestjs:nodejs package*.json ./
+
 # Solo copiar las dependencias de producción
-COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
+# Copiar el código compilado desde el builder
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 USER nestjs
 
 EXPOSE 3000
 
-CMD ["dumb-init", "node", "dist/main"]
+CMD ["dumb-init", "node", "dist/main.js"]
