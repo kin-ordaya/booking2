@@ -1,46 +1,35 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Crear directorio de logs con permisos adecuados
-RUN mkdir -p /app/logs && chmod 755 /app/logs
-
-COPY package*.json ./
-
-RUN npm ci && npm cache clean --force
-
-COPY . .
-
-# Invalidar cache - rebuild 2026-01-29-v2
-RUN npm run build && ls -la dist/
-
-# Etapa de producción
-FROM node:18-alpine AS production
-
+# Instalar herramientas necesarias
 RUN apk add --no-cache dumb-init curl
 
-# Crear usuario con UID específico para mejor control de permisos
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001 -G nodejs
+# Copiar archivos de dependencias
+COPY package*.json ./
 
-WORKDIR /app
+# Instalar dependencias
+RUN npm ci && npm cache clean --force
 
-# Crear directorios necesarios con permisos adecuados
+# Copiar código fuente - CACHE INVALIDATION 2026-01-29-v3
+COPY . .
+
+# Build del proyecto con verificación
+RUN echo "=== Iniciando build ===" && \
+    npm run build && \
+    echo "=== Contenido de dist/ ===" && \
+    ls -laR dist/ && \
+    echo "=== Verificando main.js ===" && \
+    test -f dist/main.js && echo "✓ main.js encontrado" || echo "✗ ERROR: main.js NO encontrado"
+
+# Crear directorios necesarios
 RUN mkdir -p /app/logs /app/uploads /app/temp && \
-    chown -R nestjs:nodejs /app && \
     chmod -R 755 /app/logs /app/uploads /app/temp
 
-# Copiar package.json para tener la info de dependencias
-COPY --chown=nestjs:nodejs package*.json ./
-
-# Solo copiar las dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
-
-# Copiar el código compilado desde el builder
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-
-# Verificar que los archivos existan
-RUN ls -la /app/dist/ || echo "ERROR: dist directory is empty or missing"
+# Crear usuario
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 -G nodejs && \
+    chown -R nestjs:nodejs /app
 
 USER nestjs
 
