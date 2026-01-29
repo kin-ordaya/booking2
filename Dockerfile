@@ -11,8 +11,8 @@ RUN npm ci && npm cache clean --force
 
 COPY . .
 
-# Invalidar cache - rebuild 2026-01-29
-RUN npm run build
+# Invalidar cache - rebuild 2026-01-29-v2
+RUN npm run build && ls -la dist/
 
 # Etapa de producción
 FROM node:18-alpine AS production
@@ -38,6 +38,9 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copiar el código compilado desde el builder
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+
+# Verificar que los archivos existan
+RUN ls -la /app/dist/ || echo "ERROR: dist directory is empty or missing"
 
 USER nestjs
 
