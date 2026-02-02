@@ -100,14 +100,10 @@ export class ImportService {
     private readonly rolService: RolService,
     private readonly rolUsuarioService: RolUsuarioService,
     private readonly usuarioService: UsuarioService,
-    @InjectPinoLogger(CampusService.name)
-    private readonly logger: PinoLogger,
   ) {}
 
   async procesarExcel(fileBuffer: Buffer, queryImportDto: QueryImportDto) {
     const { tipo, hoja } = queryImportDto;
-
-    this.logger.info(`Iniciando importación de tipo: ${tipo}`);
 
     const workbook = XLSX.read(fileBuffer);
 
@@ -129,7 +125,6 @@ export class ImportService {
 
     // Obtener columnas según el tipo
     let columnasConfig;
-    this.logger.info(tipo);
     switch (tipo) {
       case 'usuarios':
         columnasConfig = this.COLUMNAS_USUARIOS_ROLES;
@@ -176,11 +171,8 @@ export class ImportService {
    * Procesa usuarios y sus roles
    */
   private async procesarUsuarios(data: any[]): Promise<any> {
-    this.logger.info(`Procesando ${data.length} filas para usuarios`);
 
-    // Filtrar usuarios únicos
     const usuariosUnicos = this.filtrarUsuariosUnicos(data);
-    this.logger.info(`Filtrados a ${usuariosUnicos.length} usuarios únicos`);
 
     const resultados_usuarios: ImportResultDto = {
       exitosos: 0,
@@ -222,11 +214,7 @@ export class ImportService {
         if (row.rol && row.correo_institucional) {
           await this.procesarRolUsuario(row);
           resultados_roles_usuarios.exitosos++;
-        } else {
-          this.logger.warn(
-            `Fila ${numeroFila}: No tiene datos suficientes para asignar rol`,
-          );
-        }
+        } 
       } catch (error) {
         resultados_roles_usuarios.errores++;
         resultados_roles_usuarios.detalles.push({
@@ -246,11 +234,9 @@ export class ImportService {
    * Procesa cursos
    */
   private async procesarCursos(data: any[]): Promise<any> {
-    this.logger.info(`Procesando ${data.length} filas para cursos`);
 
     // Filtrar cursos únicos
     const cursosUnicos = this.filtrarCursosUnicos(data);
-    this.logger.info(`Filtrados a ${cursosUnicos.length} cursos únicos`);
 
     const resultados_cursos: ImportResultDto = {
       exitosos: 0,
@@ -332,9 +318,6 @@ export class ImportService {
       const numeroFila = index + 2;
 
       try {
-        this.logger.info('Procesando fila: ' + numeroFila);
-        this.logger.info(row);
-        // Validar que tenga datos mínimos de curso
         if (
           !row.nrc ||
           !row.inscritos ||
@@ -386,7 +369,6 @@ export class ImportService {
     //procesar responsables
     for (const [index, row] of data.entries()) {
       const numeroFila = index + 2;
-      this.logger.info(row);
       try {
         if (
           !row.correo_institucional ||
@@ -474,25 +456,18 @@ export class ImportService {
     const campus = await this.campusService.findOneByNombre(row.campus);
     if (!campus) throw new NotFoundException('Campus no encontrado');
 
-    this.logger.info('Procesando responsable');
-    this.logger.info(row);
-
     // Crear DTO para usuario
     const createResponsableDto = new CreateResponsableDto();
     createResponsableDto.rol_usuario_id = rolUsuarioExistente.id;
     createResponsableDto.clase_id = clase.id;
 
-    this.logger.info(createResponsableDto);
-
     return await this.responsableService.create(createResponsableDto);
   }
 
   private async procesarRecursoCurso(row: any): Promise<any> {
-    this.logger.info('Procesando recurso de curso');
-    this.logger.info(row);
     const recurso = await this.recursoService.findOneByNombre(row.recurso);
     if (!recurso) throw new NotFoundException('Recurso no encontrado');
-    this.logger.info(row.codigo_curso);
+
     const curso = await this.cursoService.findOneByCodigo(row.codigo_curso);
     if (!curso) throw new NotFoundException('Curso no encontrado');
 
@@ -503,7 +478,6 @@ export class ImportService {
   }
 
   private async procesarCredenciales(data: any[]): Promise<any> {
-    this.logger.info(`Procesando ${data.length} filas para credenciales`);
 
     const resultados: ImportResultDto = {
       exitosos: 0,
@@ -589,11 +563,11 @@ export class ImportService {
       (columna) => !columnasRelevantes.includes(columna),
     );
 
-    if (columnasExtras.length > 0) {
-      this.logger.warn(
-        `Columnas extras detectadas (serán ignoradas): ${columnasExtras.join(', ')}`,
-      );
-    }
+    // if (columnasExtras.length > 0) {
+    //   this.logger.warn(
+    //     `Columnas extras detectadas (serán ignoradas): ${columnasExtras.join(', ')}`,
+    //   );
+    // }
   }
 
   /**

@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { LogRequest } from '@/common/decorators/log-request.decorator';
 
 @Controller('aula')
 @ApiBearerAuth()
@@ -23,6 +24,7 @@ export class AulaController {
   constructor(private readonly aulaService: AulaService) {}
 
   @Post()
+  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Crear aula',
@@ -34,6 +36,7 @@ export class AulaController {
   }
 
   @Get()
+  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Obtener todas las aulas',
@@ -44,6 +47,7 @@ export class AulaController {
   }
 
   @Get(':id')
+  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Obtener una aula',
@@ -54,6 +58,7 @@ export class AulaController {
   }
 
   @Patch(':id')
+  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Actualizar una aula',
@@ -65,6 +70,7 @@ export class AulaController {
   }
 
   @Delete(':id')
+  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Eliminar una aula',

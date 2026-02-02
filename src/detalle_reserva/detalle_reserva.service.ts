@@ -21,8 +21,6 @@ export class DetalleReservaService {
     private readonly reservaRepository: Repository<DetalleReserva>,
   ) {}
 
-  async create(createDetalleReservaDto: CreateDetalleReservaDto) {}
-
   async findAll(paginationDetalleReservaDto: PaginationDetalleReservaDto) {
     try {
       const { reserva_id, page, limit, search } = paginationDetalleReservaDto;

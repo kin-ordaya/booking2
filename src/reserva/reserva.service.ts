@@ -30,9 +30,6 @@ import { CreateReservaMantenimientoMixtoMultipleDto } from './dto/multiple/creat
 @Injectable()
 export class ReservaService {
   constructor(
-    @InjectPinoLogger(ReservaService.name)
-    private readonly logger: PinoLogger,
-
     @InjectRepository(Reserva)
     private readonly reservaRepository: Repository<Reserva>,
 
@@ -190,32 +187,8 @@ export class ReservaService {
     autorRol: string,
     recursoTiempoReserva: number,
   ) {
-    this.logger.info({ inicio }, '[validarInicioyFinReserva] Inicio');
-    this.logger.info({ fin }, '[validarInicioyFinReserva] Fin');
-    this.logger.info({ autorRol }, '[validarInicioyFinReserva] Rol');
-    this.logger.info(
-      { recursoTiempoReserva },
-      '[validarInicioyFinReserva] Tiempo Reserva',
-    );
-
-    // ✅ SOLUCIÓN: Ajustar solo para la comparación sumando 5 horas
     const inicioAjustado = new Date(inicio.getTime() + 5 * 60 * 60 * 1000);
     const ahora = new Date();
-
-    this.logger.info(
-      {
-        inicioOriginal: inicio,
-        inicioAjustado: inicioAjustado,
-        inicioLocal: inicioAjustado.toLocaleString('es-PE', {
-          timeZone: 'America/Lima',
-        }),
-        ahoraLocal: ahora.toLocaleString('es-PE', { timeZone: 'America/Lima' }),
-        inicioTimestamp: inicioAjustado.getTime(),
-        ahoraTimestamp: ahora.getTime(),
-        diferencia: inicioAjustado.getTime() - ahora.getTime(),
-      },
-      '[validarInicioyFinReserva] Comparación ajustada',
-    );
 
     if (autorRol === 'DOCENTE') {
       if (inicioAjustado.getTime() < ahora.getTime()) {
@@ -226,15 +199,6 @@ export class ReservaService {
 
       const minimoReserva = new Date(
         ahora.getTime() + recursoTiempoReserva * 60 * 60 * 1000,
-      );
-
-      this.logger.info(
-        {
-          inicioAjustado: inicioAjustado.getTime(),
-          minimoReserva: minimoReserva.getTime(),
-          diferenciaMinima: inicioAjustado.getTime() - minimoReserva.getTime(),
-        },
-        '[validarInicioyFinReserva] Validación docente',
       );
 
       if (inicioAjustado.getTime() < minimoReserva.getTime()) {
@@ -892,7 +856,6 @@ export class ReservaService {
         docente_id,
       } = createReservaMixtoDto;
 
-      this.logger.info;
       const { recurso, autor } = await this.validateBasicReservationData(
         recurso_id,
         autor_id,

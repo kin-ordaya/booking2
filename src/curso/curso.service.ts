@@ -14,15 +14,10 @@ import { Not, Repository } from 'typeorm';
 import { PaginationCursoDto } from './dto/pagination.dto';
 import { Eap } from 'src/eap/entities/eap.entity';
 import { Plan } from 'src/plan/entities/plan.entity';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CursoService {
   constructor(
-    private readonly config: ConfigService,
-    @InjectPinoLogger(CursoService.name)
-    private readonly logger: PinoLogger,
     @InjectRepository(Curso)
     private readonly cursoRepository: Repository<Curso>,
     @InjectRepository(Eap)
@@ -32,24 +27,8 @@ export class CursoService {
   ) {}
 
   async create(createCursoDto: CreateCursoDto): Promise<Curso> {
-    const operation = 'create';
-    const startTime = Date.now();
-
     try {
       const { codigo, eap_id, plan_id } = createCursoDto;
-
-      this.logger.info(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'start',
-          reason: 'create_started',
-          codigo,
-          eap_id,
-          plan_id,
-        },
-        'Iniciando creación de curso',
-      );
 
       const [codigoExiste, planExiste, eapExiste] = await Promise.all([
         this.cursoRepository.existsBy({ codigo }),
@@ -58,44 +37,14 @@ export class CursoService {
       ]);
 
       if (codigoExiste) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'curso_exists',
-            codigo,
-          },
-          'Ya existe curso con código ' + codigo,
-        );
         throw new ConflictException('Ya existe curso con código ' + codigo);
       }
 
       if (!planExiste) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'plan_not_found',
-            plan_id,
-          },
-          'No existe plan con ID ' + plan_id,
-        );
         throw new NotFoundException('No existe plan con ID ' + plan_id);
       }
 
       if (eap_id && !eapExiste) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'eap_not_found',
-            eap_id,
-          },
-          'No existe EAP con ese ID ' + eap_id,
-        );
         throw new NotFoundException('No existe EAP con ese ID ' + eap_id);
       }
 
@@ -107,46 +56,9 @@ export class CursoService {
       });
 
       const savedCurso = await this.cursoRepository.save(curso);
-      const duration = Date.now() - startTime;
-
-      this.logger.info(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'success',
-          reason: 'create_success',
-          curso_id: curso.id,
-          codigo: curso.codigo,
-          codigo_cruzado: curso?.codigo_cruzado,
-          nombre: curso.nombre,
-          descripcion: curso?.descripcion,
-          eap_id: curso.eap?.id,
-          plan_id: curso.plan.id,
-          duration,
-        },
-        'Curso creado exitosamente',
-      );
 
       return savedCurso;
     } catch (error) {
-      const duration = Date.now() - startTime;
-
-      this.logger.error(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'error',
-          reason: 'create_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-          stack_trace:
-            this.config.get('NODE_ENV') === 'development'
-              ? error.stack
-              : undefined,
-          duration,
-        },
-        'Error en proceso de creación de curso',
-      );
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException ||
@@ -159,7 +71,6 @@ export class CursoService {
   }
 
   async findAll(paginationCursoDto: PaginationCursoDto) {
-    const operation = 'find_all';
     try {
       const { page, limit, sort_name, sort_state, search } = paginationCursoDto;
 
@@ -206,15 +117,6 @@ export class CursoService {
         .take(limit)
         .getManyAndCount();
 
-      this.logger.debug(
-        {
-          operation,
-          entity: 'curso',
-          count,
-        },
-        'Cursos encontrados exitosamente',
-      );
-
       return {
         results,
         meta: {
@@ -225,18 +127,6 @@ export class CursoService {
         },
       };
     } catch (error) {
-      this.logger.error(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'error',
-          reason: 'find_all_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-        },
-        'Error al recuperar cursos',
-      );
-
       throw new InternalServerErrorException('Error al recuperar cursos');
     }
   }
@@ -295,57 +185,17 @@ export class CursoService {
 
     try {
       if (!id) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'empty_id',
-          },
-          'ID de curso vacío',
-        );
         throw new BadRequestException('El ID del curso no puede estar vacío');
       }
 
       const curso = await this.cursoRepository.findOneBy({ id });
 
       if (!curso) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            curso_id: id,
-          },
-          `Curso con ID ${id} no encontrado`,
-        );
         throw new NotFoundException(`Curso con ID ${id} no encontrado`);
       }
 
-      this.logger.debug(
-        {
-          operation,
-          entity: 'curso',
-          curso_id: curso.id,
-        },
-        'Curso recuperado exitosamente',
-      );
       return curso;
     } catch (error) {
-      this.logger.error(
-        {
-          operation,
-          entity: 'curso',
-          curso_id: id,
-          phase: 'error',
-          reason: 'find_one_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-        },
-        `Error al recuperar curso ${id}`,
-      );
-
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
@@ -360,54 +210,15 @@ export class CursoService {
     const operation = 'find_one_by_codigo';
     try {
       if (!codigo) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'empty_codigo',
-          },
-          'Codigo de curso no puede estar vacío',
-        );
         throw new BadRequestException('Codigo de curso no puede estar vacío');
       }
 
       const curso = await this.cursoRepository.findOneBy({ codigo });
       if (!curso) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            curso_codigo: codigo,
-          },
-          `Curso con codigo ${codigo} no encontrado`,
-        );
         throw new NotFoundException('Curso no encontrado');
       }
-      this.logger.debug(
-        {
-          operation,
-          entity: 'curso',
-          curso_codigo: curso.codigo,
-        },
-        'Curso recuperado exitosamente',
-      );
       return curso;
     } catch (error) {
-      this.logger.error(
-        {
-          operation,
-          entity: 'curso',
-          curso_codigo: codigo,
-          phase: 'error',
-          reason: 'find_one_by_codigo_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-        },
-        `Error al recuperar curso con codigo ${codigo}`,
-      );
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
@@ -419,37 +230,15 @@ export class CursoService {
   }
 
   async update(id: string, updateCursoDto: UpdateCursoDto) {
-    const operation = 'update';
-    const startTime = Date.now();
-
     try {
       const { codigo, nombre, descripcion, eap_id, plan_id } = updateCursoDto;
 
       if (!id) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'empty_id',
-          },
-          'ID de curso vacío',
-        );
         throw new BadRequestException('ID del curso  vacío');
       }
 
       const curso = await this.cursoRepository.findOneBy({ id });
       if (!curso) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            curso_id: id,
-          },
-          `Curso con ID ${id} no encontrado`,
-        );
         throw new NotFoundException(`Curso con ID ${id} no encontrado`);
       }
 
@@ -462,17 +251,6 @@ export class CursoService {
         });
 
         if (codigoExistente) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'curso',
-              phase: 'validation_failed',
-              reason: 'curso_exists',
-              curso_id: id,
-              curso_codigo: codigo,
-            },
-            'Ya existe curso con codigo ' + codigo,
-          );
           throw new ConflictException('Ya existe curso con codigo ' + codigo);
         }
         updateData.codigo = codigo;
@@ -484,16 +262,6 @@ export class CursoService {
         });
 
         if (!eapExists) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'curso',
-              phase: 'validation_failed',
-              reason: 'eap_not_found',
-              eap_id,
-            },
-            'No existe EAP con ID ' + eap_id,
-          );
           throw new NotFoundException('No existe EAP con ID ' + eap_id);
         }
         updateData.eap = { id: eap_id };
@@ -505,16 +273,6 @@ export class CursoService {
         });
 
         if (!planExists) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'curso',
-              phase: 'validation_failed',
-              reason: 'plan_not_found',
-              plan_id,
-            },
-            'No existe plan con ID ' + plan_id,
-          );
           throw new NotFoundException('No existe plan con ID ' + plan_id);
         }
         updateData.plan = { id: plan_id };
@@ -529,52 +287,13 @@ export class CursoService {
       }
 
       if (Object.keys(updateData).length === 0) {
-        this.logger.debug(
-          {
-            operation,
-            entity: 'curso',
-            curso_id: id,
-            phase: 'validation_failed',
-            reason: 'no_changes',
-          },
-          'No hay cambios para actualizar',
-        );
         return curso;
       }
 
       await this.cursoRepository.update(id, updateData);
-      const duration = Date.now() - startTime;
-
-      this.logger.info(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'success',
-          reason: 'update_success',
-          curso_id: id,
-          updated_fields: Object.keys(updateData),
-          duration,
-        },
-        'Curso actualizado exitosamente',
-      );
 
       return await this.cursoRepository.findOneBy({ id });
     } catch (error) {
-      const duration = Date.now() - startTime;
-
-      this.logger.error(
-        {
-          operation,
-          entity: 'curso',
-          curso_id: id,
-          phase: 'error',
-          reason: 'update_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-          duration,
-        },
-        `Error actualizando curso ${id}: ${error.message}`,
-      );
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException ||
@@ -587,46 +306,14 @@ export class CursoService {
   }
 
   async remove(id: string) {
-    const operation = 'remove';
-    const startTime = Date.now();
     try {
-      this.logger.warn(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'start',
-          reason: 'remove_started',
-          curso_id: id,
-        },
-        'Iniciando deshabilitación/habilitación de curso',
-      );
-
       if (!id) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'empty_id',
-          },
-          'ID de curso vacío',
-        );
         throw new BadRequestException('El ID del curso no puede estar vacío');
       }
 
       const curso = await this.cursoRepository.findOneBy({ id });
 
       if (!curso) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            curso_id: id,
-          },
-          `Curso con ID ${id} no encontrado`,
-        );
         throw new NotFoundException(`Curso con ID ${id} no encontrado`);
       }
 
@@ -638,54 +325,13 @@ export class CursoService {
         .execute();
 
       if (result.affected === 0) {
-        this.logger.error(
-          {
-            operation,
-            entity: 'curso',
-            phase: 'no_affected',
-            reason: 'not_found',
-            curso_id: id,
-          },
-          'No se afectaron registros al cambiar estado',
-        );
         throw new NotFoundException(
           'No se afectaron registros al cambiar estado ',
         );
       }
 
-      const duration = Date.now() - startTime;
-
-      this.logger.warn(
-        {
-          operation,
-          entity: 'curso',
-          phase: 'success',
-          reason: 'remove_success',
-          curso_id: id,
-          previous_estado: curso.estado,
-          action: curso.estado === 1 ? 'desactivada' : 'reactivada',
-          duration,
-        },
-        `Curso ${curso.estado === 1 ? 'desactivada' : 'reactivada'} exitosamente`,
-      );
       return this.cursoRepository.findOneBy({ id });
     } catch (error) {
-      const duration = Date.now() - startTime;
-
-      this.logger.error(
-        {
-          operation,
-          entity: 'curso',
-          curso_id: id,
-          phase: 'error',
-          reason: 'remove_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-          duration,
-        },
-        `Error eliminando curso ${id}: ${error.message}`,
-      );
-
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException

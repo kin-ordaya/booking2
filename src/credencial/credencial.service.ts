@@ -13,17 +13,10 @@ import { Credencial } from './entities/credencial.entity';
 import { Repository } from 'typeorm';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CredencialService {
   constructor(
-    private readonly config: ConfigService,
-
-    @InjectPinoLogger(CredencialService.name)
-    private readonly logger: PinoLogger,
-
     @InjectRepository(Credencial)
     private readonly credencialRepository: Repository<Credencial>,
 
@@ -35,25 +28,8 @@ export class CredencialService {
   ) {}
 
   async create(createCredencialDto: CreateCredencialDto) {
-    const operation = 'create';
-    const startTime = Date.now();
-
     try {
       const { usuario, clave, recurso_id, rol_id } = createCredencialDto;
-
-      this.logger.info(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'start',
-          reason: 'create_started',
-          usuario,
-          clave,
-          recurso_id,
-          rol_id,
-        },
-        'Iniciando creación de credencial',
-      );
 
       const [recursoExists, rolExists] = await Promise.all([
         this.recursoRepository.findOne({
@@ -64,34 +40,12 @@ export class CredencialService {
       ]);
 
       if (!recursoExists) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'recurso_not_found',
-            recurso_id,
-          },
-          'No existe recurso con ID ' + recurso_id,
-        );
-
         throw new NotFoundException(
           'No existe recurso con ID ' + recurso_id,
         );
       }
 
       if (!rolExists) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'rol_not_found',
-            rol_id,
-          },
-          'No existe rol con ID ' + rol_id,
-        );
-
         throw new NotFoundException('No existe rol con ID ' + rol_id);
       }
 
@@ -100,16 +54,6 @@ export class CredencialService {
       // Validación según tipo de acceso
       if (tipoAcceso === 'USERPASS') {
         if (!usuario || !clave) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'credencial',
-              phase: 'validation_failed',
-              reason: 'usuario_clave_empty',
-            },
-            'Campos usuario y clave vacíos',
-          );
-
           throw new BadRequestException('Campos usuario y clave vacíos');
         }
         const credencialExists = await this.credencialRepository.findOne({
@@ -117,23 +61,6 @@ export class CredencialService {
         });
 
         if (credencialExists) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'credencial',
-              phase: 'validation_failed',
-              reason: 'credencial_exists',
-              usuario,
-              clave,
-            },
-            'Ya existe una credencial con usuario y clave ' +
-              usuario +
-              ' y ' +
-              clave +
-              ' en el recurso ' +
-              recurso_id,
-          );
-
           throw new ConflictException(
             'Ya existe una credencial con usuario y clave ' +
               usuario +
@@ -145,16 +72,6 @@ export class CredencialService {
         }
       } else if (tipoAcceso === 'KEY') {
         if (!clave) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'credencial',
-              phase: 'validation_failed',
-              reason: 'clave_empty',
-            },
-            'Campo clave vacío',
-          );
-
           throw new BadRequestException('Campo clave vacío');
         }
         const credencialExists = await this.credencialRepository.findOne({
@@ -162,20 +79,6 @@ export class CredencialService {
         });
 
         if (credencialExists) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'credencial',
-              phase: 'validation_failed',
-              reason: 'credencial_exists',
-              clave,
-            },
-            'Ya existe una credencial con clave ' +
-              clave +
-              ' en el recurso ' +
-              recurso_id,
-          );
-
           throw new ConflictException(
             'Ya existe una credencial con clave ' +
               clave +
@@ -184,17 +87,6 @@ export class CredencialService {
           );
         }
       } else {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'tipo_acceso_invalid',
-            tipoAcceso,
-          },
-          'Tipo de acceso no válido ' + tipoAcceso,
-        );
-
         throw new BadRequestException('Tipo de acceso no válido ' + tipoAcceso);
       }
 
@@ -218,45 +110,9 @@ export class CredencialService {
       });
 
       const savedCredencial = await this.credencialRepository.save(credencial);
-      const duration = Date.now() - startTime;
-
-      this.logger.info(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'success',
-          reason: 'create_success',
-          credencial_id: savedCredencial.id,
-          usuario,
-          clave,
-          recurso_id: savedCredencial.recurso.id,
-          rol_id: savedCredencial.rol.id,
-          duration,
-        },
-        'Credencial creada exitosamente',
-      );
 
       return savedCredencial;
     } catch (error) {
-      const duration = Date.now() - startTime;
-
-      this.logger.error(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'error',
-          reason: 'create_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-          stack_trace:
-            this.config.get('NODE_ENV') === 'development'
-              ? error.stack
-              : undefined,
-          duration,
-          timestamp: new Date().toISOString(),
-        },
-        'Error en proceso de creación de credencial',
-      );
       if (
         error instanceof ConflictException ||
         error instanceof NotFoundException ||
@@ -269,7 +125,6 @@ export class CredencialService {
   }
 
   async findAll(paginationCredencialDto: PaginationCredencialDto) {
-    const operation = 'find_all_started';
     try {
       const { page, limit, search, recurso_id, sort_state, rol_id } =
         paginationCredencialDto;
@@ -279,17 +134,6 @@ export class CredencialService {
       });
 
       if (!recursoExists) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            recursoId: recurso_id,
-          },
-          'No existe recurso con ID ' + recurso_id,
-        );
-
         throw new NotFoundException(
           'No existe recurso con ID ' + recurso_id,
         );
@@ -342,15 +186,6 @@ export class CredencialService {
         .take(limit)
         .getManyAndCount();
 
-      this.logger.debug(
-        {
-          operation,
-          entity: 'credencial',
-          count: count,
-        },
-        'Credenciales recuperadas exitosamente',
-      );
-
       return {
         results,
         meta: {
@@ -361,17 +196,6 @@ export class CredencialService {
         },
       };
     } catch (error) {
-      this.logger.error(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'error',
-          reason: 'find_all_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-        },
-        'Error al recuperar credenciales',
-      );
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
@@ -383,19 +207,8 @@ export class CredencialService {
   }
 
   async findOne(id: string) {
-    const operation = 'find_one_started';
     try {
       if (!id) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'empty_id',
-          },
-          'ID de la credencial vacío',
-        );
-
         throw new BadRequestException('ID de la credencial vacío');
       }
 
@@ -405,39 +218,11 @@ export class CredencialService {
       });
 
       if (!credencial) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            credencialId: id,
-          },
-          `Credencial con id ${id} no encontrada`,
-        );
         throw new NotFoundException(`Credencial con id ${id} no encontrada`);
       }
 
-      this.logger.debug(
-        {
-          operation,
-          entity: 'credencial',
-          credencialId: id,
-        },
-        'Credencial recuperada exitosamente',
-      );
-
       return credencial;
     } catch (error) {
-      this.logger.error(
-        {
-          operation: 'find_one_error',
-          entity: 'credencial',
-          error_type: error.constructor.name,
-          error_message: error.message,
-        },
-        'Error al recuperar credencial ' + id,
-      );
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
@@ -449,36 +234,10 @@ export class CredencialService {
   }
 
   async update(id: string, updateCredencialDto: UpdateCredencialDto) {
-    const operation = 'update_started';
-    const startTime = Date.now();
     try {
       const { usuario, clave, rol_id } = updateCredencialDto;
 
-      this.logger.info(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'start',
-          reason: 'update_started',
-          credencial_id: id,
-          update_fields: Object.keys(updateCredencialDto).filter(
-            (key) => updateCredencialDto[key] !== undefined,
-          ),
-        },
-        'Iniciando actualización de credencial',
-      );
-
       if (!id) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'empty_id',
-          },
-          'ID de la credencial vacío',
-        );
-
         throw new BadRequestException('ID de la credencial vacío');
       }
 
@@ -489,17 +248,6 @@ export class CredencialService {
       });
 
       if (!credencial) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            credencial_id: id,
-          },
-          'Credencial no encontrada ' + id,
-        );
-
         throw new NotFoundException('Credencial no encontrada ' + id);
       }
 
@@ -528,17 +276,6 @@ export class CredencialService {
         });
 
         if (!rolExists) {
-          this.logger.warn(
-            {
-              operation,
-              entity: 'credencial',
-              phase: 'validation_failed',
-              reason: 'rol_not_found',
-              rol_id: rol_id,
-            },
-            'No existe un rol con ese id ' + rol_id,
-          );
-
           throw new NotFoundException('No existe un rol con ese id ' + rol_id);
         }
 
@@ -547,54 +284,17 @@ export class CredencialService {
 
       // Si no hay cambios, retornar la credencial actual
       if (Object.keys(updateData).length === 0) {
-        this.logger.debug(
-          {
-            operation,
-            entity: 'credencial',
-            credencial_id: id,
-            phase: 'validation_failed',
-            reason: 'no_changes',
-          },
-          'No hay cambios para actualizar',
-        );
         return credencial;
       }
 
       // Aplicar actualización
       await this.credencialRepository.update(id, updateData);
-      const duration = Date.now() - startTime;
-
-      this.logger.info(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'success',
-          credencial_id: id,
-          updated_fields: Object.keys(updateData),
-          duration,
-        },
-        'Credencial actualizada exitosamente',
-      );
 
       return await this.credencialRepository.findOne({
         where: { id },
         relations: ['recurso', 'rol'],
       });
     } catch (error) {
-      const duration = Date.now() - startTime;
-      this.logger.error(
-        {
-          operation,
-          entity: 'credencial',
-          credencial_id: id,
-          phase: 'error',
-          error: 'update_error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-          duration,
-        },
-        'Error actualizando credencial ' + id + ': ' + error.message,
-      );
       if (
         error instanceof ConflictException ||
         error instanceof NotFoundException ||
@@ -607,28 +307,8 @@ export class CredencialService {
   }
 
   async remove(id: string) {
-    const operation = 'remove_started';
-    const startTime = Date.now();
-
     try {
-      this.logger.warn({
-        operation,
-        entity: 'credencial',
-        phase: 'start',
-        reason: 'remove_started',
-        credencial_id: id,
-      });
-
       if (!id) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'empty_id',
-          },
-          'ID de la credencial vacío',
-        );
         throw new BadRequestException(
           'El ID de la credencial no puede estar vacío',
         );
@@ -640,16 +320,6 @@ export class CredencialService {
       });
 
       if (!credencial) {
-        this.logger.warn(
-          {
-            operation,
-            entity: 'credencial',
-            phase: 'validation_failed',
-            reason: 'not_found',
-            credencial_id: id,
-          },
-          `Credencial con id ${id} no encontrada`,
-        );
         throw new NotFoundException(`Credencial con id ${id} no encontrada`);
       }
 
@@ -661,49 +331,11 @@ export class CredencialService {
         .execute();
 
       if (result.affected === 0) {
-        this.logger.info(
-          {
-            operation,
-            entity: 'credencial',
-            reason: 'no_affected',
-            credencial_id: id,
-          },
-          `No se afectaron registros al cambiar estado`,
-        );
         throw new NotFoundException('Credencial no encontrada');
       }
 
-      const duration = Date.now() - startTime;
-
-      this.logger.warn(
-        {
-          operation,
-          entity: 'credencial',
-          phase: 'success',
-          credencial_id: id,
-          previous_estado: credencial.estado,
-          action: credencial.estado === 1 ? 'desactivada' : 'reactivada',
-          duration,
-        },
-        `Credencial ${credencial.estado === 1 ? 'desactivada' : 'reactivada'} exitosamente`,
-      );
-
       return this.credencialRepository.findOneBy({ id });
     } catch (error) {
-      const duration = Date.now() - startTime;
-
-      this.logger.error(
-        {
-          operation,
-          entity: 'credencial',
-          credencial_id: id,
-          phase: 'error',
-          error_type: error.constructor.name,
-          error_message: error.message,
-          duration,
-        },
-        `Error eliminando credencial ${id}: ${error.message}`,
-      );
       if(
         error instanceof NotFoundException ||
         error instanceof BadRequestException

@@ -24,11 +24,11 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 export class DetalleReservaController {
   constructor(private readonly detalleReservaService: DetalleReservaService) {}
 
-  @Post()
-  @Roles('ADMINISTRADOR')
-  create(@Body() createDetalleReservaDto: CreateDetalleReservaDto) {
-    return this.detalleReservaService.create(createDetalleReservaDto);
-  }
+  // @Post()
+  // @Roles('ADMINISTRADOR')
+  // create(@Body() createDetalleReservaDto: CreateDetalleReservaDto) {
+  //   return this.detalleReservaService.create(createDetalleReservaDto);
+  // }
 
   @Get()
   @Roles('ADMINISTRADOR', 'DOCENTE')

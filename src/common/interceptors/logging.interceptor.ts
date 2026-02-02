@@ -142,6 +142,6 @@ export class LoggingInterceptor implements NestInterceptor {
 
   private sanitizeUrl(url: string): string {
     // Remover tokens de autenticación de URLs
-    return url.replace(/\/auth\/[^\/]+\/(token|refresh)/, '/auth/***/***');
+    return url.replace(/\/auth\/[^\/]+\/(token|refresh|idToken)/, '/auth/***/***');
   }
 }
