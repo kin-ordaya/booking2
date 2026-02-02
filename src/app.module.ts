@@ -45,6 +45,8 @@ import { LogModule } from './log/log.module';
 import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
 import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso_periodo.module';
 import { PowerbiModule } from './powerbi/powerbi.module';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -54,7 +56,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      cache:true
+      cache: true,
     }),
 
     LoggerModule.forRootAsync({

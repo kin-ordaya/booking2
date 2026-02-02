@@ -1,13 +1,15 @@
-import { Controller, Post, Body, Logger } from '@nestjs/common';
+import { Controller, Post, Body} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ApiOperation } from '@nestjs/swagger';
+import { LogRequest } from '@/common/decorators/log-request.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post()
+  @LogRequest()
   @ApiOperation({
     summary: 'Login de usuario',
     description:

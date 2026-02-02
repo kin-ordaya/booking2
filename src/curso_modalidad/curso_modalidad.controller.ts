@@ -18,6 +18,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { LogRequest } from '@/common/decorators/log-request.decorator';
 
 @Controller('curso-modalidad')
 @ApiBearerAuth()
@@ -33,12 +34,14 @@ export class CursoModalidadController {
 
   @Get()
   @Roles('ADMINISTRADOR')
+  @LogRequest()
   findAll(@Query() paginationCursoModalidadDto: PaginationCursoModalidadDto) {
     return this.cursoModalidadService.findAll(paginationCursoModalidadDto);
   }
 
   @Get(':id')
   @Roles('ADMINISTRADOR')
+  @LogRequest()
   findOne(@Param('id') id: string) {
     return this.cursoModalidadService.findOne(id);
   }
