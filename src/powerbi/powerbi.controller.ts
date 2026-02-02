@@ -4,7 +4,6 @@ import { BasicAuthGuard } from 'src/auth/guard/basicAuth.guard';
 import { ApiBasicAuth, ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { LogRequest } from '@/common/decorators/log-request.decorator';
 
-@ApiTags('Power-BI')
 @Controller('powerbi')
 export class PowerbiController {
   constructor(private readonly powerbiService: PowerbiService) {}

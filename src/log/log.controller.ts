@@ -5,7 +5,6 @@ import { GetLogsDto } from './dto/get-log.dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@/auth/guard/auth.guard';
 import { RolesGuard } from '@/auth/guard/roles.guard';
-import { LogRequest } from '@/common/decorators/log-request.decorator';
 
 @Controller('logs')
 @ApiBearerAuth()
@@ -15,7 +14,6 @@ export class LogController {
   constructor(private readonly logService: LogService) {}
 
   @Get()
-  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Obtener logs',
@@ -26,7 +24,6 @@ export class LogController {
   }
 
   @Get('errors')
-  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Obtener errores',
@@ -37,7 +34,6 @@ export class LogController {
   }
 
   @Get('stats')
-  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Obtener estadísticas',
@@ -48,7 +44,6 @@ export class LogController {
   }
 
   @Delete('cleanup')
-  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Limpiar logs',
@@ -60,7 +55,6 @@ export class LogController {
   }
 
   @Delete()
-  @LogRequest()
   @Roles('ADMINISTRADOR')
   @ApiOperation({
     summary: 'Limpiar logs',

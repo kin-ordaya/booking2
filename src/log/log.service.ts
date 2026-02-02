@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { join } from 'path';
 import { readdir, readFile, stat, unlink, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -18,7 +18,6 @@ export class LogService {
   private readonly logsDir = join(process.cwd(), 'logs');
   private readonly appLogFile = join(this.logsDir, 'app.log');
   private readonly errorLogFile = join(this.logsDir, 'error.log');
-  private readonly logger = new Logger(LogService.name);
 
   async getLogs(getLogsDto: GetLogsDto): Promise<any> {
     try {
@@ -87,8 +86,7 @@ export class LogService {
         }
       };
     } catch (error) {
-      this.logger.error(`Error getting logs: ${error.message}`);
-      throw error;
+      throw new InternalServerErrorException('Error al obtener los logs');
     }
   }
 
@@ -124,8 +122,7 @@ export class LogService {
         type: 'errors-only'
       };
     } catch (error) {
-      this.logger.error(`Error getting error logs: ${error.message}`);
-      throw error;
+      throw new InternalServerErrorException('Error al obtener los errores');
     }
   }
 
@@ -212,7 +209,6 @@ export class LogService {
         })
         .filter((log): log is LogEntry => log !== null);
     } catch (error) {
-      this.logger.error(`Error reading log file ${filePath}: ${error.message}`);
       return [];
     }
   }
@@ -237,11 +233,10 @@ export class LogService {
 
         if (fileAge > maxAge && file.endsWith('.log')) {
           await unlink(filePath);
-          this.logger.log(`Deleted old log file: ${file}`);
         }
       }
     } catch (error) {
-      this.logger.error(`Error cleaning up old logs: ${error.message}`);
+      throw new InternalServerErrorException('Error al limpiar los logs');
     }
   }
 
@@ -250,14 +245,12 @@ export class LogService {
       if (type === 'all' || type === 'app') {
         if (existsSync(this.appLogFile)) {
           await writeFile(this.appLogFile, '');
-          this.logger.log('App logs cleared');
         }
       }
 
       if (type === 'all' || type === 'error') {
         if (existsSync(this.errorLogFile)) {
           await writeFile(this.errorLogFile, '');
-          this.logger.log('Error logs cleared');
         }
       }
 
@@ -266,8 +259,7 @@ export class LogService {
         message: type ? `${type} logs cleared` : 'All logs cleared' 
       };
     } catch (error) {
-      this.logger.error(`Error clearing logs: ${error.message}`);
-      throw error;
+      throw new InternalServerErrorException('Error al limpiar los logs');
     }
   }
 
@@ -329,8 +321,7 @@ export class LogService {
         }
       };
     } catch (error) {
-      this.logger.error(`Error getting log stats: ${error.message}`);
-      throw error;
+      throw new InternalServerErrorException('Error al obtener los estadísticas');
     }
   }
 

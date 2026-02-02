@@ -11,7 +11,6 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 
-@ApiTags('Health')
 @ApiBearerAuth()
 @UseGuards(AuthGuard, RolesGuard)
 @Controller('health')

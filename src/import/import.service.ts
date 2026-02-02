@@ -553,21 +553,6 @@ export class ImportService {
       );
     }
 
-    // Mostrar advertencia de columnas extras (pero no error)
-    const columnasRelevantes =
-      tipo === 'usuarios'
-        ? this.COLUMNAS_USUARIOS_ROLES.todas()
-        : this.COLUMNAS_RECURSOS_CURSOS_MODALIDADES_CLASES_RESPONSABLE.todas();
-
-    const columnasExtras = columnasEncontradas.filter(
-      (columna) => !columnasRelevantes.includes(columna),
-    );
-
-    // if (columnasExtras.length > 0) {
-    //   this.logger.warn(
-    //     `Columnas extras detectadas (serán ignoradas): ${columnasExtras.join(', ')}`,
-    //   );
-    // }
   }
 
   /**
