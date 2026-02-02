@@ -1,13 +1,30 @@
-import { Controller, Get } from '@nestjs/common';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { AuthGuard } from '@/auth/guard/auth.guard';
+import { RolesGuard } from '@/auth/guard/roles.guard';
+import { LogRequest } from '@/common/decorators/log-request.decorator';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Health')
+@ApiBearerAuth()
+@UseGuards(AuthGuard, RolesGuard)
 @Controller('health')
 export class HealthController {
   constructor(private readonly configService: ConfigService) {}
+
   @Get()
-  @ApiOperation({ summary: 'Health check endpoint' })
+  @LogRequest()
+  @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Health check endpoint',
+    description: 'Enpoint para verificar el estado de la aplicación',
+  })
   @ApiResponse({
     status: 200,
     description: 'Application is healthy',
@@ -32,7 +49,13 @@ export class HealthController {
   }
 
   @Get('ready')
-  @ApiOperation({ summary: 'Readiness check endpoint' })
+  @LogRequest()
+  @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Readiness check endpoint',
+    description:
+      'Endpoint para verificar si la aplicación está lista para recibir tráfico',
+  })
   @ApiResponse({
     status: 200,
     description: 'Application is ready to receive traffic',
@@ -45,7 +68,12 @@ export class HealthController {
   }
 
   @Get('live')
-  @ApiOperation({ summary: 'Liveness check endpoint' })
+  @LogRequest()
+  @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Liveness check endpoint',
+    description: 'Endpoint para verificar si la aplicación está funcionando',
+  })
   @ApiResponse({
     status: 200,
     description: 'Application is alive',

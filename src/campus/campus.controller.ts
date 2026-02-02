@@ -50,6 +50,10 @@ export class CampusController {
   @Get(':id')
   @LogRequest()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Obtener un campus',
+    description: 'Obtener un campus del sistema por su ID.',
+  })
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.campusService.findOne(id);
   }
@@ -57,6 +61,11 @@ export class CampusController {
   @Patch(':id')
   @LogRequest()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Actualizar un campus',
+    description:
+      'Actualizar un campus del sistema por su ID y datos de actualización.',
+  })
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body(new AtLeastOneFieldPipe()) updateCampusDto: UpdateCampusDto,
@@ -67,6 +76,10 @@ export class CampusController {
   @Delete(':id')
   @LogRequest()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Eliminar un campus',
+    description: 'Eliminar un campus del sistema por su ID.',
+  })
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.campusService.remove(id);
   }

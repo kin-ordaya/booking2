@@ -11,7 +11,7 @@ import {
 import { AulaService } from './aula.service';
 import { CreateAulaDto } from './dto/create-aula.dto';
 import { UpdateAulaDto } from './dto/update-aula.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -29,7 +29,7 @@ export class AulaController {
   @ApiOperation({
     summary: 'Crear aula',
     description:
-      'Crea un nuevo registro de aula fisica en el sistema.\n\n**Roles permitidos:** ADMINISTRADOR',
+      'Crea un nuevo registro de aula fisica en el sistema.',
   })
   create(@Body() createAulaDto: CreateAulaDto) {
     return this.aulaService.create(createAulaDto);
