@@ -25,249 +25,249 @@ export class RecursoCursoService {
     private readonly cursoRepository: Repository<Curso>,
   ) {}
 
-  async create(
-    createRecursoCursoDto: CreateRecursoCursoDto,
-  ): Promise<RecursoCurso> {
-    try {
-      const { recurso_id, curso_id } = createRecursoCursoDto;
+  // async create(
+  //   createRecursoCursoDto: CreateRecursoCursoDto,
+  // ): Promise<RecursoCurso> {
+  //   try {
+  //     const { recurso_id, curso_id } = createRecursoCursoDto;
 
-      const [recursoCursoExists, recursoExists, cursoExists] =
-        await Promise.all([
-          this.recursoCursoRepository.existsBy({
-            curso: { id: curso_id },
-            recurso: { id: recurso_id },
-          }),
-          this.recursoRepository.existsBy({ id: recurso_id }),
-          this.cursoRepository.existsBy({ id: curso_id }),
-        ]);
+  //     const [recursoCursoExists, recursoExists, cursoExists] =
+  //       await Promise.all([
+  //         this.recursoCursoRepository.existsBy({
+  //           curso: { id: curso_id },
+  //           recurso: { id: recurso_id },
+  //         }),
+  //         this.recursoRepository.existsBy({ id: recurso_id }),
+  //         this.cursoRepository.existsBy({ id: curso_id }),
+  //       ]);
 
-      if (recursoCursoExists)
-        throw new ConflictException(
-          'Ya existe una asignacion de recurso a curso',
-        );
+  //     if (recursoCursoExists)
+  //       throw new ConflictException(
+  //         'Ya existe una asignacion de recurso a curso',
+  //       );
 
-      if (!recursoExists)
-        throw new NotFoundException('No existe un recurso con ese id');
+  //     if (!recursoExists)
+  //       throw new NotFoundException('No existe un recurso con ese id');
 
-      if (!cursoExists)
-        throw new NotFoundException('No existe un curso con ese id');
+  //     if (!cursoExists)
+  //       throw new NotFoundException('No existe un curso con ese id');
 
-      const recursoCurso = this.recursoCursoRepository.create({
-        recurso: { id: recurso_id },
-        curso: { id: curso_id },
-      });
-      return await this.recursoCursoRepository.save(recursoCurso);
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
-    }
-  }
+  //     const recursoCurso = this.recursoCursoRepository.create({
+  //       recurso: { id: recurso_id },
+  //       curso: { id: curso_id },
+  //     });
+  //     return await this.recursoCursoRepository.save(recursoCurso);
+  //   } catch (error) {
+  //     if (
+  //       error instanceof NotFoundException ||
+  //       error instanceof ConflictException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException('Error inesperado');
+  //   }
+  // }
 
-  async findAll(paginationRecursoCursoDto: PaginationRecursoCursoDto) {
-    try {
-      const { page, limit, sort_name, sort_state, search, curso_id } =
-        paginationRecursoCursoDto;
+  // async findAll(paginationRecursoCursoDto: PaginationRecursoCursoDto) {
+  //   try {
+  //     const { page, limit, sort_name, sort_state, search, curso_id } =
+  //       paginationRecursoCursoDto;
 
-      const query = this.recursoCursoRepository
-        .createQueryBuilder('recursoCurso')
-        .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
-        .leftJoinAndSelect('recursoCurso.curso', 'curso')
-        .leftJoinAndSelect('recurso.proveedor', 'proveedor')
-        .select([
-          'recursoCurso.id',
-          'recurso.id',
-          'recurso.nombre',
-          'recurso.creacion',
-          'proveedor.nombre',
-          'curso.id as curso_id',
-          'curso.nombre as curso_nombre',
-        ]);
+  //     const query = this.recursoCursoRepository
+  //       .createQueryBuilder('recursoCurso')
+  //       .leftJoinAndSelect('recursoCurso.recurso', 'recurso')
+  //       .leftJoinAndSelect('recursoCurso.curso', 'curso')
+  //       .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+  //       .select([
+  //         'recursoCurso.id',
+  //         'recurso.id',
+  //         'recurso.nombre',
+  //         'recurso.creacion',
+  //         'proveedor.nombre',
+  //         'curso.id as curso_id',
+  //         'curso.nombre as curso_nombre',
+  //       ]);
 
-      let orderApplied = false;
+  //     let orderApplied = false;
 
-      if (sort_name) {
-        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
-        orderApplied = true;
-      }
+  //     if (sort_name) {
+  //       query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+  //       orderApplied = true;
+  //     }
 
-      if (!orderApplied) {
-        query.orderBy('recurso.creacion', 'DESC');
-      }
+  //     if (!orderApplied) {
+  //       query.orderBy('recurso.creacion', 'DESC');
+  //     }
 
-      if (sort_state) {
-        query.andWhere('recursoCurso.estado = :estado', {
-          estado: sort_state === 1 ? 1 : 0,
-        });
-      }
+  //     if (sort_state) {
+  //       query.andWhere('recursoCurso.estado = :estado', {
+  //         estado: sort_state === 1 ? 1 : 0,
+  //       });
+  //     }
 
-      if (curso_id) {
-        query.andWhere('curso.id = :curso_id', {
-          curso_id,
-        });
-      }
+  //     if (curso_id) {
+  //       query.andWhere('curso.id = :curso_id', {
+  //         curso_id,
+  //       });
+  //     }
 
-      if (search) {
-        query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search))', {
-          // Paréntesis corregido
-          search: `%${search}%`,
-        });
-      }
+  //     if (search) {
+  //       query.andWhere('(UPPER(recurso.nombre) LIKE UPPER(:search))', {
+  //         // Paréntesis corregido
+  //         search: `%${search}%`,
+  //       });
+  //     }
 
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+  //     const [results, count] = await query
+  //       .skip((page - 1) * limit)
+  //       .take(limit)
+  //       .getManyAndCount();
 
-      return {
-        results,
-        meta: {
-          count,
-          page,
-          limit,
-          totalPages: Math.ceil(count / limit),
-        },
-      };
-    } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
-    }
-  }
+  //     return {
+  //       results,
+  //       meta: {
+  //         count,
+  //         page,
+  //         limit,
+  //         totalPages: Math.ceil(count / limit),
+  //       },
+  //     };
+  //   } catch (error) {
+  //     throw new InternalServerErrorException('Error inesperado', {
+  //       cause: error,
+  //     });
+  //   }
+  // }
 
-  async findOne(id: string) {
-    try {
-      if (!id)
-        throw new BadRequestException(
-          'El ID del recurso curso no puede estar vacío',
-        );
+  // async findOne(id: string) {
+  //   try {
+  //     if (!id)
+  //       throw new BadRequestException(
+  //         'El ID del recurso curso no puede estar vacío',
+  //       );
 
-      const recursoCurso = await this.recursoCursoRepository.findOneBy({ id });
-      if (!recursoCurso)
-        throw new NotFoundException('No existe un recurso curso con ese id');
-      return recursoCurso;
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
-    }
-  }
+  //     const recursoCurso = await this.recursoCursoRepository.findOneBy({ id });
+  //     if (!recursoCurso)
+  //       throw new NotFoundException('No existe un recurso curso con ese id');
+  //     return recursoCurso;
+  //   } catch (error) {
+  //     if (
+  //       error instanceof NotFoundException ||
+  //       error instanceof BadRequestException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException('Error inesperado');
+  //   }
+  // }
 
-  async update(id: string, updateRecursoCursoDto: UpdateRecursoCursoDto) {
-    try {
-      const { recurso_id, curso_id } = updateRecursoCursoDto;
+  // async update(id: string, updateRecursoCursoDto: UpdateRecursoCursoDto) {
+  //   try {
+  //     const { recurso_id, curso_id } = updateRecursoCursoDto;
 
-      if (!id) {
-        throw new BadRequestException(
-          'El ID del recurso curso no puede estar vacío',
-        );
-      }
+  //     if (!id) {
+  //       throw new BadRequestException(
+  //         'El ID del recurso curso no puede estar vacío',
+  //       );
+  //     }
 
-      const recursoCurso = await this.recursoCursoRepository.findOne({
-        where: { id },
-        relations: ['recurso', 'curso'],
-      });
-      if (!recursoCurso) {
-        throw new NotFoundException('No existe un recurso curso con ese id');
-      }
+  //     const recursoCurso = await this.recursoCursoRepository.findOne({
+  //       where: { id },
+  //       relations: ['recurso', 'curso'],
+  //     });
+  //     if (!recursoCurso) {
+  //       throw new NotFoundException('No existe un recurso curso con ese id');
+  //     }
 
-      // Preparar datos para actualización y validación
-      const newRecursoId =
-        recurso_id !== undefined ? recurso_id : recursoCurso.recurso.id;
-      const newCursoId =
-        curso_id !== undefined ? curso_id : recursoCurso.curso.id;
+  //     // Preparar datos para actualización y validación
+  //     const newRecursoId =
+  //       recurso_id !== undefined ? recurso_id : recursoCurso.recurso.id;
+  //     const newCursoId =
+  //       curso_id !== undefined ? curso_id : recursoCurso.curso.id;
 
-      // Verificar existencia de recurso y curso (si se están modificando)
-      if (recurso_id !== undefined) {
-        const recursoExists = await this.recursoRepository.existsBy({
-          id: recurso_id,
-        });
-        if (!recursoExists) {
-          throw new NotFoundException('No existe un recurso con ese id');
-        }
-      }
+  //     // Verificar existencia de recurso y curso (si se están modificando)
+  //     if (recurso_id !== undefined) {
+  //       const recursoExists = await this.recursoRepository.existsBy({
+  //         id: recurso_id,
+  //       });
+  //       if (!recursoExists) {
+  //         throw new NotFoundException('No existe un recurso con ese id');
+  //       }
+  //     }
 
-      if (curso_id !== undefined) {
-        const cursoExists = await this.cursoRepository.existsBy({
-          id: curso_id,
-        });
-        if (!cursoExists) {
-          throw new NotFoundException('No existe un curso con ese id');
-        }
-      }
+  //     if (curso_id !== undefined) {
+  //       const cursoExists = await this.cursoRepository.existsBy({
+  //         id: curso_id,
+  //       });
+  //       if (!cursoExists) {
+  //         throw new NotFoundException('No existe un curso con ese id');
+  //       }
+  //     }
 
-      // Verificar si ya existe la misma asignación (en otros registros)
-      const existingAssignment = await this.recursoCursoRepository.findOne({
-        where: {
-          id: Not(id),
-          recurso: { id: newRecursoId },
-          curso: { id: newCursoId },
-        },
-      });
-      if (existingAssignment) {
-        throw new ConflictException(
-          'Ya existe una asignación de este recurso a este curso',
-        );
-      }
+  //     // Verificar si ya existe la misma asignación (en otros registros)
+  //     const existingAssignment = await this.recursoCursoRepository.findOne({
+  //       where: {
+  //         id: Not(id),
+  //         recurso: { id: newRecursoId },
+  //         curso: { id: newCursoId },
+  //       },
+  //     });
+  //     if (existingAssignment) {
+  //       throw new ConflictException(
+  //         'Ya existe una asignación de este recurso a este curso',
+  //       );
+  //     }
 
-      // Preparar datos de actualización
-      const updateData: Partial<RecursoCurso> & {
-        recurso?: { id: string };
-        curso?: { id: string };
-      } = {};
-      if (recurso_id !== undefined)
-        updateData.recurso = { id: recurso_id } as any;
-      if (curso_id !== undefined) updateData.curso = { id: curso_id } as any;
+  //     // Preparar datos de actualización
+  //     const updateData: Partial<RecursoCurso> & {
+  //       recurso?: { id: string };
+  //       curso?: { id: string };
+  //     } = {};
+  //     if (recurso_id !== undefined)
+  //       updateData.recurso = { id: recurso_id } as any;
+  //     if (curso_id !== undefined) updateData.curso = { id: curso_id } as any;
 
-      // Realizar actualización
-      await this.recursoCursoRepository.update(id, updateData);
+  //     // Realizar actualización
+  //     await this.recursoCursoRepository.update(id, updateData);
 
-      return await this.recursoCursoRepository.findOneBy({ id });
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error inesperado');
-    }
-  }
+  //     return await this.recursoCursoRepository.findOneBy({ id });
+  //   } catch (error) {
+  //     if (
+  //       error instanceof NotFoundException ||
+  //       error instanceof BadRequestException ||
+  //       error instanceof ConflictException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException('Error inesperado');
+  //   }
+  // }
 
-  async remove(id: string) {
-    try {
-      if (!id)
-        throw new BadRequestException(
-          'El ID del recurso curso no puede estar vacío',
-        );
+  // async remove(id: string) {
+  //   try {
+  //     if (!id)
+  //       throw new BadRequestException(
+  //         'El ID del recurso curso no puede estar vacío',
+  //       );
 
-      const result = await this.recursoCursoRepository
-        .createQueryBuilder()
-        .update()
-        .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
-        .where('id = :id', { id })
-        .execute();
+  //     const result = await this.recursoCursoRepository
+  //       .createQueryBuilder()
+  //       .update()
+  //       .set({ estado: () => 'CASE WHEN estado = 1 THEN 0 ELSE 1 END' })
+  //       .where('id = :id', { id })
+  //       .execute();
 
-      if (result.affected === 0)
-        throw new NotFoundException('Recurso curso no encontrado');
+  //     if (result.affected === 0)
+  //       throw new NotFoundException('Recurso curso no encontrado');
 
-      return this.recursoCursoRepository.findOneBy({ id });
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      )
-        throw error;
-      throw new InternalServerErrorException('Error inesperado');
-    }
-  }
+  //     return this.recursoCursoRepository.findOneBy({ id });
+  //   } catch (error) {
+  //     if (
+  //       error instanceof NotFoundException ||
+  //       error instanceof BadRequestException
+  //     )
+  //       throw error;
+  //     throw new InternalServerErrorException('Error inesperado');
+  //   }
+  // }
 }

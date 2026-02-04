@@ -7,7 +7,6 @@ import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Curso } from 'src/curso/entities/curso.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RecursoCurso, Recurso, Curso])],
   controllers: [RecursoCursoController],
   providers: [RecursoCursoService],
   exports: [RecursoCursoService],

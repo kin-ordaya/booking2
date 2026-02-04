@@ -26,15 +26,15 @@ export class RecursoCursoPeriodo {
   @Column()
   fin: Date;
 
-  @ManyToOne(() => RecursoCurso, (rc) => rc.recurso_curso_periodo, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'recurso_curso_id' })
-  recurso_curso: RecursoCurso;
+  // @ManyToOne(() => RecursoCurso, (rc) => rc.recurso_curso_periodo, {
+  //   nullable: false,
+  // })
+  // @JoinColumn({ name: 'recurso_curso_id' })
+  // recurso_curso: RecursoCurso;
 
-  @ManyToOne(() => Periodo, (periodo) => periodo.recurso_curso_periodo, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'periodo_id' })
-  periodo: Periodo;
+  // @ManyToOne(() => Periodo, (periodo) => periodo.recurso_curso_periodo, {
+  //   nullable: false,
+  // })
+  // @JoinColumn({ name: 'periodo_id' })
+  // periodo: Periodo;
 }

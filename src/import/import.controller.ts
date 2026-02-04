@@ -27,29 +27,29 @@ import { Roles } from '@/auth/decorators/roles.decorator';
 export class ImportController {
   constructor(private readonly importService: ImportService) {}
 
-  @Post('excel')
-  @LogRequest()
-  @Roles('ADMINISTRADOR')
-  @ApiOperation({
-    summary: 'Importar datos',
-    description: 'Importar datos del sistema.',
-  })
-  @UseInterceptors(FileInterceptor('file'))
-  async create(
-    @UploadedFile() file: any,
-    @Query() queryImportDto: QueryImportDto,
-  ) {
-    try {
-      const resultado = await this.importService.procesarExcel(
-        file.buffer,
-        queryImportDto,
-      );
-      return {
-        success: true,
-        data: resultado,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
+  // @Post('excel')
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Importar datos',
+  //   description: 'Importar datos del sistema.',
+  // })
+  // @UseInterceptors(FileInterceptor('file'))
+  // async create(
+  //   @UploadedFile() file: any,
+  //   @Query() queryImportDto: QueryImportDto,
+  // ) {
+  //   try {
+  //     const resultado = await this.importService.procesarExcel(
+  //       file.buffer,
+  //       queryImportDto,
+  //     );
+  //     return {
+  //       success: true,
+  //       data: resultado,
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 }

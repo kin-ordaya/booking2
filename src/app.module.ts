@@ -47,6 +47,8 @@ import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso
 import { PowerbiModule } from './powerbi/powerbi.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RecursoCursoModalidadModule } from './recurso_curso_modalidad/recurso_curso_modalidad.module';
+import { RecursoCursoModalidadPeriodoModule } from './recurso_curso_modalidad_periodo/recurso_curso_modalidad_periodo.module';
 
 // Configura los parsers de fecha ANTES de iniciar TypeORM
 types.setTypeParser(1114, (val) => new Date(val + 'Z')); // timestamp sin timezone
@@ -103,6 +105,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
       }),
       inject: [ConfigService],
     }),
+    // ImportModule,
     AulaModule,
     AuthModule,
     CampusModule,
@@ -121,7 +124,6 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     GrupoReservaModule,
     HealthModule,
     HorarioModule,
-    // ImportModule,
     LaboratorioAulaModule,
     LaboratorioModule,
     LogModule,
@@ -130,9 +132,10 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     PabellonModule,
     PeriodoModule,
     PlanModule,
+    PowerbiModule,
     ProveedorModule,
-    RecursoCursoModule,
-    RecursoCursoPeriodoModule,
+    RecursoCursoModalidadModule,
+    RecursoCursoModalidadPeriodoModule,
     RecursoModule,
     ReservaModule,
     ResponsableModule,
@@ -142,7 +145,6 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
     TipoAccesoModule,
     TipoRecursoModule,
     UsuarioModule,
-    PowerbiModule,
   ],
 })
 export class AppModule {

@@ -1,3 +1,5 @@
+import { RecursoCursoModalidad } from '@/recurso_curso_modalidad/entities/recurso_curso_modalidad.entity';
+import { RecursoCursoModalidadPeriodo } from '@/recurso_curso_modalidad_periodo/entities/recurso_curso_modalidad_periodo.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DeclaracionJurada } from 'src/declaracion_jurada/entities/declaracion_jurada.entity';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
@@ -69,8 +71,8 @@ export class Recurso {
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;
 
-  @OneToMany(() => RecursoCurso, (recursoCurso) => recursoCurso.recurso)
-  recurso_curso: RecursoCurso[];
+  // @OneToMany(() => RecursoCurso, (recursoCurso) => recursoCurso.recurso)
+  // recurso_curso: RecursoCurso[];
 
   @OneToMany(() => Responsable, (responsable) => responsable.recurso)
   responsable: Responsable[];
@@ -90,9 +92,14 @@ export class Recurso {
   )
   declaracionJurada: DeclaracionJurada[];
 
+  @OneToMany(()=> RecursoCursoModalidad, (recursoCursoModalidad) => recursoCursoModalidad.recurso)
+  recursoCursoModalidad: RecursoCursoModalidad[];
+
   @ManyToOne(() => TipoAcceso, (tipoAcceso) => tipoAcceso.recursos, {
     nullable: false,
   })
   @JoinColumn({ name: 'tipo_acceso_id' })
   tipoAcceso: TipoAcceso;
+
+
 }

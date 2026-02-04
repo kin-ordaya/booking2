@@ -1,3 +1,4 @@
+import { RecursoCursoModalidad } from '@/recurso_curso_modalidad/entities/recurso_curso_modalidad.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { Curso } from 'src/curso/entities/curso.entity';
 import { Modalidad } from 'src/modalidad/entities/modalidad.entity';
@@ -39,4 +40,7 @@ export class CursoModalidad {
 
   @OneToMany(() => Responsable, (responsable) => responsable.cursoModalidad)
   responsable: Responsable[];
+
+  @OneToMany(() => RecursoCursoModalidad, (recursoCursoModalidad) => recursoCursoModalidad.cursoModalidad)
+  recursoCursoModalidad: RecursoCursoModalidad[];
 }

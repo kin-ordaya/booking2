@@ -1,3 +1,4 @@
+import { RecursoCursoModalidadPeriodo } from '@/recurso_curso_modalidad_periodo/entities/recurso_curso_modalidad_periodo.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
 import { RecursoCursoPeriodo } from 'src/recurso_curso_periodo/entities/recurso_curso_periodo.entity';
 import {
@@ -30,6 +31,9 @@ export class Periodo {
   @OneToMany(() => Clase, (clase) => clase.periodo)
   clase: Clase[];
 
-  @OneToMany(() => RecursoCursoPeriodo, (rcp) => rcp.periodo)
-  recurso_curso_periodo: RecursoCursoPeriodo[];
+  @OneToMany(() => RecursoCursoModalidadPeriodo, (rcmp) => rcmp.periodo)
+  recurso_curso_modalidad_periodo: RecursoCursoModalidadPeriodo[];
+
+  // @OneToMany(() => RecursoCursoPeriodo, (rcp) => rcp.periodo)
+  // recurso_curso_periodo: RecursoCursoPeriodo[];
 }
