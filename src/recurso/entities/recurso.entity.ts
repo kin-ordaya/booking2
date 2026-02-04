@@ -3,7 +3,6 @@ import { RecursoCursoModalidadPeriodo } from '@/recurso_curso_modalidad_periodo/
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DeclaracionJurada } from 'src/declaracion_jurada/entities/declaracion_jurada.entity';
 import { Proveedor } from 'src/proveedor/entities/proveedor.entity';
-import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { Reserva } from 'src/reserva/entities/reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
 import { SeccionEmail } from 'src/seccion_email/entities/seccion_email.entity';

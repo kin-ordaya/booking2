@@ -25,7 +25,6 @@ import { CreateClaseDto } from 'src/clase/dto/create-clase.dto';
 import { CredencialService } from 'src/credencial/credencial.service';
 import { RecursoService } from 'src/recurso/recurso.service';
 import { CreateCredencialDto } from 'src/credencial/dto/create-credencial.dto';
-import { RecursoCursoService } from '../recurso_curso/recurso_curso.service';
 import { CreateResponsableDto } from 'src/responsable/dto/create-responsable.dto';
 import { ResponsableService } from 'src/responsable/responsable.service';
 import { CampusService } from 'src/campus/campus.service';
@@ -95,7 +94,6 @@ export class ImportService {
     private readonly periodoService: PeriodoService,
     private readonly planService: PlanService,
     private readonly recursoService: RecursoService,
-    private readonly recursoCursoService: RecursoCursoService,
     private readonly responsableService: ResponsableService,
     private readonly rolService: RolService,
     private readonly rolUsuarioService: RolUsuarioService,

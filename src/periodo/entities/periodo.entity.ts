@@ -1,6 +1,5 @@
 import { RecursoCursoModalidadPeriodo } from '@/recurso_curso_modalidad_periodo/entities/recurso_curso_modalidad_periodo.entity';
 import { Clase } from 'src/clase/entities/clase.entity';
-import { RecursoCursoPeriodo } from 'src/recurso_curso_periodo/entities/recurso_curso_periodo.entity';
 import {
   Column,
   CreateDateColumn,

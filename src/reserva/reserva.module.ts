@@ -9,7 +9,6 @@ import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Credencial } from 'src/credencial/entities/credencial.entity';
 import { DetalleReserva } from 'src/detalle_reserva/entities/detalle_reserva.entity';
 import { Responsable } from 'src/responsable/entities/responsable.entity';
-import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
 
@@ -21,7 +20,6 @@ import { GrupoReserva } from 'src/grupo_reserva/entities/grupo_reserva.entity';
       Credencial,
       DetalleReserva,
       Recurso,
-      RecursoCurso,
       Reserva,
       Responsable,
       RolUsuario,

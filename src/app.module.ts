@@ -11,7 +11,6 @@ import { TipoRecursoModule } from './tipo_recurso/tipo_recurso.module';
 import { RecursoModule } from './recurso/recurso.module';
 import { ModalidadModule } from './modalidad/modalidad.module';
 import { CursoModalidadModule } from './curso_modalidad/curso_modalidad.module';
-import { RecursoCursoModule } from './recurso_curso/recurso_curso.module';
 import { UsuarioModule } from './usuario/usuario.module';
 import { RolModule } from './rol/rol.module';
 import { CampusModule } from './campus/campus.module';
@@ -43,10 +42,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from './config/pinoConfig';
 import { LogModule } from './log/log.module';
 import { GrupoReservaModule } from './grupo_reserva/grupo_reserva.module';
-import { RecursoCursoPeriodoModule } from './recurso_curso_periodo/recurso_curso_periodo.module';
 import { PowerbiModule } from './powerbi/powerbi.module';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RecursoCursoModalidadModule } from './recurso_curso_modalidad/recurso_curso_modalidad.module';
 import { RecursoCursoModalidadPeriodoModule } from './recurso_curso_modalidad_periodo/recurso_curso_modalidad_periodo.module';
 

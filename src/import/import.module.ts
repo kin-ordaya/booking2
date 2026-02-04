@@ -13,7 +13,6 @@ import { ClaseModule } from 'src/clase/clase.module';
 import { PeriodoModule } from 'src/periodo/periodo.module';
 import { CredencialModule } from 'src/credencial/credencial.module';
 import { RecursoModule } from 'src/recurso/recurso.module';
-import { RecursoCursoModule } from 'src/recurso_curso/recurso_curso.module';
 import { ResponsableModule } from 'src/responsable/responsable.module';
 import { CampusModule } from 'src/campus/campus.module';
 
@@ -29,7 +28,6 @@ import { CampusModule } from 'src/campus/campus.module';
     PeriodoModule,
     PlanModule,
     RecursoModule,
-    RecursoCursoModule,
     ResponsableModule,
     RolModule,
     RolUsuarioModule,

@@ -1,7 +1,6 @@
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { Eap } from 'src/eap/entities/eap.entity';
 import { Plan } from 'src/plan/entities/plan.entity';
-import { RecursoCurso } from 'src/recurso_curso/entities/recurso_curso.entity';
 import {
   Column,
   CreateDateColumn,
