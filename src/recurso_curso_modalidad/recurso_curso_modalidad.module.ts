@@ -7,7 +7,9 @@ import { CursoModalidad } from '@/curso_modalidad/entities/curso_modalidad.entit
 import { Recurso } from '@/recurso/entities/recurso.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RecursoCursoModalidad, CursoModalidad,Recurso])],
+  imports: [
+    TypeOrmModule.forFeature([RecursoCursoModalidad, CursoModalidad, Recurso]),
+  ],
   controllers: [RecursoCursoModalidadController],
   providers: [RecursoCursoModalidadService],
 })

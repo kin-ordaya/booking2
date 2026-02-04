@@ -9,7 +9,7 @@ import {
 import { CreateRolUsuarioDto } from './dto/create-rol_usuario.dto';
 import { UpdateRolUsuarioDto } from './dto/update-rol_usuario.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { RolUsuario } from './entities/rol_usuario.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
@@ -279,6 +279,7 @@ export class RolUsuarioService {
       }
 
       const rolUsuarioExists = await this.rolUsuarioRepository.existsBy({
+        id: Not(id),
         usuario: { id: rolUsuario.usuario.id },
         rol: { id: rol_id },
       });
@@ -325,7 +326,7 @@ export class RolUsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar usuario');
     }
   }
 }

@@ -25,63 +25,63 @@
 // export class RecursoCursoController {
 //   constructor(private readonly recursoCursoService: RecursoCursoService) {}
 
-//   // @Post()
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Crear recurso de curso',
-//   //   description:
-//   //     'Crear un recurso de curso del sistema con sus datos de creación.',
-//   // })
-//   // create(@Body() createRecursoCursoDto: CreateRecursoCursoDto) {
-//   //   return this.recursoCursoService.create(createRecursoCursoDto);
-//   // }
+  // @Post()
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Crear recurso de curso',
+  //   description:
+  //     'Crear un recurso de curso del sistema con sus datos de creación.',
+  // })
+  // create(@Body() createRecursoCursoDto: CreateRecursoCursoDto) {
+  //   return this.recursoCursoService.create(createRecursoCursoDto);
+  // }
 
-//   // @Get()
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Obtener todos los recursos de curso',
-//   //   description: 'Obtener todos los recursos de curso del sistema.',
-//   // })
-//   // findAll(@Query() paginationRecursoCursoDto: PaginationRecursoCursoDto) {
-//   //   return this.recursoCursoService.findAll(paginationRecursoCursoDto);
-//   // }
+  // @Get()
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Obtener todos los recursos de curso',
+  //   description: 'Obtener todos los recursos de curso del sistema.',
+  // })
+  // findAll(@Query() paginationRecursoCursoDto: PaginationRecursoCursoDto) {
+  //   return this.recursoCursoService.findAll(paginationRecursoCursoDto);
+  // }
 
-//   // @Get(':id')
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Obtener un recurso de curso',
-//   //   description: 'Obtener un recurso de curso del sistema por su ID.',
-//   // })
-//   // findOne(@Param('id') id: string) {
-//   //   return this.recursoCursoService.findOne(id);
-//   // }
+  // @Get(':id')
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Obtener un recurso de curso',
+  //   description: 'Obtener un recurso de curso del sistema por su ID.',
+  // })
+  // findOne(@Param('id') id: string) {
+  //   return this.recursoCursoService.findOne(id);
+  // }
 
-//   // @Patch(':id')
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Actualizar un recurso de curso',
-//   //   description:
-//   //     'Actualizar un recurso de curso del sistema por su ID y datos de actualización.',
-//   // })
-//   // update(
-//   //   @Param('id') id: string,
-//   //   @Body() updateRecursoCursoDto: UpdateRecursoCursoDto,
-//   // ) {
-//   //   return this.recursoCursoService.update(id, updateRecursoCursoDto);
-//   // }
+  // @Patch(':id')
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Actualizar un recurso de curso',
+  //   description:
+  //     'Actualizar un recurso de curso del sistema por su ID y datos de actualización.',
+  // })
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateRecursoCursoDto: UpdateRecursoCursoDto,
+  // ) {
+  //   return this.recursoCursoService.update(id, updateRecursoCursoDto);
+  // }
 
-//   // @Delete(':id')
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Eliminar un recurso de curso',
-//   //   description: 'Eliminar un recurso de curso del sistema por su ID.',
-//   // })
-//   // remove(@Param('id') id: string) {
-//   //   return this.recursoCursoService.remove(id);
-//   // }
+  // @Delete(':id')
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Eliminar un recurso de curso',
+  //   description: 'Eliminar un recurso de curso del sistema por su ID.',
+  // })
+  // remove(@Param('id') id: string) {
+  //   return this.recursoCursoService.remove(id);
+  // }
 // }
