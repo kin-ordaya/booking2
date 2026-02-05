@@ -8,11 +8,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService);
-  const port = configService.get('PORT');
 
   // Forzar HTTPS en producción
-  if (configService.get('NODE_ENV') === 'production') {
+  if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
       if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
         return res.redirect('https://' + req.get('host') + req.url);
@@ -46,8 +44,8 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document, {
+  const document = SwaggerModule.createDocument(app, config,);
+  SwaggerModule.setup('docs', app, document,{
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -78,6 +76,8 @@ async function bootstrap() {
     ],
   });
 
+  const configService = app.get(ConfigService);
+  const port = configService.get('PORT');
   await app.listen(port);
 
   // console.log(`Server started on port ${process.env.PORT}`);
