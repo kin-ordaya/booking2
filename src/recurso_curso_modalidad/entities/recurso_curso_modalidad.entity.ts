@@ -34,6 +34,6 @@ export class RecursoCursoModalidad {
   @JoinColumn({ name: 'recurso_id' })
   recurso: Recurso;
 
-  @OneToMany(() => RecursoCursoModalidadPeriodo, (recursoCursoModalidadPeriodo) => recursoCursoModalidadPeriodo.recurso_curso_modalidad)
+  @OneToMany(() => RecursoCursoModalidadPeriodo, (recursoCursoModalidadPeriodo) => recursoCursoModalidadPeriodo.recursoCursoModalidad)
   recursoCursoModalidadPeriodo: RecursoCursoModalidadPeriodo[];
 }

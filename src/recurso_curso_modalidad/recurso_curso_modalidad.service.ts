@@ -77,7 +77,7 @@ export class RecursoCursoModalidadService {
     paginationRecursoCursoModalidadDto: PaginationRecursoCursoModalidadDto,
   ) {
     try {
-      const { page, limit, sort_name, sort_state, curso_modalidad_id } =
+      const { page, limit, sort_name, sort_state, curso_modalidad_id, search } =
         paginationRecursoCursoModalidadDto;
 
       const query = this.recursoCursoModalidadRepository
@@ -118,6 +118,12 @@ export class RecursoCursoModalidadService {
       if (curso_modalidad_id) {
         query.andWhere('cursoModalidad.id = :curso_modalidad_id', {
           curso_modalidad_id,
+        });
+      }
+
+      if (search) {
+        query.andWhere('recurso.nombre LIKE :search ', {
+          search: `%${search}%`,
         });
       }
 
@@ -180,17 +186,6 @@ export class RecursoCursoModalidadService {
         );
       }
 
-      const recursoCursoModalidad =
-        await this.recursoCursoModalidadRepository.findOne({
-          where: { id },
-          relations: ['recurso', 'cursoModalidad'],
-        });
-      if (!recursoCursoModalidad) {
-        throw new NotFoundException(
-          'No existe un recurso curso modalidad con ese id',
-        );
-      }
-
       const [
         idRecursoCursoModalidadExists,
         recursoExists,
@@ -223,10 +218,23 @@ export class RecursoCursoModalidadService {
           'Ya existe una asignación de este recurso a este curso modalidad',
         );
 
-      await this.recursoCursoModalidadRepository.update(id, {
-        recurso: { id: recurso_id },
-        cursoModalidad: { id: curso_modalidad_id },
-      });
+      const updateData: Partial<RecursoCursoModalidad> & { recurso?: any; cursoModalidad?: any } = {};
+
+      if (recurso_id !== undefined) {
+        updateData.recurso = { id: recurso_id };
+      }
+
+      if (curso_modalidad_id !== undefined) {
+        updateData.cursoModalidad = { id: curso_modalidad_id };
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        throw new BadRequestException(
+          'No hay datos para actualizar el recurso curso modalidad',
+        );
+      }
+
+      await this.recursoCursoModalidadRepository.update(id, updateData);
 
       return await this.recursoCursoModalidadRepository.findOneBy({ id });
     } catch (error) {
@@ -237,7 +245,9 @@ export class RecursoCursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al actualizar recurso curso modalidad');
+      throw new InternalServerErrorException(
+        'Error al actualizar recurso curso modalidad',
+      );
     }
   }
 
@@ -265,7 +275,9 @@ export class RecursoCursoModalidadService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar recurso curso modalidad');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar recurso curso modalidad',
+      );
     }
   }
 }

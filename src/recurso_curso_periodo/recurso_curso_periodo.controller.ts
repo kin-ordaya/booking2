@@ -16,26 +16,26 @@
 //     private readonly recursoCursoPeriodoService: RecursoCursoPeriodoService,
 //   ) {}
 
-//   // @Post()
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Crear recurso de curso periodo',
-//   //   description:
-//   //     'Crear un recurso de curso periodo del sistema con sus datos de creación.',
-//   // })
-//   // create(@Body() createRecursoCursoPeriodoDto: CreateRecursoCursoPeriodoDto) {
-//   //   return this.recursoCursoPeriodoService.create(createRecursoCursoPeriodoDto);
-//   // }
+  // @Post()
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Crear recurso de curso periodo',
+  //   description:
+  //     'Crear un recurso de curso periodo del sistema con sus datos de creación.',
+  // })
+  // create(@Body() createRecursoCursoPeriodoDto: CreateRecursoCursoPeriodoDto) {
+  //   return this.recursoCursoPeriodoService.create(createRecursoCursoPeriodoDto);
+  // }
 
-//   // @Get()
-//   // @LogRequest()
-//   // @Roles('ADMINISTRADOR')
-//   // @ApiOperation({
-//   //   summary: 'Obtener todos los recursos de curso periodo',
-//   //   description: 'Obtener todos los recursos de curso periodo del sistema.',
-//   // })
-//   // findAll(@Query() getRecursoCursoPeriodoDto: GetRecursoCursoPeriodoDto) {
-//   //   return this.recursoCursoPeriodoService.findAll(getRecursoCursoPeriodoDto);
-//   // }
+  // @Get()
+  // @LogRequest()
+  // @Roles('ADMINISTRADOR')
+  // @ApiOperation({
+  //   summary: 'Obtener todos los recursos de curso periodo',
+  //   description: 'Obtener todos los recursos de curso periodo del sistema.',
+  // })
+  // findAll(@Query() getRecursoCursoPeriodoDto: GetRecursoCursoPeriodoDto) {
+  //   return this.recursoCursoPeriodoService.findAll(getRecursoCursoPeriodoDto);
+  // }
 // }

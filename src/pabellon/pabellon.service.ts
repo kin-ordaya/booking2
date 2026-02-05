@@ -151,8 +151,10 @@ export class PabellonService {
         updateData.campus = { id: campus_id };
       }
 
-      if (Object.keys(updateData).length === 0 && nombre === undefined) {
-        return pabellon;
+      if (Object.keys(updateData).length === 0 ) {
+        throw new BadRequestException(
+          'No hay datos para actualizar el pabellon',
+        );
       }
 
       await this.pabellonRepository.update(id, updateData);
