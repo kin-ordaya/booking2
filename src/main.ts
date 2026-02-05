@@ -8,6 +8,17 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Forzar HTTPS en producción
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
+        return res.redirect('https://' + req.get('host') + req.url);
+      }
+      next();
+    });
+  }
+
   app.use(helmet());
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(
@@ -44,7 +55,6 @@ async function bootstrap() {
     origin: [
       'http://localhost:4200',
       'https://bookingravts.continental.edu.pe',
-      'http://bookingravts.continental.edu.pe',
       'https://apibookingravts.continental.edu.pe',
       'https://bookinguc.netlify.app',
     ],
