@@ -268,10 +268,12 @@ npm install
 - Esto es necesario para el correcto funcionamiento de las fechas y horarios
 
 ### Base de Datos
-- El sistema utiliza `synchronize: true` en desarrollo
+- El sistema utiliza `synchronize: false` en desarrollo 
 - En producción, usa migraciones de TypeORM
 - Configura el timezone UTC en la conexión a la base de datos
+⚠️ Si se quiere migrar a una base de datos nueva y vacia, se debe crear el esquema, por ejemplo: "public"
 ## Migracion en Local/Desarrollo:
+
 # 1. Creas/modificas una entidad
 #    src/usuarios/entities/usuario.entity.ts
 
