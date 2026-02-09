@@ -15,12 +15,15 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - DB_NAME=${DB_NAME}
+      - DB_SCHEMA=${DB_SCHEMA}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - PORT=3000
       - EMAIL_HOST=${EMAIL_HOST}
       - EMAIL_PORT=${EMAIL_PORT}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
+      - POWERBI_USERNAME=${POWERBI_USERNAME}
+      - POWERBI_PASSWORD=${POWERBI_PASSWORD}
     depends_on:
       - db
     restart: unless-stopped

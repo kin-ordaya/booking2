@@ -5,7 +5,6 @@ import * as path from "path";
 import { glob } from "glob";
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Función para cargar rutas de entidades
@@ -27,12 +26,13 @@ export default new DataSource({
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     synchronize: false,
-    
     entities: getEntityPaths(),
     
     migrations: isProduction
         ? ['dist/migrations/*.js']
         : ['src/migrations/*.ts'],
+
+    schema: process.env.DB_SCHEMA || 'public', // 👈 Agrega esta línea
     
     logging: process.env.NODE_ENV === 'development',
     extra: {

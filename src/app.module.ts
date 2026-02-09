@@ -84,6 +84,7 @@ types.setTypeParser(1184, (val) => new Date(val + 'Z')); // timestamptz
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: false,
+        schema: config.get('DB_SCHEMA') || 'public',
         // migrations:['src/migrations/*.ts'],
         logging: config.get('NODE_ENV') === 'development', // Solo en desarrollo
         extra: {

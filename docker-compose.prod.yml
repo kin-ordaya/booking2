@@ -47,6 +47,7 @@ services:
       - DB_USER=postgres
       - DB_PASS=${DB_PASS:-booking123456}
       - DB_NAME=booking2
+      - DB_SCHEMA=${DB_SCHEMA}
       - JWT_SECRET=${JWT_SECRET:-jwt-secret-por-defecto-desarrollo-1234567890}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - PORT=3000
@@ -54,6 +55,8 @@ services:
       - EMAIL_PORT=587 
       - EMAIL_USER=lab.recursosvirt@continental.edu.pe
       - EMAIL_PASS=${EMAIL_PASS}
+      - POWERBI_USERNAME=${POWERBI_USERNAME}
+      - POWERBI_PASSWORD=${POWERBI_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
