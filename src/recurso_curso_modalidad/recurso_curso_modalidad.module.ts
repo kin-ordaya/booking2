@@ -12,5 +12,6 @@ import { Recurso } from '@/recurso/entities/recurso.entity';
   ],
   controllers: [RecursoCursoModalidadController],
   providers: [RecursoCursoModalidadService],
+  exports: [RecursoCursoModalidadService],
 })
 export class RecursoCursoModalidadModule {}

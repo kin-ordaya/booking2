@@ -15,6 +15,8 @@ import { CredencialModule } from 'src/credencial/credencial.module';
 import { RecursoModule } from 'src/recurso/recurso.module';
 import { ResponsableModule } from 'src/responsable/responsable.module';
 import { CampusModule } from 'src/campus/campus.module';
+import { RecursoCursoModalidad } from '@/recurso_curso_modalidad/entities/recurso_curso_modalidad.entity';
+import { RecursoCursoModalidadModule } from '@/recurso_curso_modalidad/recurso_curso_modalidad.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { CampusModule } from 'src/campus/campus.module';
     PeriodoModule,
     PlanModule,
     RecursoModule,
+    RecursoCursoModalidadModule,
     ResponsableModule,
     RolModule,
     RolUsuarioModule,
