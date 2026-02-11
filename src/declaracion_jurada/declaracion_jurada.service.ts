@@ -113,11 +113,10 @@ export class DeclaracionJuradaService {
   ): Promise<boolean> {
     const resultado = await this.responsableRepository
       .createQueryBuilder('responsable')
-      .innerJoin('responsable.clase', 'clase') // Cambio: relación con Clase
-      .innerJoin('clase.cursoModalidad', 'cursoModalidad') // Desde Clase a CursoModalidad
-      .innerJoin('cursoModalidad.curso', 'curso')
-      .innerJoin('curso.recurso_curso', 'recursoCurso')
-      .innerJoin('recursoCurso.recurso', 'recurso')
+      .innerJoin('responsable.clase', 'clase')
+      .innerJoin('clase.cursoModalidad', 'cursoModalidad')
+      .innerJoin('cursoModalidad.recursoCursoModalidad', 'recursoCursoModalidad')
+      .innerJoin('recursoCursoModalidad.recurso', 'recurso')
       .where('responsable.rol_usuario_id = :rolUsuarioId', { rolUsuarioId })
       .andWhere('recurso.id = :recursoId', { recursoId })
       .getCount();

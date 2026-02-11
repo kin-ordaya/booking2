@@ -198,9 +198,9 @@ export class ClaseService {
         .innerJoinAndSelect('clase.cursoModalidad', 'cursoModalidad')
         .innerJoinAndSelect('cursoModalidad.curso', 'curso')
         // Relación con recurso
-        .innerJoin('curso.recurso_curso', 'recursoCurso')
+        .innerJoin('cursoModalidad.recursoCursoModalidad', 'recursoCursoModalidad')
         .innerJoin(
-          'recursoCurso.recurso',
+          'recursoCursoModalidad.recurso',
           'recurso',
           'recurso.id = :recursoId',
           { recursoId: recurso_id },

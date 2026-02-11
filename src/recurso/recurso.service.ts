@@ -184,10 +184,9 @@ export class RecursoService {
           // Subquery para recursos accesibles por el docente
           const docenteSubQuery = this.recursoRepository
             .createQueryBuilder('recurso_docente')
-            .leftJoin('recurso_docente.recurso_curso', 'recursoCurso_docente')
-            .leftJoin('recursoCurso_docente.curso', 'curso_docente')
-            .leftJoin('curso_docente.curso_modalidad', 'cursoModalidad_docente')
-            .leftJoin('cursoModalidad_docente.clase', 'clase_docente')
+            .leftJoin('recurso_docente.recursoCursoModalidad', 'recursoCursoModalidad_docente')
+            .leftJoin('recursoCursoModalidad_docente.cursoModalidad', 'recursoModalidad_docente')
+            .leftJoin('recursoModalidad_docente.clase', 'clase_docente')
             .leftJoin('clase_docente.responsable', 'responsable_docente')
             .leftJoin(
               'responsable_docente.rolUsuario',
@@ -271,6 +270,12 @@ export class RecursoService {
         },
       };
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error inesperado');
     }
   }
@@ -328,38 +333,6 @@ export class RecursoService {
       );
     return await this.recursoRepository.findOneBy({ nombre });
   }
-
-  //   async getRecursosByDocente(rol_usuario_id: string) {
-  //   try {
-  //     if (!rol_usuario_id) {
-  //       throw new BadRequestException('El ID del rol_usuario no puede estar vacío');
-  //     }
-
-  //     const rolUsuario = await this.rolUsuarioRepository.existsBy({
-  //       id: rol_usuario_id,
-  //     });
-  //     if (!rolUsuario) {
-  //       throw new NotFoundException('No existe un rol_usuario con ese id');
-  //     }
-
-  //     return await this.recursoRepository
-  //       .createQueryBuilder('recurso')
-  //       .innerJoin('recurso.recurso_curso', 'recursoCurso')
-  //       .innerJoin('recursoCurso.curso', 'curso')
-  //       .innerJoin('curso.curso_modalidad', 'cursoModalidad')
-  //       .innerJoin('cursoModalidad.responsable', 'responsable')
-  //       .innerJoin('responsable.rolUsuario', 'rolUsuario')
-  //       .where('rolUsuario.id = :rolUsuarioId', {
-  //         rolUsuarioId: rol_usuario_id,
-  //       })
-  //       .getMany();
-  //   } catch (error) {
-  //     if (error instanceof NotFoundException || error instanceof BadRequestException) {
-  //       throw error;
-  //     }
-  //     throw new InternalServerErrorException('Error al obtener los recursos del docente');
-  //   }
-  // }
 
   async update(id: string, updateRecursoDto: UpdateRecursoDto) {
     try {

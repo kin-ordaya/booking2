@@ -46,7 +46,4 @@ export class Curso {
 
   @OneToMany(() => CursoModalidad, (cursoModalidad) => cursoModalidad.curso)
   curso_modalidad: CursoModalidad[];
-
-  // @OneToMany(() => RecursoCurso, (recursoCurso) => recursoCurso.curso)
-  // recurso_curso: RecursoCurso[];
 }

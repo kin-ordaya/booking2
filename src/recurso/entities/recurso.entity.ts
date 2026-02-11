@@ -70,9 +70,6 @@ export class Recurso {
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;
 
-  // @OneToMany(() => RecursoCurso, (recursoCurso) => recursoCurso.recurso)
-  // recurso_curso: RecursoCurso[];
-
   @OneToMany(() => Responsable, (responsable) => responsable.recurso)
   responsable: Responsable[];
 
