@@ -7,23 +7,30 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 @Entity()
+@Index('idx_reserva_recurso_estado', ['recurso', 'estado']) // ✅ COMPUESTO MÁS IMPORTANTE
+@Index('idx_reserva_fin_estado', ['fin', 'estado']) // ✅ PARA RESERVAS EXPIRADAS ACTIVAS
+@Index('idx_reserva_creacion_estado', ['creacion', 'estado']) // ✅ PARA ORDENAMIENTO CON FILTRO
 export class Reserva {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @CreateDateColumn()
+  @Index('idx_reserva_creacion')
   creacion: Date;
 
   @Column({ type: 'int', default: 1 })
+  @Index('idx_reserva_estado')
   estado: number;
 
   @Column({ type: 'varchar', length: 100 })
+  @Index('idx_reserva_codigo')
   codigo: string;
 
   @Column({ type: 'int' })
@@ -39,6 +46,7 @@ export class Reserva {
   inicio: Date;
 
   @Column()
+  @Index('idx_reserva_fin')
   fin: Date;
 
   @Column({ type: 'int' })
@@ -57,12 +65,14 @@ export class Reserva {
     nullable: false,
   })
   @JoinColumn({ name: 'recurso_id' })
+  @Index('idx_reserva_recurso_id')
   recurso: Recurso;
 
   @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.reserva, {
     nullable: true,
   })
   @JoinColumn({ name: 'docente_id' })
+  @Index('idx_reserva_docente_id')
   docente?: RolUsuario;
 
   @ManyToOne(() => RolUsuario, (rolUsuario) => rolUsuario.reservaCreada, {

@@ -1887,8 +1887,7 @@ export class ReservaService {
         );
       }
 
-      // Filtro por búsqueda por nrc, nombre de curso y nombres de docente
-      // Filtro por búsqueda por nrc, nombre de curso y nombres de docente
+      // Filtro por búsqueda por nrc, nombre de curso y nombres de docente (opcional)
       if (search) {
         query.andWhere(
           new Brackets((qb) => {
