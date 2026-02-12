@@ -128,21 +128,11 @@ export class CredencialService {
     try {
       const { page, limit, search, recurso_id, sort_state, rol_id } =
         paginationCredencialDto;
-
-      const recursoExists = await this.recursoRepository.existsBy({
-        id: recurso_id,
-      });
-
-      if (!recursoExists) {
-        throw new NotFoundException(
-          'No existe recurso con ID ' + recurso_id,
-        );
-      }
-
+        
       const query = this.credencialRepository
         .createQueryBuilder('credencial')
-        .leftJoinAndSelect('credencial.recurso', 'recurso')
-        .leftJoinAndSelect('credencial.rol', 'rol')
+        .leftJoin('credencial.recurso', 'recurso')
+        .leftJoin('credencial.rol', 'rol')
         .select([
           'credencial.id',
           'credencial.usuario',
@@ -153,6 +143,7 @@ export class CredencialService {
           'recurso.capacidad',
           'rol.nombre',
         ])
+        .addSelect('COUNT(*) OVER()', 'total_count')
         .where('credencial.recurso.id = :recurso_id', { recurso_id });
 
       let orderApplied = false;
@@ -173,18 +164,19 @@ export class CredencialService {
         });
       }
 
-      if (search) {
-        // Cambiar .where() por .andWhere() aquí
+      if (search !== undefined && search.trim() !== '') {
         query.andWhere(
           '(UPPER(credencial.usuario) LIKE UPPER(:search) OR UPPER(credencial.clave) LIKE UPPER(:search))',
           { search: `%${search}%` },
         );
       }
 
-      const [results, count] = await query
+      const results= await query
         .skip((page - 1) * limit)
         .take(limit)
-        .getManyAndCount();
+        .getRawMany();
+
+      const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
 
       return {
         results,

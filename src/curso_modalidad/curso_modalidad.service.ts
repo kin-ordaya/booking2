@@ -81,9 +81,9 @@ export class CursoModalidadService {
 
       const query = this.cursoModalidadRepository
         .createQueryBuilder('cursoModalidad')
-        .leftJoinAndSelect('cursoModalidad.curso', 'curso')
-        .leftJoinAndSelect('curso.plan', 'plan')
-        .leftJoinAndSelect('cursoModalidad.modalidad', 'modalidad')
+        .leftJoin('cursoModalidad.curso', 'curso')
+        .leftJoin('curso.plan', 'plan')
+        .leftJoin('cursoModalidad.modalidad', 'modalidad')
         .select([
           'cursoModalidad.id',
           'cursoModalidad.estado',
@@ -95,20 +95,16 @@ export class CursoModalidadService {
           'plan.nombre',
           'modalidad.id',
           'modalidad.nombre',
-        ]);
+        ])
+        .addSelect('COUNT(*) OVER() AS total_count');
 
-      let orderApplied = false;
-
-      if (sort_name) {
+      if (sort_name !== undefined) {
         query.orderBy('curso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
-        orderApplied = true;
-      }
-
-      if (!orderApplied) {
+      } else {
         query.orderBy('curso.creacion', 'DESC');
       }
 
-      if (sort_state) {
+      if (sort_state !== undefined) {
         query.andWhere('cursoModalidad.estado = :estado', {
           estado: sort_state === 1 ? 1 : 0,
         });
@@ -126,26 +122,42 @@ export class CursoModalidadService {
         });
       }
 
-      if (search) {
+      if (search !== undefined && search.trim() !== '') {
         query.andWhere(
           '(UPPER(curso.codigo) LIKE UPPER(:search) OR UPPER(curso.nombre) LIKE UPPER(:search) OR UPPER(modalidad.nombre) LIKE UPPER(:search))',
           { search: `%${search}%` },
         );
       }
 
-      const [results, count] = await query
+      const results = await query
         .skip((page - 1) * limit)
         .take(limit)
-        .getManyAndCount();
+        .getRawMany();
+
+      const count =
+        results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+
+      const formattedResults = results.map((row) => ({
+        id: row.cursoModalidad_id,
+        estado: row.cursoModalidad_estado,
+        curso: {
+          id: row.curso_id,
+          codigo: row.curso_codigo,
+          nombre: row.curso_nombre,
+          creacion: row.curso_creacion,
+          plan: {
+            id: row.plan_id,
+            nombre: row.plan_nombre,
+          },
+        },
+        modalidad: {
+          id: row.modalidad_id,
+          nombre: row.modalidad_nombre,
+        },
+      }));
 
       return {
-        results: results.map((item) => ({
-          ...item,
-          curso: {
-            ...item.curso,
-            plan: item.curso.plan, // Incluimos el plan en la respuesta
-          },
-        })),
+        results: formattedResults,
         meta: {
           count,
           page,
@@ -154,7 +166,10 @@ export class CursoModalidadService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error al recuperar cursos modalidades');
+      console.error(error);
+      throw new InternalServerErrorException(
+        'Error al recuperar cursos modalidades',
+      );
     }
   }
 
@@ -178,7 +193,9 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al recuperar curso modalidad');
+      throw new InternalServerErrorException(
+        'Error al recuperar curso modalidad',
+      );
     }
   }
 
@@ -202,7 +219,9 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al recuperar curso modalidad por ID de curso y modalidad');
+      throw new InternalServerErrorException(
+        'Error al recuperar curso modalidad por ID de curso y modalidad',
+      );
     }
   }
 
@@ -276,7 +295,9 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al actualizar curso modalidad');
+      throw new InternalServerErrorException(
+        'Error al actualizar curso modalidad',
+      );
     }
   }
 
@@ -304,7 +325,9 @@ export class CursoModalidadService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar curso modalidad');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar curso modalidad',
+      );
     }
   }
 }

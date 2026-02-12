@@ -84,11 +84,12 @@ export class CursoService {
           'curso.codigo',
           'curso.estado',
           'plan.nombre',
-        ]);
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count');
 
       let orderApplied = false;
 
-      if (sort_name) {
+      if (sort_name !== undefined) {
         query.orderBy('curso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
         orderApplied = true;
       }
@@ -97,13 +98,13 @@ export class CursoService {
         query.orderBy('curso.creacion', 'DESC');
       }
 
-      if (sort_state) {
+      if (sort_state !== undefined) {
         query.andWhere('curso.estado = :estado', {
           estado: sort_state === 1 ? 1 : 0,
         });
       }
 
-      if (search) {
+      if (search !== undefined && search.trim() !== '') {
         query.where(
           'UPPER(curso.codigo) LIKE UPPER(:search) OR UPPER(curso.nombre) LIKE UPPER(:search)',
           {
@@ -112,10 +113,12 @@ export class CursoService {
         );
       }
 
-      const [results, count] = await query
+      const results= await query
         .skip((page - 1) * limit)
         .take(limit)
-        .getManyAndCount();
+        .getRawMany();
+
+      const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
 
       return {
         results,
