@@ -1800,84 +1800,46 @@ export class ReservaService {
         search,
       } = paginationReservaDto;
 
-      // Validaciones básicas
-      if (page < 1)
-        throw new BadRequestException('La página debe ser mayor a 0');
-      if (limit < 1)
-        throw new BadRequestException('El límite debe ser mayor a 0');
-
-      const recurso = await this.recursoRepository.existsBy({ id: recurso_id });
-      if (!recurso) {
-        throw new NotFoundException('Recurso no encontrado');
-      }
-
-      // Crear query builder con joins adecuados
       const query = this.reservaRepository
         .createQueryBuilder('reserva')
-        .leftJoinAndSelect('reserva.docente', 'docente')
-        .leftJoinAndSelect('docente.usuario', 'usuario')
-        .leftJoinAndSelect('reserva.clase', 'clase')
-        .leftJoinAndSelect('clase.cursoModalidad', 'cursoModalidad')
-        .leftJoinAndSelect('cursoModalidad.curso', 'curso')
-        .leftJoinAndSelect('reserva.autor', 'autor')
-        .leftJoinAndSelect('autor.rol', 'rolAutor')
-        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });;
+        .leftJoin('reserva.docente', 'docente')
+        .leftJoin('docente.usuario', 'usuario')
+        .leftJoin('reserva.clase', 'clase')
+        .leftJoin('clase.cursoModalidad', 'cursoModalidad')
+        .leftJoin('cursoModalidad.curso', 'curso')
+        .leftJoin('reserva.autor', 'autor')
+        .leftJoin('autor.rol', 'rolAutor')
+        .select([
+          'reserva.id',
+          'reserva.creacion',
+          'reserva.codigo',
+          'reserva.inicio',
+          'reserva.fin',
+          'reserva.estado',
+          'reserva.cantidad_accesos',
+          'reserva.cantidad_credenciales',
+          'usuario.nombres',
+          'usuario.apellidos',
+          'clase.nrc',
+          'curso.nombre',
+          'rolAutor.nombre',
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count')
+        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id });
 
-      if (docente_id) {
-        const docente = await this.rolUsuarioRepository.findOne({
-          where: { id: docente_id },
-          relations: ['usuario', 'rol'],
-        });
-        if (!docente) throw new NotFoundException('Docente no encontrado');
-
+      if (docente_id !== undefined) {
         query.andWhere('reserva.docente_id = :docenteId', {
           docenteId: docente_id,
         });
       }
-      // Filtro por estado
+
       if (sort_state !== undefined) {
         query.andWhere('reserva.estado = :estado', {
           estado: sort_state === 1 ? 1 : 0,
         });
       }
 
-      // Ordenamiento por nombre o fecha
-      if (sort_order) {
-        switch (sort_order) {
-          case 1: // Nombre ASC
-            query.orderBy('usuario.nombres', 'ASC');
-            break;
-          case 2: // Nombre DESC
-            query.orderBy('usuario.nombres', 'DESC');
-            break;
-          case 3: // Fecha ASC
-            query.orderBy('reserva.creacion', 'ASC');
-            break;
-          case 4: // Fecha DESC
-            query.orderBy('reserva.creacion', 'DESC');
-            break;
-          default:
-            query.orderBy('reserva.creacion', 'DESC');
-        }
-      } else {
-        query.orderBy('reserva.creacion', 'DESC');
-      }
-
-      // Filtro por reservas expiradas/no expiradas
-      if (sort_expired) {
-        const now = new Date();
-
-        if (sort_expired === 1) {
-          // Expiradas
-          query.andWhere('reserva.fin < :now', { now });
-        } else if (sort_expired === 2) {
-          // No expiradas
-          query.andWhere('reserva.fin >= :now', { now });
-        }
-      }
-
-      // Filtro por rango de fechas
-      if (inicio && fin) {
+      if (inicio !== undefined && fin !== undefined) {
         query.andWhere(
           'reserva.creacion <= :fin AND reserva.creacion >= :inicio',
           {
@@ -1887,8 +1849,39 @@ export class ReservaService {
         );
       }
 
-      // Filtro por búsqueda por nrc, nombre de curso y nombres de docente (opcional)
-      if (search) {
+      if (sort_expired !== undefined) {
+        const now = new Date();
+        if (sort_expired === 1) {
+          query.andWhere('reserva.fin < :now', { now });
+        } else {
+          query.andWhere('reserva.fin >= :now', { now });
+        }
+      }
+
+      // ✅ Ordenamiento (sin cambios)
+      if (sort_order) {
+        switch (sort_order) {
+          case 1:
+            query.orderBy('usuario.nombres', 'ASC');
+            break;
+          case 2:
+            query.orderBy('usuario.nombres', 'DESC');
+            break;
+          case 3:
+            query.orderBy('reserva.creacion', 'ASC');
+            break;
+          case 4:
+            query.orderBy('reserva.creacion', 'DESC');
+            break;
+          default:
+            query.orderBy('reserva.creacion', 'DESC');
+        }
+      } else {
+        query.orderBy('reserva.creacion', 'DESC');
+      }
+
+      // ✅ Búsqueda (igual, pero ahora SELECT trae menos)
+      if (search !== undefined && search.trim() !== '') {
         query.andWhere(
           new Brackets((qb) => {
             qb.where('UPPER(clase.nrc) LIKE UPPER(:search)')
@@ -1901,41 +1894,42 @@ export class ReservaService {
         );
       }
 
-      // Obtener resultados y total
-      const [reservas, totalCount] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
 
-      // Mapeo de resultados con los nuevos campos
-      const results = reservas.map((reserva) => ({
-        id: reserva.id,
-        creacion: reserva.creacion,
-        codigo: reserva.codigo,
-        inicio: reserva.inicio,
-        fin: reserva.fin,
-        estado: reserva.estado,
-        cantidad_accesos: reserva.cantidad_accesos,
-        cantidad_credenciales: reserva.cantidad_credenciales,
-        docente: reserva.docente
+      const totalCount =
+        results.length > 0 ? parseInt(results[0].total_count) : 0;
+
+      const formattedResults = results.map((row) => ({
+        id: row.reserva_id,
+        creacion: row.reserva_creacion,
+        codigo: row.reserva_codigo,
+        inicio: row.reserva_inicio,
+        fin: row.reserva_fin,
+        estado: row.reserva_estado,
+        cantidad_accesos: row.reserva_cantidad_accesos,
+        cantidad_credenciales: row.reserva_cantidad_credenciales,
+        docente: row.usuario_nombres
           ? {
-              nombres: reserva.docente?.usuario?.nombres,
-              apellidos: reserva.docente?.usuario?.apellidos,
+              nombres: row.usuario_nombres,
+              apellidos: row.usuario_apellidos,
             }
           : null,
-        clase: reserva.clase
+        clase: row.clase_nrc
           ? {
-              nrc: reserva.clase.nrc,
-              nombre_curso: reserva.clase.cursoModalidad.curso.nombre,
+              nrc: row.clase_nrc,
+              nombre_curso: row.curso_nombre,
             }
           : null,
         autor: {
-          rol: reserva.autor?.rol?.nombre, // Asumiendo
+          rol: row.rolAutor_nombre,
         },
       }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
           count: totalCount,
           page,
@@ -1944,8 +1938,10 @@ export class ReservaService {
         },
       };
     } catch (error) {
-      // Podrías loguear el error aquí
-      throw error;
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al obtener las reservas');
     }
   }
 
@@ -1988,7 +1984,6 @@ export class ReservaService {
         )
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
-
 
       // 4. Calcular credenciales ocupadas en el rango de fechas
       const credencialesOcupadas = new Set<string>();
@@ -2085,7 +2080,6 @@ export class ReservaService {
       const totalCredenciales = credenciales.length;
 
       if (totalCredenciales === 0) {
-
         return {
           credenciales_disponibles: {
             total: 0,
@@ -2123,8 +2117,6 @@ export class ReservaService {
         .andWhere('reserva.estado = :estado', { estado: 1 })
         .getMany();
 
-
-
       // 4. Calcular credenciales ocupadas en el rango de fechas
       const credencialesOcupadas = new Set<string>();
       reservasEnRango.forEach((reserva) => {
@@ -2134,7 +2126,6 @@ export class ReservaService {
           }
         });
       });
-
 
       // 5. Filtrar disponibilidad por tipo
       const capacidadPorCredencial = credenciales[0].recurso.capacidad;
@@ -2150,7 +2141,6 @@ export class ReservaService {
       const docenteDisponibles = credencialesDisponibles.filter(
         (c) => c.rol?.nombre === 'DOCENTE',
       ).length;
-
 
       const resultado = {
         credenciales_disponibles: {
