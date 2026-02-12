@@ -78,9 +78,10 @@ export class ContactoService {
     try {
       const { page, limit, sort, search } = paginationContactoDto;
 
-      const query = this.contactoRepository.createQueryBuilder('contacto');
+      const query = this.contactoRepository.createQueryBuilder('contacto')
+      .addSelect('COUNT(*) OVER()', 'total_count');
 
-      if (sort) {
+      if (sort !== undefined) {
         switch (sort.toString()) {
           case '1':
             query.orderBy('contacto.nombres', 'ASC');
@@ -97,7 +98,7 @@ export class ContactoService {
         }
       }
 
-      if (search) {
+      if (search !== undefined && search.trim() !== '') {
         query.where(
           '(UPPER(contacto.nombres) LIKE UPPER(:search) OR UPPER(contacto.apellidos) LIKE UPPER(:search))',
           {
@@ -105,10 +106,12 @@ export class ContactoService {
           },
         );
       }
-      const [results, count] = await query
+      const results = await query
         .skip((page - 1) * limit)
         .take(limit)
-        .getManyAndCount();
+        .getRawMany();
+
+      const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
 
       return {
         results,

@@ -1858,8 +1858,7 @@ export class ReservaService {
         }
       }
 
-      // ✅ Ordenamiento (sin cambios)
-      if (sort_order) {
+      if (sort_order !== undefined) {
         switch (sort_order) {
           case 1:
             query.orderBy('usuario.nombres', 'ASC');
@@ -1880,7 +1879,6 @@ export class ReservaService {
         query.orderBy('reserva.creacion', 'DESC');
       }
 
-      // ✅ Búsqueda (igual, pero ahora SELECT trae menos)
       if (search !== undefined && search.trim() !== '') {
         query.andWhere(
           new Brackets((qb) => {
@@ -1938,9 +1936,6 @@ export class ReservaService {
         },
       };
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       throw new InternalServerErrorException('Error al obtener las reservas');
     }
   }
