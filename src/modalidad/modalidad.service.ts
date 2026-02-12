@@ -33,7 +33,7 @@ export class ModalidadService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear modalidad');
     }
   }
 
@@ -43,9 +43,7 @@ export class ModalidadService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -64,7 +62,7 @@ export class ModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el modalidad');
     }
   }
 
@@ -85,7 +83,7 @@ export class ModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el modalidad');
     }
   }
 
@@ -132,7 +130,7 @@ export class ModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el modalidad');
     }
   }
 
@@ -159,7 +157,7 @@ export class ModalidadService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el modalidad');
     }
   }
 }

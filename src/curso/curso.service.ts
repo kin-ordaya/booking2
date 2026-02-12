@@ -132,8 +132,6 @@ export class CursoService {
   }
 
   async findOne(id: string) {
-    const operation = 'find_one';
-
     try {
       if (!id) {
         throw new BadRequestException('El ID del curso no puede estar vacío');
@@ -158,7 +156,6 @@ export class CursoService {
   }
 
   async findOneByCodigo(codigo: string): Promise<Curso> {
-    const operation = 'find_one_by_codigo';
     try {
       if (!codigo) {
         throw new BadRequestException('Codigo de curso no puede estar vacío');

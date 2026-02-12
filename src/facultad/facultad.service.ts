@@ -32,7 +32,7 @@ export class FacultadService {
       return await this.facultadRepository.save(facultad);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear facultad');
     }
   }
 
@@ -42,9 +42,7 @@ export class FacultadService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -64,7 +62,7 @@ export class FacultadService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener la facultad');
     }
   }
 
@@ -114,7 +112,7 @@ export class FacultadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar la facultad');
     }
   }
 
@@ -141,7 +139,7 @@ export class FacultadService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar la facultad');
     }
   }
 }

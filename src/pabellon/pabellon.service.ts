@@ -52,7 +52,7 @@ export class PabellonService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear pabellon');
     }
   }
 
@@ -62,9 +62,7 @@ export class PabellonService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -89,7 +87,7 @@ export class PabellonService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el pabellon');
     }
   }
 
@@ -166,7 +164,7 @@ export class PabellonService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el pabellon');
     }
   }
 
@@ -194,7 +192,7 @@ export class PabellonService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el pabellon');
     }
   }
 }

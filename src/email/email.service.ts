@@ -1,5 +1,6 @@
 import { SendEmailDto } from './dto/sendEmailDto.dto';
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -138,7 +139,10 @@ export class EmailService {
         },
       };
     } catch (error) {
-      throw error;
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al obtener credenciales');
     }
   }
 
@@ -416,7 +420,7 @@ export class EmailService {
       );
 
       if (!mismasCondiciones) {
-        throw new Error(
+        throw new BadRequestException(
           'Las reservas del grupo no tienen las mismas condiciones',
         );
       }
@@ -452,7 +456,10 @@ export class EmailService {
         credenciales: todasCredencialesUnidas, // Credenciales combinadas
       };
     } catch (error) {
-      throw error;
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al obtener reservas del grupo');
     }
   }
 

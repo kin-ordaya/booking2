@@ -3,15 +3,11 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { DeclaracionJuradaService } from './declaracion_jurada.service';
 import { CreateDeclaracionJuradaDto } from './dto/create-declaracion_jurada.dto';
-import { UpdateDeclaracionJuradaDto } from './dto/update-declaracion_jurada.dto';
 import { PaginationDeclaracionJuradaDto } from './dto/pagination-declaracion_jurada.dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
@@ -48,45 +44,5 @@ export class DeclaracionJuradaController {
   })
   findAll(@Query() getDeclaracionJuradaDto: PaginationDeclaracionJuradaDto) {
     return this.declaracionJuradaService.findAll(getDeclaracionJuradaDto);
-  }
-
-  @Get(':id')
-  @LogRequest()
-  @Roles('ADMINISTRADOR')
-  @ApiOperation({
-    summary: 'Obtener una declaración jurada',
-    description: 'Obtener una declaración jurada del sistema por su ID.',
-  })
-  findOne(@Param('id') id: string) {
-    return this.declaracionJuradaService.findOne(+id);
-  }
-
-  @Patch(':id')
-  @LogRequest()
-  @Roles('ADMINISTRADOR')
-  @ApiOperation({
-    summary: 'Actualizar una declaración jurada',
-    description:
-      'Actualizar una declaración jurada del sistema por su ID y datos de actualización.',
-  })
-  update(
-    @Param('id') id: string,
-    @Body() updateDeclaracionJuradaDto: UpdateDeclaracionJuradaDto,
-  ) {
-    return this.declaracionJuradaService.update(
-      +id,
-      updateDeclaracionJuradaDto,
-    );
-  }
-
-  @Delete(':id')
-  @LogRequest()
-  @Roles('ADMINISTRADOR')
-  @ApiOperation({
-    summary: 'Eliminar una declaración jurada',
-    description: 'Eliminar una declaración jurada del sistema por su ID.',
-  })
-  remove(@Param('id') id: string) {
-    return this.declaracionJuradaService.remove(+id);
   }
 }

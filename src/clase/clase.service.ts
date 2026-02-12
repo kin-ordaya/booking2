@@ -15,8 +15,6 @@ import { RecursoDocenteClaseDto } from './dto/recurso-docente-clase.dto';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
 import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ClaseService {
@@ -34,8 +32,6 @@ export class ClaseService {
   ) {}
 
   async create(createClaseDto: CreateClaseDto) {
-    const operation = 'create';
-    const startTime = Date.now();
     try {
       const {
         nrc,
@@ -108,8 +104,6 @@ export class ClaseService {
   }
 
   async findAll() {
-    const operation = 'find_all';
-
     try {
       const query = await this.claseRepository.find({ order: { nrc: 'ASC' } });
 
@@ -120,8 +114,6 @@ export class ClaseService {
   }
 
   async findOne(id: string) {
-    const operation = 'find_one';
-
     try {
       if (!id) {
         throw new BadRequestException('ID de la clase vacío');
@@ -152,7 +144,6 @@ export class ClaseService {
   async getClasesByRecursoDocente(
     recursoDocenteClaseDto: RecursoDocenteClaseDto,
   ) {
-    const operation = 'get_clases_by_recurso_docente';
     try {
       const { recurso_id, rol_usuario_id } = recursoDocenteClaseDto;
 
@@ -275,8 +266,6 @@ export class ClaseService {
   }
 
   async update(id: string, updateClaseDto: UpdateClaseDto) {
-    const operation = 'update_clase';
-    const startTime = Date.now();
     try {
       const {
         nrc,

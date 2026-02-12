@@ -103,7 +103,7 @@ export class DeclaracionJuradaService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear declaracion jurada');
     }
   }
 
@@ -170,19 +170,8 @@ export class DeclaracionJuradaService {
       ) {
         throw error;
       }
-      throw error;
+      throw new InternalServerErrorException('Error al recuperar declaraciones juradas');
     }
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} declaracionJurada`;
-  }
-
-  update(id: number, updateDeclaracionJuradaDto: UpdateDeclaracionJuradaDto) {
-    return `This action updates a #${id} declaracionJurada`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} declaracionJurada`;
-  }
 }

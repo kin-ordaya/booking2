@@ -36,7 +36,6 @@ import { types } from 'pg';
 import { EmailModule } from './email/email.module';
 import { SeccionEmailModule } from './seccion_email/seccion_email.module';
 import { PeriodoModule } from './periodo/periodo.module';
-// import { ImportModule } from './import/import.module';
 import { HealthModule } from './health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from './config/pinoConfig';

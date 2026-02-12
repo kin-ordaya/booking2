@@ -149,9 +149,7 @@ export class UsuarioService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 

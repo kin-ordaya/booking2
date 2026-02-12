@@ -42,9 +42,7 @@ export class TipoAccesoService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 

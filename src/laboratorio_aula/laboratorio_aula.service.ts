@@ -59,6 +59,7 @@ export class LaboratorioAulaService {
       ) {
         throw error;
       }
+      throw new InternalServerErrorException('Error al crear asignación de laboratorio a aula');
     }
   }
 
@@ -66,9 +67,7 @@ export class LaboratorioAulaService {
     try {
       return await this.laboratorioAulaRepository.find();
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error al recuperar asignaciones de laboratorio a aula');
     }
   }
 }

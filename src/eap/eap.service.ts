@@ -47,7 +47,7 @@ export class EapService {
         error instanceof ConflictException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear EAP');
     }
   }
 
@@ -60,7 +60,6 @@ export class EapService {
     } catch (error) {
       throw new InternalServerErrorException(
         'Ocurrió un error al recuperar las EAPs',
-        { cause: error },
       );
     }
   }
@@ -80,7 +79,7 @@ export class EapService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener la EAP');
     }
   }
 
@@ -101,7 +100,7 @@ export class EapService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener la EAP por nombre');
     }
   }
 
@@ -166,7 +165,7 @@ export class EapService {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error inesperado al actualizar la EAP',
+        'Error al actualizar la EAP',
       );
     }
   }
@@ -193,7 +192,7 @@ export class EapService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar EAP');
     }
   }
 }

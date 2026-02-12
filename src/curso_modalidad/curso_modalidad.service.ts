@@ -63,7 +63,7 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear curso modalidad');
     }
   }
 
@@ -154,9 +154,7 @@ export class CursoModalidadService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error al recuperar cursos modalidades');
     }
   }
 
@@ -180,7 +178,7 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al recuperar curso modalidad');
     }
   }
 
@@ -204,7 +202,7 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al recuperar curso modalidad por ID de curso y modalidad');
     }
   }
 
@@ -278,7 +276,7 @@ export class CursoModalidadService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar curso modalidad');
     }
   }
 
@@ -306,7 +304,7 @@ export class CursoModalidadService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar curso modalidad');
     }
   }
 }

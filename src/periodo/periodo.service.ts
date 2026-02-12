@@ -47,7 +47,7 @@ export class PeriodoService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear periodo');
     }
   }
 
@@ -57,9 +57,8 @@ export class PeriodoService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error al recuperar periodos');
+      
     }
   }
 
@@ -81,7 +80,7 @@ export class PeriodoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el periodo');
     }
   }
 
@@ -166,7 +165,7 @@ export class PeriodoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el periodo');
     }
   }
 
@@ -192,7 +191,7 @@ export class PeriodoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el periodo');
     }
   }
 }

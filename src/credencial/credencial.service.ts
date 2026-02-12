@@ -229,7 +229,7 @@ export class CredencialService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al recuperar credencial');
     }
   }
 
@@ -302,7 +302,7 @@ export class CredencialService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar credencial');
     }
   }
 
@@ -342,7 +342,7 @@ export class CredencialService {
       ){
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar credencial');
     }
   }
 }

@@ -75,10 +75,8 @@ export class AulaService {
       throw new InternalServerErrorException('Error al crear aula');
     }
   }
-
+  
   async findAll() {
-    const operation = 'find_all';
-
     try {
       const aulas = await this.aulaRepository.find({
         order: { nombre: 'ASC' },
@@ -91,8 +89,6 @@ export class AulaService {
   }
 
   async findOne(id: string) {
-    const operation = 'find_one';
-
     try {
       if (!id) {
         throw new BadRequestException('El ID del aula no puede estar vacío');
@@ -194,9 +190,6 @@ export class AulaService {
   }
 
   async remove(id: string) {
-    const operation = 'remove';
-    const startTime = Date.now();
-
     try {
       if (!id) {
         throw new BadRequestException('ID del aula vacío');

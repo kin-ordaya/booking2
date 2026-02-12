@@ -94,6 +94,7 @@ export class RecursoCursoModalidadService {
           'cursoModalidad.id',
           'curso.id',
           'curso.nombre',
+          'curso.codigo',
           'modalidad.id',
           'modalidad.nombre',
         ]);
@@ -122,8 +123,8 @@ export class RecursoCursoModalidadService {
       }
 
       if (search) {
-        query.andWhere('recurso.nombre LIKE :search ', {
-          search: `%${search}%`,
+        query.andWhere('recurso.nombre LIKE :search  OR curso.nombre LIKE :search', {
+          search: `%${search.toUpperCase()}%`,
         });
       }
 

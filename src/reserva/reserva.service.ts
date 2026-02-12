@@ -19,7 +19,6 @@ import { CredencialesDisponiblesDto } from './dto/credenciales-disponibles-reser
 import { PaginationReservaInRangeDto } from './dto/pagination-reserva-in-range.dto';
 import { CreateReservaMixtoDto } from './dto/individual/create-reserva-mixto.dto';
 import { CreateReservaMantenimientoMixtoDto } from './dto/individual/create-reserva-mantenimiento-mixto.dto';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CreateReservaGeneralDto } from './dto/individual/create-reserva-general.dto';
 import { CreateReservaGeneralMultipleDto } from './dto/multiple/create-reserva-general-multiple.dto';
 import { CreateReservaMantenimientoGeneralMultipleDto } from './dto/multiple/create-reserva-mantenimiento-general-multiple.dto';

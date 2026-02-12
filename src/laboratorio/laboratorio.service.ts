@@ -56,7 +56,7 @@ export class LaboratorioService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear laboratorio');
     }
   }
 
@@ -66,9 +66,7 @@ export class LaboratorioService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 
@@ -93,7 +91,7 @@ export class LaboratorioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el laboratorio');
     }
   }
 
@@ -209,7 +207,7 @@ export class LaboratorioService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el laboratorio');
     }
   }
 
@@ -237,7 +235,7 @@ export class LaboratorioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el laboratorio');
     }
   }
 }

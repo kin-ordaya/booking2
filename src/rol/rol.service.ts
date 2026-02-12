@@ -41,9 +41,7 @@ export class RolService {
     try {
       return await this.rolRepository.find({ order: { nombre: 'ASC' } });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado', {
-        cause: error,
-      });
+      throw new InternalServerErrorException('Error inesperado');
     }
   }
 

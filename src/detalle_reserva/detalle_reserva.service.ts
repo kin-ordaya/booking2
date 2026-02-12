@@ -79,15 +79,4 @@ export class DetalleReservaService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} detalleReserva`;
-  }
-
-  update(id: number, updateDetalleReservaDto: UpdateDetalleReservaDto) {
-    return `This action updates a #${id} detalleReserva`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} detalleReserva`;
-  }
 }
