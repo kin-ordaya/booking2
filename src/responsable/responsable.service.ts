@@ -203,7 +203,7 @@ export class ResponsableService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear responsable');
     }
   }
 
@@ -254,7 +254,7 @@ export class ResponsableService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener los responsables');
     }
   }
 
@@ -287,39 +287,6 @@ export class ResponsableService {
     }
   }
 
-  // async update(id: string, updateResponsableDto: UpdateResponsableDto) {
-  //   try {
-  //     const {
-  //       rol_usuario_id,
-  //       recurso_id,
-  //       clase_id,
-  //       curso_modalidad_id,
-  //       campus_id,
-  //     } = updateResponsableDto;
-
-  //     if (!id) {
-  //       throw new BadRequestException('Id invalido');
-  //     }
-  //     const responsable = await this.responsableRepository.findOne({
-  //       where: { id },
-  //     });
-  //     if (!responsable) {
-  //       throw new NotFoundException('Responsable not found');
-  //     }
-
-  //   } catch (error) {
-  //     if (
-  //       error instanceof BadRequestException ||
-  //       error instanceof NotFoundException
-  //     ) {
-  //       throw error;
-  //     }
-  //     throw new InternalServerErrorException(
-  //       error.message || 'Error inesperado',
-  //     );
-  //   }
-  // }
-
   async remove(id: string) {
     try {
       if (!id) {
@@ -338,7 +305,7 @@ export class ResponsableService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el responsable');
     }
   }
 }

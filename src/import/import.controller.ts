@@ -20,7 +20,7 @@ import { Roles } from '@/auth/decorators/roles.decorator';
 @UseGuards(AuthGuard, RolesGuard)
 export class ImportController {
   constructor(private readonly importService: ImportService) {}
-  //TODO: Evaluar si el try catch es necesario
+
   @Post('excel')
   @LogRequest()
   @Roles('ADMINISTRADOR')
@@ -33,17 +33,13 @@ export class ImportController {
     @UploadedFile() file: any,
     @Query() queryImportDto: QueryImportDto,
   ) {
-    try {
-      const resultado = await this.importService.procesarExcel(
-        file.buffer,
-        queryImportDto,
-      );
-      return {
-        success: true,
-        data: resultado,
-      };
-    } catch (error) {
-      throw error;
-    }
+    const resultado = await this.importService.procesarExcel(
+      file.buffer,
+      queryImportDto,
+    );
+    return {
+      success: true,
+      data: resultado,
+    };
   }
 }

@@ -39,7 +39,6 @@ export class RolesGuard implements CanActivate {
     if (!hasRole) {
       throw new ForbiddenException('No tiene los permisos requeridos');
     }
-    //console.log('valido');
 
     return true;
   }

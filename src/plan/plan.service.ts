@@ -31,7 +31,7 @@ export class PlanService {
       return await this.planRepository.save(plan);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear plan');
     }
   }
 
@@ -41,7 +41,7 @@ export class PlanService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener los planes');
     }
   }
 
@@ -60,7 +60,7 @@ export class PlanService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el plan');
     }
   }
 
@@ -81,7 +81,7 @@ export class PlanService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el plan');
     }
   }
 
@@ -131,7 +131,7 @@ export class PlanService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el plan');
     }
   }
 
@@ -156,7 +156,7 @@ export class PlanService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el plan');
     }
   }
 }

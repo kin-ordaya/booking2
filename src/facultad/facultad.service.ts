@@ -42,7 +42,7 @@ export class FacultadService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener las facultades');
     }
   }
 

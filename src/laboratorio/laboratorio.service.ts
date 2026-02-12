@@ -66,7 +66,7 @@ export class LaboratorioService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener los laboratorios');
     }
   }
 

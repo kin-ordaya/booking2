@@ -33,7 +33,7 @@ export class RolService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear rol');
     }
   }
 
@@ -41,7 +41,7 @@ export class RolService {
     try {
       return await this.rolRepository.find({ order: { nombre: 'ASC' } });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener los roles');
     }
   }
 
@@ -58,7 +58,7 @@ export class RolService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el rol');
     }
   }
 
@@ -75,7 +75,7 @@ export class RolService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el rol por nombre');
     }
   }
 
@@ -115,7 +115,7 @@ export class RolService {
         error instanceof ConflictException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el rol');
     }
   }
 
@@ -139,7 +139,7 @@ export class RolService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el rol');
     }
   }
 }

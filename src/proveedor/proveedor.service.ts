@@ -37,7 +37,7 @@ export class ProveedorService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear proveedor');
     }
   }
 
@@ -76,7 +76,7 @@ export class ProveedorService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el proveedor');
     }
   }
 
@@ -127,7 +127,7 @@ export class ProveedorService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el proveedor');
     }
   }
 
@@ -154,7 +154,7 @@ export class ProveedorService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el proveedor');
     }
   }
 }

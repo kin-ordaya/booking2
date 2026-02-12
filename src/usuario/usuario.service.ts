@@ -29,11 +29,8 @@ export class UsuarioService {
     try {
       return await this.dataSource.transaction(
         async (transactionalEntityManager) => {
-          const {
-            correo_institucional,
-            telefono_institucional,
-            rol_id,
-          } = createUsuarioDto;
+          const { correo_institucional, telefono_institucional, rol_id } =
+            createUsuarioDto;
 
           // // 1. Verificar documento_identidad
           // const documento_identidad =
@@ -74,7 +71,7 @@ export class UsuarioService {
 
           // 3. Crear usuario
           const usuario = transactionalEntityManager.create(Usuario, {
-            ...createUsuarioDto
+            ...createUsuarioDto,
           });
           await transactionalEntityManager.save(usuario);
 
@@ -109,7 +106,7 @@ export class UsuarioService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear usuario');
     }
   }
 
@@ -124,7 +121,7 @@ export class UsuarioService {
           'usuario.id',
           'usuario.nombres',
           'usuario.apellidos',
-          'usuario.correo_institucional'
+          'usuario.correo_institucional',
         ]);
 
       if (search) {
@@ -149,7 +146,7 @@ export class UsuarioService {
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener usuarios');
     }
   }
 
@@ -166,14 +163,16 @@ export class UsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el usuario');
     }
   }
 
   async findOneByCorreo(correo: string) {
     try {
       if (!correo)
-        throw new BadRequestException('El correo del usuario no puede estar vacío');
+        throw new BadRequestException(
+          'El correo del usuario no puede estar vacío',
+        );
       const usuario = await this.usuarioRepository.findOne({
         where: { correo_institucional: correo },
       });
@@ -185,41 +184,11 @@ export class UsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException(
+        'Error al obtener usuario por correo',
+      );
     }
   }
-  // async findOneByNumeroDocumento(
-  //   numero_documento: string,
-  //   tipo_documento: string,
-  // ) {
-  //   try {
-  //     console.log('Buscando usuario por numero de documento');
-  //     console.log(`tipo_documento: ${tipo_documento}`);
-  //     console.log(`numero_documento: ` + numero_documento);
-
-  //     const tipoDocumento = await this.documentoIdentidadRepository.findOne({
-  //       where: { nombre: tipo_documento },
-  //     });
-  //     console.log(tipoDocumento);
-
-  //     if (!tipoDocumento)
-  //       throw new NotFoundException('Tipo de documento no encontrado');
-
-  //     return await this.usuarioRepository.findOne({
-  //       where: {
-  //         numero_documento,
-  //         documento_identidad: { id: tipoDocumento.id },
-  //       },
-  //     });
-  //   } catch (error) {
-  //     if (
-  //       error instanceof NotFoundException ||
-  //       error instanceof BadRequestException
-  //     )
-  //       throw error;
-  //     throw new InternalServerErrorException('Error inesperado');
-  //   }
-  // }
 
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     try {
@@ -238,7 +207,7 @@ export class UsuarioService {
         throw new BadRequestException('El ID del usuario no puede estar vacío');
 
       const usuario = await this.usuarioRepository.findOne({
-        where: { id }
+        where: { id },
       });
       if (!usuario) {
         throw new NotFoundException('Usuario no encontrado');
@@ -311,7 +280,7 @@ export class UsuarioService {
         error instanceof ConflictException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el usuario');
     }
   }
 
@@ -336,7 +305,9 @@ export class UsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar el usuario',
+      );
     }
   }
 
@@ -367,7 +338,7 @@ export class UsuarioService {
         errores.push({
           indice: index + 1,
           datos: usuarioData,
-          error: error.message || error,
+          error: error instanceof Error ? error.message : error,
         });
       }
     }

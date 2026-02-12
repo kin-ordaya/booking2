@@ -32,7 +32,7 @@ export class TipoAccesoService {
       return await this.tipoAccesoRepository.save(tipoAcceso);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear tipoAcceso');
     }
   }
 
@@ -42,7 +42,7 @@ export class TipoAccesoService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener tipoAcceso');
     }
   }
 
@@ -62,7 +62,7 @@ export class TipoAccesoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener tipoAcceso');
     }
   }
 
@@ -111,7 +111,7 @@ export class TipoAccesoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar tipoAcceso');
     }
   }
 
@@ -138,7 +138,7 @@ export class TipoAccesoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar tipoAcceso');
     }
   }
 }

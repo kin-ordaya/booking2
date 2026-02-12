@@ -113,7 +113,7 @@ export class RecursoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear recurso');
     }
   }
 
@@ -276,7 +276,7 @@ export class RecursoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener los recursos');
     }
   }
 
@@ -322,7 +322,7 @@ export class RecursoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el recurso');
     }
   }
 
@@ -432,7 +432,7 @@ export class RecursoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el recurso');
     }
   }
 
@@ -457,7 +457,7 @@ export class RecursoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar el recurso');
     }
   }
 }

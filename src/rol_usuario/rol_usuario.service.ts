@@ -64,7 +64,9 @@ export class RolUsuarioService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException(
+        'Error al crear asignación de rol a usuario',
+      );
     }
   }
 
@@ -137,9 +139,9 @@ export class RolUsuarioService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error inesperado';
-      throw new InternalServerErrorException(errorMessage);
+      throw new InternalServerErrorException(
+        'Error al obtener las asignaciones de rol a usuario',
+      );
     }
   }
 
@@ -161,7 +163,10 @@ export class RolUsuarioService {
         .innerJoin('rolUsuario.responsable', 'responsable')
         .innerJoin('responsable.clase', 'clase')
         .innerJoin('clase.cursoModalidad', 'cursoModalidad')
-        .innerJoin('cursoModalidad.recursoCursoModalidad', 'recursoCursoModalidad')
+        .innerJoin(
+          'cursoModalidad.recursoCursoModalidad',
+          'recursoCursoModalidad',
+        )
         .innerJoin('recursoCursoModalidad.recurso', 'recurso')
         .innerJoin('rolUsuario.rol', 'rol')
         .innerJoin('rolUsuario.usuario', 'usuario')
@@ -206,7 +211,7 @@ export class RolUsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el rolUsuario');
     }
   }
 
@@ -228,7 +233,7 @@ export class RolUsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el rolUsuario');
     }
   }
 
@@ -251,7 +256,7 @@ export class RolUsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener el rolUsuario por usuario y rol');
     }
   }
 
@@ -297,7 +302,7 @@ export class RolUsuarioService {
         error instanceof ConflictException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar el rolUsuario');
     }
   }
 
@@ -322,7 +327,9 @@ export class RolUsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar usuario');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar usuario',
+      );
     }
   }
 }

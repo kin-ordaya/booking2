@@ -39,7 +39,7 @@ export class SeccionEmailService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear seccionEmail');
     }
   }
 }

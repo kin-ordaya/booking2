@@ -34,7 +34,7 @@ export class TipoRecursoService {
       return await this.tipoRecursoRepository.save(tipoRecurso);
     } catch (error) {
       if (error instanceof ConflictException) throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al crear tipoRecurso');
     }
   }
 
@@ -44,7 +44,7 @@ export class TipoRecursoService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener tipoRecursos');
     }
   }
 
@@ -66,7 +66,7 @@ export class TipoRecursoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al obtener tipoRecurso');
     }
   }
 
@@ -116,7 +116,7 @@ export class TipoRecursoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al actualizar tipoRecurso');
     }
   }
 
@@ -143,7 +143,7 @@ export class TipoRecursoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error inesperado');
+      throw new InternalServerErrorException('Error al deshabilitar/habilitar tipoRecurso');
     }
   }
 }
