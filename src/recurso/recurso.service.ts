@@ -122,35 +122,13 @@ export class RecursoService {
       const { rol_usuario_id, sort_name, sort_state, page, limit, search } =
         paginationRecursoDto;
 
-      // Validar rol_usuario_id
-      if (rol_usuario_id) {
-        const rolUsuario = await this.rolUsuarioRepository.findOne({
-          where: { id: rol_usuario_id },
-          relations: ['usuario', 'rol'],
-        });
-
-        if (!rolUsuario) {
-          throw new BadRequestException(
-            'El rol de usuario proporcionado no existe',
-          );
-        }
-      }
-
-      // Subquery para contar credenciales
-      const credencialCountSubQuery = this.recursoRepository
-        .createQueryBuilder('recurso_sub')
-        .leftJoin('recurso_sub.credencial', 'credencial_sub')
-        .select('COUNT(credencial_sub.id)', 'count')
-        .where('recurso_sub.id = recurso.id')
-        .getQuery();
-
-      // Query principal - USAR DISTINCT DE FORMA CORRECTA
+      // Construir query base
       const query = this.recursoRepository
         .createQueryBuilder('recurso')
-        .distinct(true) // ✅ AGREGAR DISTINCT AQUÍ
         .leftJoinAndSelect('recurso.tipoRecurso', 'tipoRecurso')
         .leftJoinAndSelect('recurso.tipoAcceso', 'tipoAcceso')
         .leftJoinAndSelect('recurso.proveedor', 'proveedor')
+        .leftJoin('recurso.credencial', 'credencial')
         .select([
           'recurso.id',
           'recurso.nombre',
@@ -164,88 +142,64 @@ export class RecursoService {
           'tipoAcceso.nombre',
         ])
         .addSelect(
-          `(${credencialCountSubQuery})`,
+          'COUNT(DISTINCT credencial.id)',
           'recurso_cantidad_credenciales',
-        );
+        )
+        .addSelect('COUNT(*) OVER() AS total_count')
+        .groupBy('recurso.id')
+        .addGroupBy('tipoRecurso.id')
+        .addGroupBy('tipoAcceso.id')
+        .addGroupBy('proveedor.id');
 
-      // Query para contar el total
-      const countQuery = this.recursoRepository
-        .createQueryBuilder('recurso')
-        .select('COUNT(DISTINCT recurso.id)', 'count');
-
-      // Filtro por rol_usuario_id (si es docente)
+      // Si hay rol_usuario_id, filtrar por usuario
       if (rol_usuario_id) {
-        const rolUsuario = await this.rolUsuarioRepository.findOne({
-          where: { id: rol_usuario_id },
-          relations: ['rol'],
-        });
-
-        if (rolUsuario && rolUsuario.rol.nombre === 'DOCENTE') {
-          // Subquery para recursos accesibles por el docente
-          const docenteSubQuery = this.recursoRepository
-            .createQueryBuilder('recurso_docente')
-            .leftJoin('recurso_docente.recursoCursoModalidad', 'recursoCursoModalidad_docente')
-            .leftJoin('recursoCursoModalidad_docente.cursoModalidad', 'recursoModalidad_docente')
-            .leftJoin('recursoModalidad_docente.clase', 'clase_docente')
-            .leftJoin('clase_docente.responsable', 'responsable_docente')
-            .leftJoin(
-              'responsable_docente.rolUsuario',
-              'rolUsuarioResponsable_docente',
-            )
-            .where('rolUsuarioResponsable_docente.id = :rol_usuario_id')
-            .andWhere('recurso_docente.id = recurso.id')
-            .select('1');
-
-          query.andWhere(`EXISTS (${docenteSubQuery.getQuery()})`, {
+        query
+          .innerJoin('recurso.recursoCursoModalidad', 'recursoCursoModalidad')
+          .innerJoin('recursoCursoModalidad.cursoModalidad', 'cursoModalidad')
+          .innerJoin('cursoModalidad.clase', 'clase')
+          .innerJoin('clase.responsable', 'responsable')
+          .andWhere('responsable.rol_usuario_id = :rol_usuario_id', {
             rol_usuario_id,
           });
-          countQuery.andWhere(`EXISTS (${docenteSubQuery.getQuery()})`, {
-            rol_usuario_id,
-          });
-        }
       }
 
-      // Resto de filtros
+      // Aplicar filtros comunes
       if (sort_state !== undefined) {
-        const estado = sort_state === 1 ? 1 : 0;
-        query.andWhere('recurso.estado = :estado', { estado });
-        countQuery.andWhere('recurso.estado = :estado', { estado });
+        query.andWhere('recurso.estado = :estado', {
+          estado: sort_state === 1 ? 1 : 0,
+        });
       }
 
-      if (search) {
-        const searchPattern = `%${search}%`;
+      if (search?.trim()) {
         query.andWhere(
           '(recurso.nombre ILIKE :search OR recurso.descripcion ILIKE :search)',
-          { search: searchPattern },
-        );
-        countQuery.andWhere(
-          '(recurso.nombre ILIKE :search OR recurso.descripcion ILIKE :search)',
-          { search: searchPattern },
+          { search: `%${search}%` },
         );
       }
 
       // Ordenamiento
       if (sort_name !== undefined) {
-        query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
+        query.orderBy(
+          'recurso.nombre',
+          sort_name === 1 ? 'ASC' : 'DESC',
+        );
       } else {
         query.orderBy('recurso.creacion', 'DESC');
       }
 
       // Paginación
-      query.offset((page - 1) * limit).limit(limit);
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
 
-      // Ejecutar queries
-      const [rawResults, totalCountResult] = await Promise.all([
-        query.getRawMany(),
-        countQuery.getRawOne() as Promise<CountResult>,
-      ]);
+      const totalCount =
+        results.length > 0 ? parseInt(results[0].total_count) : 0;
 
-      const totalCount = parseInt(totalCountResult.count, 10);
-
-      // Mapear resultados
-      const results = rawResults.map((raw) => ({
+      const mappedResults = results.map((raw) => ({
         id: raw.recurso_id,
         nombre: raw.recurso_nombre,
+        descripcion: raw.recurso_descripcion,
         link_declaracion: raw.recurso_link_declaracion,
         creacion: raw.recurso_creacion,
         estado: raw.recurso_estado,
@@ -261,11 +215,11 @@ export class RecursoService {
       }));
 
       return {
-        results,
+        results: mappedResults,
         meta: {
           count: totalCount,
-          page,
-          limit,
+          page: page,
+          limit: limit,
           totalPages: Math.ceil(totalCount / limit),
         },
       };
@@ -279,7 +233,6 @@ export class RecursoService {
       throw new InternalServerErrorException('Error al obtener los recursos');
     }
   }
-
   async findOne(id: string) {
     try {
       if (!id)
@@ -457,7 +410,9 @@ export class RecursoService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar el recurso');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar el recurso',
+      );
     }
   }
 }
