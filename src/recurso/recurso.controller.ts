@@ -55,13 +55,23 @@ export class RecursoController {
   // }
 
   @Get(':id')
+  @LogRequest()
   @Roles('ADMINISTRADOR', 'DOCENTE')
+  @ApiOperation({
+    summary: 'Obtener un recurso',
+    description: 'Obtener un recurso del sistema.',
+  })
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.recursoService.findOne(id);
   }
 
   @Patch(':id')
+  @LogRequest()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Actualizar un recurso',
+    description: 'Actualizar un recurso del sistema.',
+  })
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body(new AtLeastOneFieldPipe()) updateRecursoDto: UpdateRecursoDto,
@@ -70,7 +80,12 @@ export class RecursoController {
   }
 
   @Delete(':id')
+  @LogRequest()
   @Roles('ADMINISTRADOR')
+  @ApiOperation({
+    summary: 'Eliminar un recurso',
+    description: 'Eliminar un recurso del sistema.',
+  })
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.recursoService.remove(id);
   }
