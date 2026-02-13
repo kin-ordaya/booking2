@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDeclaracionJuradaDto } from './dto/create-declaracion_jurada.dto';
-import { UpdateDeclaracionJuradaDto } from './dto/update-declaracion_jurada.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeclaracionJurada } from './entities/declaracion_jurada.entity';
 import { Repository } from 'typeorm';
@@ -103,7 +102,9 @@ export class DeclaracionJuradaService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al crear declaracion jurada');
+      throw new InternalServerErrorException(
+        'Error al crear declaracion jurada',
+      );
     }
   }
 
@@ -115,7 +116,10 @@ export class DeclaracionJuradaService {
       .createQueryBuilder('responsable')
       .innerJoin('responsable.clase', 'clase')
       .innerJoin('clase.cursoModalidad', 'cursoModalidad')
-      .innerJoin('cursoModalidad.recursoCursoModalidad', 'recursoCursoModalidad')
+      .innerJoin(
+        'cursoModalidad.recursoCursoModalidad',
+        'recursoCursoModalidad',
+      )
       .innerJoin('recursoCursoModalidad.recurso', 'recurso')
       .where('responsable.rol_usuario_id = :rolUsuarioId', { rolUsuarioId })
       .andWhere('recurso.id = :recursoId', { recursoId })
@@ -131,47 +135,22 @@ export class DeclaracionJuradaService {
       const query = this.declaracionJuradaRepository
         .createQueryBuilder('declaracionJurada')
         .where('declaracionJurada.estado = :estado', { estado: 1 })
-        .leftJoin('declaracionJurada.rolUsuario', 'rolUsuario') // Agregar JOIN para rolUsuario
-        .leftJoin('declaracionJurada.recurso', 'recurso'); // Agregar JOIN para recurso
+        .leftJoin('declaracionJurada.rolUsuario', 'rolUsuario')
+        .leftJoin('declaracionJurada.recurso', 'recurso');
 
-      // 1. Validar que el rol_usuario_id existe si fue proporcionado
-      if (rol_usuario_id) {
-        const rolUsuario = await this.rolUsuarioRepository.existsBy({
-          id: rol_usuario_id,
-        });
-
-        if (!rolUsuario) {
-          throw new NotFoundException(
-            'El rol de usuario proporcionado no existe',
-          );
-        }
-
+      if (rol_usuario_id !== undefined) {
         query.andWhere('rolUsuario.id = :rol_usuario_id', { rol_usuario_id });
       }
 
-      // 2. Validar que el recurso_id existe si fue proporcionado
-      if (recurso_id) {
-        const recurso = await this.recursoRepository.existsBy({
-          id: recurso_id,
-        });
-
-        if (!recurso) {
-          throw new NotFoundException('El recurso proporcionado no existe');
-        }
-
+      if (recurso_id !== undefined) {
         query.andWhere('recurso.id = :recurso_id', { recurso_id });
       }
 
       return await query.getMany();
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error al recuperar declaraciones juradas');
+      throw new InternalServerErrorException(
+        'Error al recuperar declaraciones juradas',
+      );
     }
   }
-
 }

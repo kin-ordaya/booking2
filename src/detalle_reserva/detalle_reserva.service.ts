@@ -3,12 +3,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateDetalleReservaDto } from './dto/create-detalle_reserva.dto';
-import { UpdateDetalleReservaDto } from './dto/update-detalle_reserva.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DetalleReserva } from './entities/detalle_reserva.entity';
-import { Repository } from 'typeorm';
-import { Reserva } from 'src/reserva/entities/reserva.entity';
+import { Brackets, Repository } from 'typeorm';
 import { PaginationDetalleReservaDto } from './dto/pagination_reserva.dto';
 
 @Injectable()
@@ -16,67 +13,67 @@ export class DetalleReservaService {
   constructor(
     @InjectRepository(DetalleReserva)
     private readonly detalleReservaRepository: Repository<DetalleReserva>,
-
-    @InjectRepository(Reserva)
-    private readonly reservaRepository: Repository<DetalleReserva>,
   ) {}
 
   async findAll(paginationDetalleReservaDto: PaginationDetalleReservaDto) {
     try {
       const { reserva_id, page, limit, search } = paginationDetalleReservaDto;
 
-      const reserva = await this.reservaRepository.existsBy({ id: reserva_id });
-      if (!reserva) {
-        throw new NotFoundException('Reserva no encontrada');
-      }
-
-      // Crear query builder para manejar la búsqueda
       const queryBuilder = this.detalleReservaRepository
         .createQueryBuilder('detalleReserva')
-        .leftJoinAndSelect('detalleReserva.credencial', 'credencial')
-        .leftJoinAndSelect('credencial.rol', 'rol')
+        .leftJoin('detalleReserva.credencial', 'credencial')
+        .leftJoin('credencial.rol', 'rol')
+        .select([
+          'credencial.usuario',
+          'credencial.clave',
+          'rol.nombre',
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count')
         .where('detalleReserva.reserva.id = :reserva_id', { reserva_id });
 
-      // Aplicar búsqueda si existe
-      if (search) {
-        queryBuilder.andWhere('credencial.usuario ILIKE :search', {
-          search: `%${search}%`,
-        });
+      if (search !== undefined && search.trim() !== '') {
+        queryBuilder.andWhere(
+          new Brackets((qb) => {
+            qb.where('credencial.usuario ILIKE :search').orWhere(
+              'rol.nombre ILIKE :search',
+            );
+          }),
+          { search: `%${search}%` },
+        );
       }
 
-      // Obtener el conteo total CON la búsqueda aplicada
-      const total = await queryBuilder.getCount();
-
-      // Obtener los detalles con paginación y búsqueda
-      const detallesReserva = await queryBuilder
+      const results = await queryBuilder
         .take(limit)
         .skip((page - 1) * limit)
-        .getMany();
+        .getRawMany();
 
-      // Extraer solo las credenciales con su rol
-      const results = detallesReserva.map((detalle) => ({
-        ...detalle.credencial,
-        rol: detalle.credencial.rol,
+      const total_count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+
+      const formattedResults = results.map((row) => ({
+        usuario: row.credencial_usuario,
+        clave: row.credencial_clave,
+        rol: {
+          nombre: row.rol_nombre,
+        },
       }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
-          count: results.length, // Cantidad en esta página
-          total, // Total general de registros (con filtro aplicado)
+          count: total_count,
           page,
           limit,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(total_count / limit),
         },
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
+      console.error('Error en findAll detalles:', error);
       throw new InternalServerErrorException(
         'Error al obtener los detalles de reserva',
       );
     }
   }
-
 }

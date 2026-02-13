@@ -136,7 +136,6 @@ export class CredencialService {
         .select([
           'credencial.id',
           'credencial.usuario',
-          'credencial.creacion',
           'credencial.clave',
           'credencial.estado',
           'recurso.nombre',
@@ -176,15 +175,29 @@ export class CredencialService {
         .take(limit)
         .getRawMany();
 
-      const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+      const total_count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+
+      const formattedResults = results.map((row) => ({
+        id: row.credencial_id,
+        estado: row.credencial_estado,
+        usuario: row.credencial_usuario,
+        clave: row.credencial_clave,
+        recurso: {
+          nombre: row.recurso_nombre,
+          capacidad: row.recurso_capacidad,
+        },
+        rol: {
+          nombre: row.rol_nombre,
+        },
+      }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
-          count,
+          count: total_count,
           page,
           limit,
-          totalPages: Math.ceil(count / limit),
+          totalPages: Math.ceil(total_count / limit),
         },
       };
     } catch (error) {
