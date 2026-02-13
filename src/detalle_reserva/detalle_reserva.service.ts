@@ -43,8 +43,8 @@ export class DetalleReservaService {
       }
 
       const results = await queryBuilder
-        .take(limit)
-        .skip((page - 1) * limit)
+        .offset((page - 1) * limit)
+        .limit(limit)
         .getRawMany();
 
       const total_count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;

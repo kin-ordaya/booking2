@@ -130,8 +130,8 @@ export class CursoModalidadService {
       }
 
       const results = await query
-        .skip((page - 1) * limit)
-        .take(limit)
+        .offset((page - 1) * limit)
+        .limit(limit)
         .getRawMany();
 
       const count =

@@ -114,8 +114,8 @@ export class CursoService {
       }
 
       const results= await query
-        .skip((page - 1) * limit)
-        .take(limit)
+        .offset((page - 1) * limit)
+        .limit(limit)
         .getRawMany();
 
       const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
