@@ -1946,85 +1946,71 @@ export class ReservaService {
     try {
       const { recurso_id, inicio, fin } = paginationReservaInRangeDto;
 
-      // 1. Obtener el recurso con su capacidad
-      const recurso = await this.recursoRepository.findOne({
-        where: { id: recurso_id },
-        select: ['id', 'capacidad'],
-      });
+      const query = `
+      WITH 
+      -- Obtener información del recurso
+      recurso_info AS (
+        SELECT id, COALESCE(capacidad, 1) as capacidad_por_credencial
+        FROM recurso
+        WHERE id = $1
+      ),
+      -- Total de credenciales del recurso
+      total_credenciales AS (
+        SELECT COUNT(id) as total
+        FROM credencial
+        WHERE recurso_id = $1
+      ),
+      -- Reservas en el rango
+      reservas_rango AS (
+        SELECT 
+          r.*,
+          (
+            SELECT COUNT(DISTINCT d.credencial_id)
+            FROM detalle_reserva d
+            WHERE d.reserva_id = r.id
+          ) as credenciales_usadas_esta
+        FROM reserva r
+        WHERE r.recurso_id = $1
+          AND r.estado = 1
+          AND (
+            (r.inicio BETWEEN $2 AND $3) OR
+            (r.fin BETWEEN $2 AND $3) OR
+            (r.inicio <= $2 AND r.fin >= $3)
+          )
+      )
+      -- Consulta final con cálculos
+      SELECT 
+        rr.*,
+        (
+          SELECT COUNT(DISTINCT d2.credencial_id)
+          FROM detalle_reserva d2
+          INNER JOIN reserva r2 ON d2.reserva_id = r2.id
+          WHERE r2.recurso_id = $1
+            AND r2.estado = 1
+            AND r2.id != rr.id
+            AND r2.inicio < rr.fin
+            AND r2.fin > rr.inicio
+        ) as credenciales_ocupadas_por_otras,
+        tc.total as total_credenciales,
+        ri.capacidad_por_credencial
+      FROM reservas_rango rr
+      CROSS JOIN total_credenciales tc
+      CROSS JOIN recurso_info ri
+    `;
 
-      if (!recurso) {
-        throw new NotFoundException('Recurso no encontrado');
-      }
+      const reservas = await this.reservaRepository.query(query, [
+        recurso_id,
+        inicio,
+        fin,
+      ]);
 
-      const capacidadPorCredencial = recurso.capacidad || 1;
-
-      // 2. Obtener todas las credenciales del recurso
-      const totalCredenciales = await this.credencialRepository.count({
-        where: { recurso: { id: recurso_id } },
-      });
-
-      // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
-      const reservasEnRango = await this.reservaRepository
-        .createQueryBuilder('reserva')
-        .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-        .innerJoinAndSelect('detalle.credencial', 'credencial')
-        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-        .andWhere(
-          `(
-          (reserva.inicio BETWEEN :inicio AND :fin) OR
-          (reserva.fin BETWEEN :inicio AND :fin) OR
-          (reserva.inicio <= :inicio AND reserva.fin >= :fin)
-        )`,
-          { inicio, fin },
-        )
-        .andWhere('reserva.estado = :estado', { estado: 1 })
-        .getMany();
-
-      // 4. Calcular credenciales ocupadas en el rango de fechas
-      const credencialesOcupadas = new Set<string>();
-      reservasEnRango.forEach((reserva) => {
-        reserva.detalle_reserva.forEach((detalle) => {
-          if (detalle.credencial) {
-            credencialesOcupadas.add(detalle.credencial.id);
-          }
-        });
-      });
-
-      // 6. Procesar cada reserva para calcular disponibilidad específica
-      const reservasConDisponibilidad = reservasEnRango.map((reserva) => {
-        // Calcular disponibilidad durante el período de esta reserva específica
-        const credencialesOcupadasDuranteReserva = new Set<string>();
-
-        reservasEnRango.forEach((otraReserva) => {
-          // Si las reservas se solapan (excluyendo la misma reserva)
-          if (
-            reserva.id !== otraReserva.id &&
-            new Date(otraReserva.inicio) < new Date(reserva.fin) &&
-            new Date(otraReserva.fin) > new Date(reserva.inicio)
-          ) {
-            otraReserva.detalle_reserva.forEach((detalle) => {
-              if (detalle.credencial) {
-                credencialesOcupadasDuranteReserva.add(detalle.credencial.id);
-              }
-            });
-          }
-        });
-
-        // Credenciales usadas por esta reserva
-        const credencialesEstaReserva = new Set(
-          reserva.detalle_reserva.map((d) => d.credencial?.id).filter(Boolean),
-        );
-
-        // Calcular disponibilidad específica para esta reserva
-        const credencialesDisponiblesParaReserva = Math.max(
+      return reservas.map((reserva) => {
+        const credencialesDisponibles = Math.max(
           0,
-          totalCredenciales -
-            credencialesOcupadasDuranteReserva.size -
-            credencialesEstaReserva.size,
+          parseInt(reserva.total_credenciales) -
+            parseInt(reserva.credenciales_ocupadas_por_otras || 0) -
+            parseInt(reserva.credenciales_usadas_esta || 0),
         );
-
-        const capacidadDisponibleParaReserva =
-          credencialesDisponiblesParaReserva * capacidadPorCredencial;
 
         return {
           id: reserva.id,
@@ -2036,12 +2022,12 @@ export class ReservaService {
           fin: reserva.fin,
           cantidad_accesos: reserva.cantidad_accesos,
           cantidad_credenciales: reserva.cantidad_credenciales,
-          disponibles: capacidadDisponibleParaReserva,
-          credenciales_disponibles: credencialesDisponiblesParaReserva,
+          disponibles:
+            credencialesDisponibles *
+            parseInt(reserva.capacidad_por_credencial),
+          credenciales_disponibles: credencialesDisponibles,
         };
       });
-
-      return reservasConDisponibilidad;
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -2052,7 +2038,7 @@ export class ReservaService {
       throw new InternalServerErrorException('Error al obtener las reservas');
     }
   }
-  // En reserva.service.ts
+
   async countCredencialesDisponibles(
     credencialesDisponiblesDto: CredencialesDisponiblesDto,
   ) {
@@ -2088,16 +2074,6 @@ export class ReservaService {
           },
         };
       }
-
-      // // Ajuste de zona horaria (igual que en findAll)
-      // const adjustToUTC = (dateString: string) => {
-      //   const date = new Date(dateString);
-      //   date.setHours(date.getHours() - 5); // UTC-5
-      //   return date;
-      // };
-
-      // const fechaInicio = adjustToUTC(inicio);
-      // const fechaFin = adjustToUTC(fin);
 
       // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
       const reservasEnRango = await this.reservaRepository
@@ -2225,10 +2201,6 @@ export class ReservaService {
       throw new InternalServerErrorException('Error al obtener la reserva');
     }
   }
-
-  // async update(id: string, updateReservaDto: UpdateReservaDto) {
-  //   return `This action updates a #${id} reserva`;
-  // }
 
   async remove(id: string) {
     try {
