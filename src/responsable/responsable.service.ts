@@ -211,12 +211,11 @@ export class ResponsableService {
     try {
       const { page, limit, search } = paginationDto;
 
-      // Paso 1: Obtener usuarios paginados
       const query = this.responsableRepository
         .createQueryBuilder('responsable')
-        .leftJoinAndSelect('responsable.rolUsuario', 'rolUsuario')
-        .leftJoinAndSelect('rolUsuario.usuario', 'usuario')
-        .leftJoinAndSelect('rolUsuario.rol', 'rol')
+        .leftJoin('responsable.rolUsuario', 'rolUsuario')
+        .leftJoin('rolUsuario.usuario', 'usuario')
+        .leftJoin('rolUsuario.rol', 'rol')
         .select([
           'responsable.id',
           'responsable.estado',
@@ -230,31 +229,58 @@ export class ResponsableService {
           'rolUsuario.estado',
           'rol.id',
           'rol.nombre',
-        ]);
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count');
 
-      if (search) {
+      if (search && search.trim() !== '') {
         query.where(
           'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }
 
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
+
+      const totalCount =
+        results.length > 0 ? parseInt(results[0].total_count) : 0;
+
+      const formattedResults = results.map((row) => ({
+        id: row.responsable_id,
+        estado: row.responsable_estado,
+        rolUsuario: {
+          id: row.rolUsuario_id,
+          asignacion: row.rolUsuario_asignacion,
+          estado: row.rolUsuario_estado,
+          usuario: {
+            id: row.usuario_id,
+            estado: row.usuario_estado,
+            nombres: row.usuario_nombres,
+            apellidos: row.usuario_apellidos,
+            correo_institucional: row.usuario_correo_institucional,
+          },
+          rol: {
+            id: row.rol_id,
+            nombre: row.rol_nombre,
+          },
+        },
+      }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
-          count,
+          count: totalCount,
           page,
           limit,
-          totalPages: Math.ceil(count / limit),
+          totalPages: Math.ceil(totalCount / limit),
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error al obtener los responsables');
+      throw new InternalServerErrorException(
+        'Error al obtener los responsables',
+      );
     }
   }
 
@@ -305,7 +331,9 @@ export class ResponsableService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar el responsable');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar el responsable',
+      );
     }
   }
 }
