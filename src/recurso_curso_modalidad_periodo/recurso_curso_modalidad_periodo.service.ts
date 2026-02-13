@@ -39,6 +39,7 @@ export class RecursoCursoModalidadPeriodoService {
       ] = await Promise.all([
         this.recursoCursoModalidadPeriodoRepository.existsBy({
           recursoCursoModalidad: { id: recurso_curso_modalidad_id },
+          periodo: { id: periodo_id },
         }),
         this.recursoCursoModalidadRepository.existsBy({
           id: recurso_curso_modalidad_id,
@@ -91,11 +92,11 @@ export class RecursoCursoModalidadPeriodoService {
 
       const query = await this.recursoCursoModalidadPeriodoRepository
         .createQueryBuilder('rcmp')
-        .leftJoinAndSelect('rcmp.recursoCursoModalidad', 'rcm')
-        .leftJoinAndSelect('rcmp.periodo', 'p')
-        .leftJoinAndSelect('rcm.recurso', 'r')
-        .leftJoinAndSelect('rcm.cursoModalidad', 'c')
-        .leftJoinAndSelect('c.curso', 'curso')
+        .leftJoin('rcmp.recursoCursoModalidad', 'rcm')
+        .leftJoin('rcmp.periodo', 'p')
+        .leftJoin('rcm.recurso', 'r')
+        .leftJoin('rcm.cursoModalidad', 'c')
+        .leftJoin('c.curso', 'curso')
         .select([
           'rcmp.id',
           'rcmp.inicio',
@@ -103,14 +104,10 @@ export class RecursoCursoModalidadPeriodoService {
           'rcm.id',
           'p.id',
           'p.nombre',
-        ]);
-      let orderApplied = false;
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count');
 
-      if (!orderApplied) {
-        query.orderBy('rcmp.inicio', 'DESC');
-      }
-
-      if (search) {
+      if (search && search.trim() !== '') {
         query.andWhere('r.nombre LIKE :search ', {
           search: `%${search}%`,
         });
@@ -122,28 +119,44 @@ export class RecursoCursoModalidadPeriodoService {
         });
       }
 
-      if (periodo_id) {
+      if (periodo_id !== undefined) {
         query.andWhere('p.id = :periodo_id', { periodo_id });
       }
 
-      if (recurso_modalidad_id) {
+      if (recurso_modalidad_id !== undefined) {
         query.andWhere('rcm.id = :recurso_modalidad_id', {
           recurso_modalidad_id,
         });
       }
 
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
+
+      const totalCount =
+        results.length > 0 ? parseInt(results[0].total_count) : 0;
+
+      const formattedResults = results.map((raw) => ({
+        id: raw.rcmp_id,
+        inicio: raw.rcmp_inicio,
+        fin: raw.rcmp_fin,
+        recursoCursoModalidad: {
+          id: raw.rcm_id,
+        },
+        periodo: {
+          id: raw.p_id,
+          nombre: raw.p_nombre,
+        },
+      }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
-          count,
+          count: totalCount,
           page,
           limit,
-          totalPages: Math.ceil(count / limit),
+          totalPages: Math.ceil(totalCount / limit),
         },
       };
     } catch (error) {
@@ -286,11 +299,16 @@ export class RecursoCursoModalidadPeriodoService {
         .execute();
 
       if (result.affected === 0)
-        throw new NotFoundException('Recurso curso modalidad periodo no encontrado');
+        throw new NotFoundException(
+          'Recurso curso modalidad periodo no encontrado',
+        );
 
       return this.recursoCursoModalidadPeriodoRepository.findOneBy({ id });
     } catch (error) {
-      if( error instanceof NotFoundException || error instanceof BadRequestException)
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
         throw error;
       throw new InternalServerErrorException(
         'Error al deshabilitar/habilitar recurso curso modalidad periodo',
