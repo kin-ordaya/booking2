@@ -114,7 +114,6 @@ export class UsuarioService {
     try {
       const { page, limit, search } = paginationDto;
 
-      // Paso 1: Obtener usuarios paginados
       const query = this.usuarioRepository
         .createQueryBuilder('usuario')
         .select([
@@ -122,27 +121,38 @@ export class UsuarioService {
           'usuario.nombres',
           'usuario.apellidos',
           'usuario.correo_institucional',
-        ]);
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count');
 
-      if (search) {
+      if (search && search.trim() !== '') {
         query.where(
           'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }
 
-      const [usuarios, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
+
+      const totalCount =
+        results.length > 0 ? parseInt(results[0].total_count) : 0;
+
+      const formattedResults = results.map((row) => ({
+        id: row.usuario_id,
+        nombres: row.usuario_nombres,
+        apellidos: row.usuario_apellidos,
+        correo_institucional: row.usuario_correo_institucional,
+      }));
 
       return {
-        results: usuarios,
+        results: formattedResults,
         meta: {
-          count,
+          totalCount,
           page,
           limit,
-          totalPages: Math.ceil(count / limit),
+          totalPages: Math.ceil(totalCount / limit),
         },
       };
     } catch (error) {

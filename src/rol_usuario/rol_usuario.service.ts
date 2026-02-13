@@ -77,8 +77,8 @@ export class RolUsuarioService {
 
       const query = this.rolUsuarioRepository
         .createQueryBuilder('rolUsuario')
-        .leftJoinAndSelect('rolUsuario.usuario', 'usuario')
-        .leftJoinAndSelect('rolUsuario.rol', 'rol')
+        .leftJoin('rolUsuario.usuario', 'usuario')
+        .leftJoin('rolUsuario.rol', 'rol')
         .select([
           'rolUsuario.id',
           'rolUsuario.asignacion',
@@ -90,55 +90,67 @@ export class RolUsuarioService {
           'usuario.correo_institucional',
           'rol.id',
           'rol.nombre',
-        ]);
+        ])
+        .addSelect('COUNT(*) OVER()', 'total_count');
 
-      // Ordenamiento
-      if (sort_name) {
+      if (sort_name !== undefined) {
         query.orderBy('usuario.apellidos', sort_name === 1 ? 'ASC' : 'DESC');
       } else {
-        query.orderBy('rolUsuario.asignacion', 'DESC'); // Asumiendo que existe este campo
+        query.orderBy('rolUsuario.asignacion', 'DESC');
       }
 
-      // Filtros
       if (sort_state !== undefined) {
         query.andWhere('rolUsuario.estado = :estado', {
           estado: sort_state === 1 ? 1 : 0,
         });
       }
 
-      if (rol_id) {
-        const rolExists = await this.rolRepository.findOneBy({ id: rol_id });
-        if (!rolExists) {
-          throw new NotFoundException('No existe un rol con ese id');
-        }
+      if (rol_id !== undefined) {
         query.andWhere('rol.id = :rol_id', { rol_id });
       }
 
-      if (search) {
+      if (search && search.trim() !== '') {
         query.where(
           'UPPER(usuario.nombres) LIKE UPPER(:search) OR UPPER(usuario.apellidos) LIKE UPPER(:search) OR UPPER(usuario.correo_institucional) LIKE UPPER(:search)',
           { search: `%${search}%` },
         );
       }
 
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
+
+      const totalCount =
+        results.length > 0 ? parseInt(results[0].total_count) : 0;
+
+      const formattedResults = results.map((row) => ({
+        id: row.rolUsuario_id,
+        asignacion: row.rolUsuario_asignacion,
+        estado: row.rolUsuario_estado,
+        usuario: {
+          id: row.usuario_id,
+          estado: row.usuario_estado,
+          nombres: row.usuario_nombres,
+          apellidos: row.usuario_apellidos,
+          correo_institucional: row.usuario_correo_institucional,
+        },
+        rol: {
+          id: row.rol_id,
+          nombre: row.rol_nombre,
+        },
+      }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
-          count,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(count / limit),
+          count: totalCount,
+          page,
+          limit,
+          totalPages: Math.ceil(totalCount / limit),
         },
       };
-    } catch (error: unknown) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
+    } catch (error) {
       throw new InternalServerErrorException(
         'Error al obtener las asignaciones de rol a usuario',
       );
@@ -256,7 +268,9 @@ export class RolUsuarioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al obtener el rolUsuario por usuario y rol');
+      throw new InternalServerErrorException(
+        'Error al obtener el rolUsuario por usuario y rol',
+      );
     }
   }
 
@@ -302,7 +316,9 @@ export class RolUsuarioService {
         error instanceof ConflictException
       )
         throw error;
-      throw new InternalServerErrorException('Error al actualizar el rolUsuario');
+      throw new InternalServerErrorException(
+        'Error al actualizar el rolUsuario',
+      );
     }
   }
 
