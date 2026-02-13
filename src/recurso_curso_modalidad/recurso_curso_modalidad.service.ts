@@ -82,10 +82,10 @@ export class RecursoCursoModalidadService {
 
       const query = this.recursoCursoModalidadRepository
         .createQueryBuilder('rcm')
-        .leftJoinAndSelect('rcm.recurso', 'recurso')
-        .leftJoinAndSelect('rcm.cursoModalidad', 'cursoModalidad')
-        .leftJoinAndSelect('cursoModalidad.curso', 'curso')
-        .leftJoinAndSelect('cursoModalidad.modalidad', 'modalidad')
+        .leftJoin('rcm.recurso', 'recurso')
+        .leftJoin('rcm.cursoModalidad', 'cursoModalidad')
+        .leftJoin('cursoModalidad.curso', 'curso')
+        .leftJoin('cursoModalidad.modalidad', 'modalidad')
         .select([
           'rcm.id',
           'recurso.id',
@@ -97,44 +97,67 @@ export class RecursoCursoModalidadService {
           'curso.codigo',
           'modalidad.id',
           'modalidad.nombre',
-        ]);
+        ])
+        .addSelect('COUNT(*) OVER() AS total_count');
 
-      let orderApplied = false;
-
-      if (sort_name) {
+      if (sort_name !== undefined) {
         query.orderBy('recurso.nombre', sort_name === 1 ? 'ASC' : 'DESC');
-        orderApplied = true;
-      }
-
-      if (!orderApplied) {
+      } else {
         query.orderBy('recurso.creacion', 'DESC');
       }
 
-      if (sort_state) {
+      if (sort_state !== undefined) {
         query.andWhere('rcm.estado = :estado', {
           estado: sort_state === 1 ? 1 : 0,
         });
       }
 
-      if (curso_modalidad_id) {
+      if (curso_modalidad_id !== undefined) {
         query.andWhere('cursoModalidad.id = :curso_modalidad_id', {
           curso_modalidad_id,
         });
       }
 
-      if (search) {
-        query.andWhere('recurso.nombre LIKE :search  OR curso.nombre LIKE :search', {
-          search: `%${search.toUpperCase()}%`,
-        });
+      if (search !== undefined && search.trim() !== '') {
+        query.andWhere(
+          'recurso.nombre LIKE :search  OR curso.nombre LIKE :search',
+          {
+            search: `%${search.toUpperCase()}%`,
+          },
+        );
       }
 
-      const [results, count] = await query
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const results = await query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getRawMany();
+
+      const count =
+        results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+
+      const formattedResults = results.map((raw) => ({
+        id: raw.rcm_id,
+        cursoModalidad: {
+          id: raw.cursoModalidad_id,
+          curso: {
+            id: raw.curso_id,
+            codigo: raw.curso_codigo,
+            nombre: raw.curso_nombre,
+          },
+          modalidad: {
+            id: raw.modalidad_id,
+            nombre: raw.modalidad_nombre,
+          },
+        },
+        recurso: {
+          id: raw.recurso_id,
+          creacion: raw.recurso_creacion,
+          nombre: raw.recurso_nombre,
+        },
+      }));
 
       return {
-        results,
+        results: formattedResults,
         meta: {
           count,
           page,
@@ -219,7 +242,10 @@ export class RecursoCursoModalidadService {
           'Ya existe una asignación de este recurso a este curso modalidad',
         );
 
-      const updateData: Partial<RecursoCursoModalidad> & { recurso?: any; cursoModalidad?: any } = {};
+      const updateData: Partial<RecursoCursoModalidad> & {
+        recurso?: any;
+        cursoModalidad?: any;
+      } = {};
 
       if (recurso_id !== undefined) {
         updateData.recurso = { id: recurso_id };
