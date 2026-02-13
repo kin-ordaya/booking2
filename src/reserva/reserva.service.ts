@@ -2045,22 +2045,68 @@ export class ReservaService {
     try {
       const { recurso_id, inicio, fin } = credencialesDisponiblesDto;
 
-      // 1. Validar fechas
       if (fin <= inicio) {
         throw new BadRequestException(
           'La fecha de fin debe ser posterior a la de inicio',
         );
       }
 
-      // 2. Obtener todas las credenciales del recurso
-      const credenciales = await this.credencialRepository.find({
-        where: { recurso: { id: recurso_id } },
-        relations: ['recurso', 'rol'],
-      });
+      const query = `
+      SELECT 
+        r.capacidad as capacidad_por_credencial,
+        COUNT(c.id) as total_credenciales,
+        SUM(CASE 
+          WHEN NOT EXISTS(
+            SELECT 1 
+            FROM detalle_reserva d
+            INNER JOIN reserva res ON d.reserva_id = res.id
+            WHERE d.credencial_id = c.id
+              AND res.recurso_id = $1
+              AND res.estado = 1
+              AND res.fin > $2
+              AND res.inicio < $3
+          ) THEN 1 ELSE 0 
+        END) as total_disponibles,
+        SUM(CASE 
+          WHEN NOT EXISTS(
+            SELECT 1 
+            FROM detalle_reserva d
+            INNER JOIN reserva res ON d.reserva_id = res.id
+            WHERE d.credencial_id = c.id
+              AND res.recurso_id = $1
+              AND res.estado = 1
+              AND res.fin > $2
+              AND res.inicio < $3
+          ) AND (rol.nombre IS NULL OR rol.nombre != 'DOCENTE')
+          THEN 1 ELSE 0 
+        END) as generales_disponibles,
+        SUM(CASE 
+          WHEN NOT EXISTS(
+            SELECT 1 
+            FROM detalle_reserva d
+            INNER JOIN reserva res ON d.reserva_id = res.id
+            WHERE d.credencial_id = c.id
+              AND res.recurso_id = $1
+              AND res.estado = 1
+              AND res.fin > $2
+              AND res.inicio < $3
+          ) AND rol.nombre = 'DOCENTE'
+          THEN 1 ELSE 0 
+        END) as docentes_disponibles
+      FROM credencial c
+      INNER JOIN recurso r ON c.recurso_id = r.id
+      LEFT JOIN rol ON c.rol_id = rol.id
+      WHERE c.recurso_id = $1
+      GROUP BY r.capacidad
+    `;
 
-      const totalCredenciales = credenciales.length;
+      const result = await this.credencialRepository.query(query, [
+        recurso_id,
+        inicio,
+        fin,
+      ]);
 
-      if (totalCredenciales === 0) {
+      if (!result || result.length === 0) {
         return {
           credenciales_disponibles: {
             total: 0,
@@ -2075,63 +2121,29 @@ export class ReservaService {
         };
       }
 
-      // 3. Obtener las reservas que se superponen con el rango de fechas solicitado
-      const reservasEnRango = await this.reservaRepository
-        .createQueryBuilder('reserva')
-        .innerJoinAndSelect('reserva.detalle_reserva', 'detalle')
-        .innerJoinAndSelect('detalle.credencial', 'credencial')
-        .where('reserva.recurso_id = :recursoId', { recursoId: recurso_id })
-        .andWhere('reserva.fin > :inicio AND reserva.inicio < :fin', {
-          inicio,
-          fin,
-        })
-        .andWhere('reserva.estado = :estado', { estado: 1 })
-        .getMany();
+      const data = result[0];
+      const capacidadPorCredencial =
+        parseInt(data.capacidad_por_credencial) || 1;
 
-      // 4. Calcular credenciales ocupadas en el rango de fechas
-      const credencialesOcupadas = new Set<string>();
-      reservasEnRango.forEach((reserva) => {
-        reserva.detalle_reserva.forEach((detalle) => {
-          if (detalle.credencial) {
-            credencialesOcupadas.add(detalle.credencial.id);
-          }
-        });
-      });
-
-      // 5. Filtrar disponibilidad por tipo
-      const capacidadPorCredencial = credenciales[0].recurso.capacidad;
-
-      const credencialesDisponibles = credenciales.filter(
-        (c) => !credencialesOcupadas.has(c.id),
-      );
-
-      const generalDisponibles = credencialesDisponibles.filter(
-        (c) => !c.rol || c.rol.nombre !== 'DOCENTE',
-      ).length;
-
-      const docenteDisponibles = credencialesDisponibles.filter(
-        (c) => c.rol?.nombre === 'DOCENTE',
-      ).length;
-
-      const resultado = {
+      return {
         credenciales_disponibles: {
-          total: credencialesDisponibles.length,
-          generales: generalDisponibles,
-          docentes: docenteDisponibles,
+          total: parseInt(data.total_disponibles) || 0,
+          generales: parseInt(data.generales_disponibles) || 0,
+          docentes: parseInt(data.docentes_disponibles) || 0,
         },
         capacidad: {
           por_credencial: capacidadPorCredencial,
-          general_disponible: generalDisponibles * capacidadPorCredencial,
-          docente_disponible: docenteDisponibles * capacidadPorCredencial,
+          general_disponible:
+            parseInt(data.generales_disponibles || 0) * capacidadPorCredencial,
+          docente_disponible:
+            parseInt(data.docentes_disponibles || 0) * capacidadPorCredencial,
         },
       };
-
-      return resultado;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw error;
+      throw new InternalServerErrorException('Error al obtener reservas');
     }
   }
 
