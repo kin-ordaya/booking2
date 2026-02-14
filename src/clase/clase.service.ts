@@ -147,104 +147,47 @@ export class ClaseService {
     try {
       const { recurso_id, rol_usuario_id } = recursoDocenteClaseDto;
 
-      // 1. Verificaciones iniciales
-      const [recursoExists, rolUsuarioExists] = await Promise.all([
-        this.recursoRepository.existsBy({ id: recurso_id }),
-        this.rolUsuarioRepository.findOne({
-          where: { id: rol_usuario_id },
-          relations: ['rol', 'usuario'],
-        }),
-      ]);
-
-      if (!recursoExists) {
-        throw new NotFoundException(
-          'No existe un recurso con ID ' + recurso_id,
-        );
-      }
-
-      if (!rolUsuarioExists) {
-        throw new NotFoundException(
-          'No existe un docente con id ' + rol_usuario_id,
-        );
-      }
-
-      if (rolUsuarioExists.rol.nombre !== 'DOCENTE') {
-        throw new BadRequestException(
-          'El usuario con ID ' + rol_usuario_id + ' no tiene rol de DOCENTE',
-        );
-      }
-
-      // 2. Consulta principal con todas las relaciones necesarias
-      const query = this.claseRepository
+      const clases = await this.claseRepository
         .createQueryBuilder('clase')
-        // Relación con docente
-        .innerJoin('clase.responsable', 'responsable')
-        .innerJoin(
-          'responsable.rolUsuario',
-          'rolUsuario',
-          'rolUsuario.id = :rolUsuarioId',
-          { rolUsuarioId: rol_usuario_id },
-        )
-        // Relación con curso (IMPORTANTE: innerJoinAndSelect para cargar los datos)
-        .innerJoinAndSelect('clase.cursoModalidad', 'cursoModalidad')
-        .innerJoinAndSelect('cursoModalidad.curso', 'curso')
-        // Relación con recurso
-        .innerJoin('cursoModalidad.recursoCursoModalidad', 'recursoCursoModalidad')
-        .innerJoin(
-          'recursoCursoModalidad.recurso',
-          'recurso',
-          'recurso.id = :recursoId',
-          { recursoId: recurso_id },
-        )
-        // Conteo de matriculados
-        .loadRelationCountAndMap(
-          'clase.matriculadosCount',
-          'clase.matricula_clase',
-          'matricula',
-          (qb) => qb.andWhere('matricula.estado = 1'),
-        )
-        // Selección de campos
         .select([
           'clase.id',
           'clase.nrc',
+          'clase.inscritos',
           'clase.inicio',
           'clase.fin',
-          'clase.inscritos',
-          'curso.id',
           'curso.codigo',
           'curso.nombre',
-          'cursoModalidad.id',
         ])
+        .innerJoin('clase.responsable', 'responsable')
+        .innerJoin('responsable.rolUsuario', 'rolUsuario')
+        .innerJoin('clase.cursoModalidad', 'cursoModalidad')
+        .innerJoin('cursoModalidad.curso', 'curso')
+        .innerJoin(
+          'cursoModalidad.recursoCursoModalidad',
+          'recursoCursoModalidad',
+        )
+        .innerJoin('recursoCursoModalidad.recurso', 'recurso')
+        .where('rolUsuario.id = :rolUsuarioId', {
+          rolUsuarioId: rol_usuario_id,
+        })
+        .andWhere('recurso.id = :recursoId', { recursoId: recurso_id })
+        .andWhere('clase.estado = 1')
+        .andWhere('responsable.estado = 1')
+        .andWhere('cursoModalidad.estado = 1')
         .orderBy('clase.periodo', 'DESC')
-        .addOrderBy('clase.inicio', 'DESC');
+        .addOrderBy('clase.inicio', 'DESC')
+        .getRawMany(); 
 
-      // 3. Ejecutar consulta y mapear resultados
-      const clases = await query.getMany();
-
-      // 4. Formatear respuesta final
-      return clases.map((clase) => {
-        // Verificar que las relaciones existen
-        if (!clase.cursoModalidad || !clase.cursoModalidad.curso) {
-          throw new NotFoundException('No existe un curso con ese id');
-        }
-
-        return {
-          id: clase.id,
-          nrc: clase.nrc,
-          inscritos: clase.inscritos,
-          inicio: clase.inicio,
-          fin: clase.fin,
-          codigo_curso: clase.cursoModalidad.curso.codigo,
-          nombre_curso: clase.cursoModalidad.curso.nombre,
-        };
-      });
+      return clases.map((clase) => ({
+        id: clase.clase_id,
+        nrc: clase.clase_nrc,
+        inscritos: clase.clase_inscritos,
+        inicio: clase.clase_inicio,
+        fin: clase.clase_fin,
+        codigo_curso: clase.curso_codigo,
+        nombre_curso: clase.curso_nombre,
+      }));
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       throw new InternalServerErrorException('Error al recuperar clases');
     }
   }
@@ -255,12 +198,6 @@ export class ClaseService {
         throw new BadRequestException('El ID del recurso no puede estar vacío');
       return await this.claseRepository.findOneBy({ nrc });
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       throw new InternalServerErrorException('Error al recuperar clase');
     }
   }

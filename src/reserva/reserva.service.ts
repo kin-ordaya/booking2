@@ -318,10 +318,7 @@ export class ReservaService {
           );
         estudiantesOrdenados = credencialesEstudiantesPreferidas;
       } catch (error) {
-        console.warn(
-          'Error al obtener preferencias, usando orden normal:',
-          error,
-        );
+        throw new InternalServerErrorException('Error al obtener credenciales');
       }
     }
 

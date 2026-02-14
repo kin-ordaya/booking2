@@ -166,7 +166,6 @@ export class CursoModalidadService {
         },
       };
     } catch (error) {
-      console.error(error);
       throw new InternalServerErrorException(
         'Error al recuperar cursos modalidades',
       );

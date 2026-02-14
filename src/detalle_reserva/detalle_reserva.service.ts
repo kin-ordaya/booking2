@@ -70,7 +70,6 @@ export class DetalleReservaService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Error en findAll detalles:', error);
       throw new InternalServerErrorException(
         'Error al obtener los detalles de reserva',
       );
