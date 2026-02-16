@@ -13,7 +13,6 @@ import { randomUUID } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
-import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -24,8 +23,6 @@ export class AuthService {
     @InjectPinoLogger()
     private readonly logger: PinoLogger,
     private readonly jwtService: JwtService,
-    @InjectRepository(Usuario)
-    private readonly usuarioRepository: Repository<Usuario>,
     @InjectRepository(RolUsuario)
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
     private readonly configService: ConfigService,
@@ -47,32 +44,33 @@ export class AuthService {
       const { idToken } = loginDto;
 
       const googleUser = await this.verifyIdToken(idToken);
-      if (!googleUser) {
-        throw new BadRequestException('Token de Google no válido');
-      }
-      const emailGoogle = googleUser.email;
-      const user = await this.usuarioRepository.findOne({
-        where: { correo_institucional: emailGoogle },
-      });
-      if (!user) {
-        throw new NotFoundException('Usuario no encontrado');
-      }
-      const rolUsuario = await this.rolUsuarioRepository.findOne({
-        where: { usuario: { id: user.id }, estado: 1 },
-        relations: ['rol'],
-      });
-      if (!rolUsuario) {
-        throw new NotFoundException(
-          'Rol usuario no encontrado o rol usuario no activo',
-        );
+
+      const userWithRol = await this.rolUsuarioRepository
+        .createQueryBuilder('rolUsuario')
+        .leftJoin('rolUsuario.usuario', 'usuario')
+        .leftJoin('rolUsuario.rol', 'rol')
+        .select([
+          'rolUsuario.id',
+          'usuario.id',
+          'usuario.correo_institucional',
+          'rol.nombre',
+        ])
+        .where('usuario.correo_institucional = :email', {
+          email: googleUser.email,
+        })
+        .andWhere('rolUsuario.estado = :estado', { estado: 1 })
+        .getOne();
+
+      if (!userWithRol) {
+        throw new NotFoundException('Usuario no encontrado o sin rol activo');
       }
 
       const jwtPayload = {
-        sub: user.id,
+        sub: userWithRol.usuario.id,
         jti: randomUUID(),
-        usuario_id: user.id,
-        rol_usuario_id: rolUsuario.id,
-        rol_nombre: rolUsuario.rol.nombre,
+        usuario_id: userWithRol.usuario.id,
+        rol_usuario_id: userWithRol.id,
+        rol_nombre: userWithRol.rol.nombre,
         iss: 'booking2backend',
         aud: 'booking2',
       };
@@ -81,8 +79,8 @@ export class AuthService {
 
       // Actualizar el contexto del logger con el usuario autenticado
       this.logger.assign({
-        userId: user.id,
-        userRole: rolUsuario.rol.nombre,
+        userId: userWithRol.usuario.id,
+        userRole: userWithRol.rol.nombre,
       });
 
       return { token };
