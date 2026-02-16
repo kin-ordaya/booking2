@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Aula } from './entities/aula.entity';
 import { Not, Repository } from 'typeorm';
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AulaService {
@@ -26,29 +27,33 @@ export class AulaService {
     try {
       const { nombre, codigo, pabellon_id } = createAulaDto;
 
-      const [aulaExists, pabellonExists] = await Promise.all([
-        this.aulaRepository.existsBy({
-          nombre,
-          pabellon: { id: pabellon_id },
-        }),
-
-        this.pabellonRepository.existsBy({
-          id: pabellon_id,
-        }),
-      ]);
+      // Validación 1: Aula existe
+      const aulaExists = await this.aulaRepository.findOne({
+        where: { nombre, pabellon: { id: pabellon_id } },
+        relations: ['pabellon'],
+      });
 
       if (aulaExists) {
         throw new ConflictException(
-          `Ya existe un aula con nombre "${nombre}" en el pabellón especificado`,
+          'Ya existe un aula con nombre y pabellón ' +
+            nombre +
+            ' y ' +
+            pabellon_id,
         );
       }
+
+      // Validación 2: Pabellón existe
+      const pabellonExists = await this.pabellonRepository.existsBy({
+        id: pabellon_id,
+      });
 
       if (!pabellonExists) {
         throw new NotFoundException(
-          `No existe un pabellón con ID: ${pabellon_id}`,
+          'No existe un pabellón con ese ID ' + pabellon_id,
         );
       }
 
+      // Creación
       const aula = this.aulaRepository.create({
         codigo,
         nombre,
@@ -70,7 +75,7 @@ export class AulaService {
       throw new InternalServerErrorException('Error al crear aula');
     }
   }
-
+  
   async findAll() {
     try {
       const aulas = await this.aulaRepository.find({
@@ -117,41 +122,55 @@ export class AulaService {
         throw new BadRequestException('ID del aula vacío');
       }
 
-      const aulaExists = await this.aulaRepository.existsBy({ id });
+      const aula = await this.aulaRepository.findOne({
+        where: { id },
+        relations: ['pabellon'],
+      });
 
-      if (!aulaExists) {
+      if (!aula) {
         throw new NotFoundException(`Aula con ID ${id} no encontrada`);
       }
 
-      const { codigo, pabellon_id } = updateAulaDto;
+      const { nombre, codigo, pabellon_id } = updateAulaDto;
+      const updateData: any = {};
 
-      const validations: Promise<any>[] = [];
-
+      // Validación: Código único (si se actualiza)
       if (codigo !== undefined) {
-        validations.push(
-          this.aulaRepository
-            .existsBy({ id: Not(id), codigo })
-            .then((exists) => {
-              if (exists) throw new ConflictException('Código ya existe');
-            }),
-        );
+        const codigoExists = await this.aulaRepository.existsBy({
+          id: Not(id),
+          codigo,
+        });
+
+        if (codigoExists) {
+          throw new ConflictException('Ya existe un aula con código ' + codigo);
+        }
+        updateData.codigo = codigo;
       }
 
+      // Validación: Pabellón existe (si se actualiza)
       if (pabellon_id !== undefined) {
-        validations.push(
-          this.pabellonRepository
-            .existsBy({ id: pabellon_id })
-            .then((exists) => {
-              if (!exists) throw new NotFoundException('Pabellón no existe');
-            }),
-        );
+        const pabellonExists = await this.pabellonRepository.existsBy({
+          id: pabellon_id,
+        });
+
+        if (!pabellonExists) {
+          throw new NotFoundException(
+            'No existe un pabellón con ese ID ' + pabellon_id,
+          );
+        }
+        updateData.pabellon = { id: pabellon_id };
       }
 
-      if (validations.length > 0) {
-        await Promise.all(validations);
+      if (nombre !== undefined) {
+        updateData.nombre = nombre;
       }
 
-      await this.aulaRepository.update(id, updateAulaDto);
+      // Si no hay cambios, retornar sin hacer nada
+      if (Object.keys(updateData).length === 0) {
+        return aula;
+      }
+
+      await this.aulaRepository.update(id, updateData);
 
       return await this.aulaRepository.findOne({
         where: { id },
@@ -176,9 +195,12 @@ export class AulaService {
         throw new BadRequestException('ID del aula vacío');
       }
 
-      const aulaExists = await this.aulaRepository.existsBy({ id });
+      const aula = await this.aulaRepository.findOne({
+        where: { id },
+        relations: ['pabellon'],
+      });
 
-      if (!aulaExists) {
+      if (!aula) {
         throw new NotFoundException(`Aula con id ${id} no encontrada`);
       }
 
