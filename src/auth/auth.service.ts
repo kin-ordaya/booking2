@@ -18,7 +18,6 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class AuthService {
   private client: OAuth2Client;
-  private readonly apiKeyService;
   constructor(
     @InjectPinoLogger()
     private readonly logger: PinoLogger,
@@ -27,7 +26,6 @@ export class AuthService {
     private readonly rolUsuarioRepository: Repository<RolUsuario>,
     private readonly configService: ConfigService,
   ) {
-    this.apiKeyService = configService.get('API_KEY');
     if (
       !configService.get('GOOGLE_CLIENT_ID') ||
       !configService.get('JWT_SECRET')
@@ -115,9 +113,5 @@ export class AuthService {
         'Error al verificar token de Google',
       );
     }
-  }
-
-  validateApiKey(apiKey: string) {
-    return this.apiKeyService.includes(apiKey);
   }
 }
