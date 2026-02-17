@@ -12,8 +12,6 @@ import { Clase } from './entities/clase.entity';
 import { Not, Repository } from 'typeorm';
 import { CursoModalidad } from 'src/curso_modalidad/entities/curso_modalidad.entity';
 import { RecursoDocenteClaseDto } from './dto/recurso-docente-clase.dto';
-import { RolUsuario } from 'src/rol_usuario/entities/rol_usuario.entity';
-import { Recurso } from 'src/recurso/entities/recurso.entity';
 import { Periodo } from 'src/periodo/entities/periodo.entity';
 
 @Injectable()
@@ -23,15 +21,11 @@ export class ClaseService {
     private readonly claseRepository: Repository<Clase>,
     @InjectRepository(CursoModalidad)
     private readonly cursoModalidadRepository: Repository<CursoModalidad>,
-    @InjectRepository(Recurso)
-    private readonly recursoRepository: Repository<Recurso>,
-    @InjectRepository(RolUsuario)
-    private readonly rolUsuarioRepository: Repository<RolUsuario>,
     @InjectRepository(Periodo)
     private readonly periodoRepository: Repository<Periodo>,
   ) {}
 
-  async create(createClaseDto: CreateClaseDto) {
+  async create(createClaseDto: CreateClaseDto): Promise<Clase> {
     try {
       const {
         nrc,
@@ -45,9 +39,15 @@ export class ClaseService {
         periodo_id,
       } = createClaseDto;
 
-      const cursoModalidadExists = await this.cursoModalidadRepository.existsBy(
-        { id: curso_modalidad_id },
-      );
+      const [cursoModalidadExists, periodoExists, claseExists] =
+        await Promise.all([
+          this.cursoModalidadRepository.existsBy({ id: curso_modalidad_id }),
+          this.periodoRepository.existsBy({ id: periodo_id }),
+          this.claseRepository.existsBy({
+            nrc,
+            periodo: { id: periodo_id },
+          }),
+        ]);
 
       if (!cursoModalidadExists) {
         throw new NotFoundException(
@@ -55,20 +55,11 @@ export class ClaseService {
         );
       }
 
-      const periodoExists = await this.periodoRepository.existsBy({
-        id: periodo_id,
-      });
-
       if (!periodoExists) {
         throw new NotFoundException(
           'No existe un periodo con ese id ' + periodo_id,
         );
       }
-      // si ya existe una clase con ese nrc y en el mismo semestre, se devuelve error
-      const claseExists = await this.claseRepository.findOne({
-        where: { nrc, periodo: { id: periodo_id } },
-        relations: ['periodo'],
-      });
 
       if (claseExists) {
         throw new NotFoundException(
@@ -88,9 +79,7 @@ export class ClaseService {
         periodo: { id: periodo_id },
       });
 
-      const savedClase = await this.claseRepository.save(clase);
-
-      return savedClase;
+      return await this.claseRepository.save(clase);
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -176,7 +165,7 @@ export class ClaseService {
         .andWhere('cursoModalidad.estado = 1')
         .orderBy('clase.periodo', 'DESC')
         .addOrderBy('clase.inicio', 'DESC')
-        .getRawMany(); 
+        .getRawMany();
 
       return clases.map((clase) => ({
         id: clase.clase_id,
@@ -196,7 +185,9 @@ export class ClaseService {
     try {
       if (!nrc)
         throw new BadRequestException('El ID del recurso no puede estar vacío');
-      return await this.claseRepository.findOneBy({ nrc });
+      return await this.claseRepository.findOne({
+        where: { nrc },
+      });
     } catch (error) {
       throw new InternalServerErrorException('Error al recuperar clase');
     }
@@ -204,6 +195,10 @@ export class ClaseService {
 
   async update(id: string, updateClaseDto: UpdateClaseDto) {
     try {
+      if (!id) {
+        throw new BadRequestException('ID de la clase vacío');
+      }
+
       const {
         nrc,
         nrc_secundario,
@@ -216,10 +211,6 @@ export class ClaseService {
         periodo_id,
       } = updateClaseDto;
 
-      if (!id) {
-        throw new BadRequestException('ID de la clase vacío');
-      }
-
       const clase = await this.claseRepository.findOne({
         where: { id },
         relations: ['cursoModalidad'],
@@ -231,7 +222,6 @@ export class ClaseService {
 
       const updateData: any = {};
 
-      // Validación combinada de nrc y periodo_id
       if (nrc !== undefined || periodo_id !== undefined) {
         const whereConditions: any = { id: Not(id) };
 
@@ -258,27 +248,33 @@ export class ClaseService {
         }
 
         // Agregar los valores al updateData
-        if (nrc !== undefined) {
+        if (nrc !== undefined && nrc !== clase.nrc) {
           updateData.nrc = nrc;
         }
-        if (periodo_id !== undefined) {
+        if (periodo_id !== undefined && periodo_id !== clase.periodo.id) {
           updateData.periodo = { id: periodo_id };
         }
       }
 
-      if (nrc_secundario !== undefined) {
+      if (
+        nrc_secundario !== undefined &&
+        nrc_secundario !== clase.nrc_secundario
+      ) {
         updateData.nrc_secundario = nrc_secundario;
       }
 
-      if (inscritos !== undefined) {
+      if (inscritos !== undefined && inscritos !== clase.inscritos) {
         updateData.inscritos = inscritos;
       }
 
-      if (tipo !== undefined) {
+      if (tipo !== undefined && tipo !== clase.tipo) {
         updateData.tipo = tipo;
       }
 
-      if (codigo_cruzado !== undefined) {
+      if (
+        codigo_cruzado !== undefined &&
+        codigo_cruzado !== clase.codigo_cruzado
+      ) {
         updateData.codigo_cruzado = codigo_cruzado;
       }
 
@@ -295,11 +291,18 @@ export class ClaseService {
           );
         }
 
-        if (inicio !== undefined) updateData.inicio = inicio;
-        if (fin !== undefined) updateData.fin = fin;
+        if (inicio !== undefined && inicio !== clase.inicio) {
+          updateData.inicio = inicio;
+        }
+        if (fin !== undefined && fin !== clase.fin) {
+          updateData.fin = fin;
+        }
       }
 
-      if (curso_modalidad_id !== undefined) {
+      if (
+        curso_modalidad_id !== undefined &&
+        curso_modalidad_id !== clase.cursoModalidad.id
+      ) {
         const cursoModalidadExists =
           await this.cursoModalidadRepository.existsBy({
             id: curso_modalidad_id,
@@ -341,7 +344,7 @@ export class ClaseService {
         throw new BadRequestException('El ID de clase vacío');
       }
 
-      const clase = await this.claseRepository.findOneBy({ id });
+      const clase = await this.claseRepository.existsBy({ id });
 
       if (!clase) {
         throw new NotFoundException(`Clase con ID ${id} no encontrada`);
@@ -360,7 +363,7 @@ export class ClaseService {
         );
       }
 
-      return this.claseRepository.findOneBy({ id });
+      return this.claseRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||

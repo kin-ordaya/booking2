@@ -18,13 +18,11 @@ export class CampusService {
     private campusRepository: Repository<Campus>,
   ) {}
 
-  async create(createCampusDto: CreateCampusDto) {
+  async create(createCampusDto: CreateCampusDto):Promise<Campus> {
     try {
-      const { codigo } = createCampusDto;
+      const { nombre, codigo } = createCampusDto;
 
-      const campusExists = await this.campusRepository.findOne({
-        where: { codigo },
-      });
+      const campusExists = await this.campusRepository.existsBy({ codigo });
 
       if (campusExists) {
         throw new ConflictException(
@@ -32,11 +30,12 @@ export class CampusService {
         );
       }
 
-      const campus = this.campusRepository.create(createCampusDto);
+      const campus = this.campusRepository.create({
+        nombre,
+        codigo,
+      });
 
-      const savedCampus = await this.campusRepository.save(campus);
-
-      return savedCampus;
+      return await this.campusRepository.save(campus);
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -67,7 +66,7 @@ export class CampusService {
         throw new BadRequestException('ID del campus vacío');
       }
 
-      const campus = await this.campusRepository.findOneBy({ id });
+      const campus = await this.campusRepository.findOne({ where: { id } });
 
       if (!campus) {
         throw new NotFoundException(`Campus con id ${id} no encontrado`);
@@ -91,7 +90,7 @@ export class CampusService {
         throw new BadRequestException(
           'El nombre del campus no puede estar vacío',
         );
-      return await this.campusRepository.findOneBy({ nombre });
+      return await this.campusRepository.findOne({ where: { nombre } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -105,13 +104,13 @@ export class CampusService {
 
   async update(id: string, updateCampusDto: UpdateCampusDto) {
     try {
-      const { nombre, codigo } = updateCampusDto;
-
       if (!id) {
         throw new BadRequestException('ID del campus vacío');
       }
 
-      const campus = await this.campusRepository.findOneBy({ id });
+      const { nombre, codigo } = updateCampusDto;
+
+      const campus = await this.campusRepository.findOne({ where: { id } });
 
       if (!campus) {
         throw new NotFoundException(`Campus con ID ${id} no encontrado`);
@@ -119,11 +118,11 @@ export class CampusService {
 
       const updateData: any = {};
 
-      if (nombre !== undefined) {
+      if (nombre !== undefined && nombre !== campus.nombre) {
         updateData.nombre = nombre;
       }
 
-      if (codigo !== undefined) {
+      if (codigo !== undefined && codigo !== campus.codigo) {
         const codigoExists = await this.campusRepository.existsBy({
           id: Not(id),
           codigo,
@@ -143,7 +142,7 @@ export class CampusService {
 
       await this.campusRepository.update(id, updateData);
 
-      return await this.campusRepository.findOneBy({ id });
+      return await this.campusRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -162,9 +161,9 @@ export class CampusService {
         throw new BadRequestException('ID del campus vacío');
       }
 
-      const campus = await this.campusRepository.findOneBy({ id });
+      const campusExists = await this.campusRepository.existsBy({ id });
 
-      if (!campus) {
+      if (!campusExists) {
         throw new NotFoundException(`Campus con ID ${id} no encontrado`);
       }
 
@@ -176,18 +175,22 @@ export class CampusService {
         .execute();
 
       if (result.affected === 0) {
-        throw new NotFoundException('No se afectaron registros al cambiar estado');
+        throw new NotFoundException(
+          'No se afectaron registros al cambiar estado',
+        );
       }
 
-      return this.campusRepository.findOneBy({ id });
+      return this.campusRepository.findOne({ where: { id } });
     } catch (error) {
-      if(
+      if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
-      ){
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error en la deshabilitación/habilitación de campus');
+      throw new InternalServerErrorException(
+        'Error en la deshabilitación/habilitación de campus',
+      );
     }
   }
 }

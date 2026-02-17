@@ -11,7 +11,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Aula } from './entities/aula.entity';
 import { Not, Repository } from 'typeorm';
 import { Pabellon } from 'src/pabellon/entities/pabellon.entity';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AulaService {
@@ -23,46 +22,37 @@ export class AulaService {
     private readonly pabellonRepository: Repository<Pabellon>,
   ) {}
 
-  async create(createAulaDto: CreateAulaDto) {
+  async create(createAulaDto: CreateAulaDto):Promise<Aula> {
     try {
       const { nombre, codigo, pabellon_id } = createAulaDto;
 
-      // Validación 1: Aula existe
-      const aulaExists = await this.aulaRepository.findOne({
-        where: { nombre, pabellon: { id: pabellon_id } },
-        relations: ['pabellon'],
-      });
+      const [aulaExists, pabellonExists] = await Promise.all([
+        this.aulaRepository.existsBy({
+          nombre,
+          pabellon: { id: pabellon_id },
+        }),
+        this.pabellonRepository.existsBy({ id: pabellon_id }),
+      ]);
 
       if (aulaExists) {
         throw new ConflictException(
-          'Ya existe un aula con nombre y pabellón ' +
-            nombre +
-            ' y ' +
-            pabellon_id,
+          `Ya existe un aula con nombre ${nombre} y pabellón ${pabellon_id}`,
         );
       }
-
-      // Validación 2: Pabellón existe
-      const pabellonExists = await this.pabellonRepository.existsBy({
-        id: pabellon_id,
-      });
 
       if (!pabellonExists) {
         throw new NotFoundException(
-          'No existe un pabellón con ese ID ' + pabellon_id,
+          `No existe un pabellón con ese ID ${pabellon_id}`,
         );
       }
 
-      // Creación
       const aula = this.aulaRepository.create({
         codigo,
         nombre,
         pabellon: { id: pabellon_id },
       });
 
-      const savedAula = await this.aulaRepository.save(aula);
-
-      return savedAula;
+      return await this.aulaRepository.save(aula);
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -71,11 +61,10 @@ export class AulaService {
       ) {
         throw error;
       }
-
       throw new InternalServerErrorException('Error al crear aula');
     }
   }
-  
+
   async findAll() {
     try {
       const aulas = await this.aulaRepository.find({
@@ -122,6 +111,8 @@ export class AulaService {
         throw new BadRequestException('ID del aula vacío');
       }
 
+      const { nombre, codigo, pabellon_id } = updateAulaDto;
+
       const aula = await this.aulaRepository.findOne({
         where: { id },
         relations: ['pabellon'],
@@ -131,41 +122,52 @@ export class AulaService {
         throw new NotFoundException(`Aula con ID ${id} no encontrada`);
       }
 
-      const { nombre, codigo, pabellon_id } = updateAulaDto;
       const updateData: any = {};
+      const validations: Promise<any>[] = [];
 
-      // Validación: Código único (si se actualiza)
+      if (nombre !== undefined && nombre !== aula.nombre) {
+        validations.push(
+          this.aulaRepository
+            .existsBy({
+              id: Not(id),
+              nombre,
+            })
+            .then((exists) => {
+              if (exists) {
+                throw new ConflictException(
+                  `Ya existe un aula con nombre ${nombre}`,
+                );
+              }
+              updateData.nombre = nombre;
+            }),
+        );
+      }
+
+      if (pabellon_id !== undefined && pabellon_id !== aula.pabellon.id) {
+        validations.push(
+          this.pabellonRepository
+            .existsBy({
+              id: pabellon_id,
+            })
+            .then((exists) => {
+              if (!exists) {
+                throw new NotFoundException(
+                  `No existe un pabellón con ese ID ${pabellon_id}`,
+                );
+              }
+              updateData.pabellon = { id: pabellon_id };
+            }),
+        );
+      }
+
+      if (validations.length > 0) {
+        await Promise.all(validations);
+      }
+
       if (codigo !== undefined) {
-        const codigoExists = await this.aulaRepository.existsBy({
-          id: Not(id),
-          codigo,
-        });
-
-        if (codigoExists) {
-          throw new ConflictException('Ya existe un aula con código ' + codigo);
-        }
         updateData.codigo = codigo;
       }
 
-      // Validación: Pabellón existe (si se actualiza)
-      if (pabellon_id !== undefined) {
-        const pabellonExists = await this.pabellonRepository.existsBy({
-          id: pabellon_id,
-        });
-
-        if (!pabellonExists) {
-          throw new NotFoundException(
-            'No existe un pabellón con ese ID ' + pabellon_id,
-          );
-        }
-        updateData.pabellon = { id: pabellon_id };
-      }
-
-      if (nombre !== undefined) {
-        updateData.nombre = nombre;
-      }
-
-      // Si no hay cambios, retornar sin hacer nada
       if (Object.keys(updateData).length === 0) {
         return aula;
       }
@@ -184,7 +186,6 @@ export class AulaService {
       ) {
         throw error;
       }
-
       throw new InternalServerErrorException('Error al actualizar aula');
     }
   }
@@ -195,12 +196,9 @@ export class AulaService {
         throw new BadRequestException('ID del aula vacío');
       }
 
-      const aula = await this.aulaRepository.findOne({
-        where: { id },
-        relations: ['pabellon'],
-      });
+      const aulaExists = await this.aulaRepository.existsBy({ id });
 
-      if (!aula) {
+      if (!aulaExists) {
         throw new NotFoundException(`Aula con id ${id} no encontrada`);
       }
 
@@ -217,7 +215,7 @@ export class AulaService {
         );
       }
 
-      return await this.aulaRepository.findOneBy({ id });
+      return await this.aulaRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||

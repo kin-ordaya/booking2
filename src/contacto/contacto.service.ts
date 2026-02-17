@@ -59,9 +59,7 @@ export class ContactoService {
         proveedor: { id: proveedor_id },
       });
 
-      const savedContacto = await this.contactoRepository.save(contacto);
-
-      return savedContacto;
+      return await this.contactoRepository.save(contacto);
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -78,8 +76,9 @@ export class ContactoService {
     try {
       const { page, limit, sort, search } = paginationContactoDto;
 
-      const query = this.contactoRepository.createQueryBuilder('contacto')
-      .addSelect('COUNT(*) OVER()', 'total_count');
+      const query = this.contactoRepository
+        .createQueryBuilder('contacto')
+        .addSelect('COUNT(*) OVER()', 'total_count');
 
       if (sort !== undefined) {
         switch (sort.toString()) {
@@ -111,7 +110,8 @@ export class ContactoService {
         .limit(limit)
         .getRawMany();
 
-      const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+      const count =
+        results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
 
       return {
         results,
@@ -133,7 +133,10 @@ export class ContactoService {
         throw new BadRequestException('ID de contacto vacío');
       }
 
-      const contacto = await this.contactoRepository.findOneBy({ id });
+      const contacto = await this.contactoRepository.findOne({
+        where: { id },
+        relations: ['proveedor'],
+      });
 
       if (!contacto) {
         throw new NotFoundException(`Contacto con ID ${id} no encontrado`);
@@ -153,68 +156,94 @@ export class ContactoService {
 
   async update(id: string, updateContactoDto: UpdateContactoDto) {
     try {
-      const { nombres, apellidos, telefono, correo, proveedor_id } =
-        updateContactoDto;
-
-
       if (!id) {
         throw new BadRequestException('ID de contacto vacío');
       }
 
-      const contacto = await this.contactoRepository.findOneBy({ id });
+      const { nombres, apellidos, telefono, correo, proveedor_id } =
+        updateContactoDto;
+
+      const contacto = await this.contactoRepository.findOne({
+        where: { id },
+        relations: ['proveedor'],
+      });
 
       if (!contacto) {
         throw new NotFoundException(`Contacto con id ${id} no encontrado`);
       }
 
       const updateData: any = {};
+      const validations: Promise<any>[] = [];
 
-      if (nombres !== undefined) {
-        updateData.nombres = nombres;
-      }
-      if (apellidos !== undefined) {
-        updateData.apellidos = apellidos;
-      }
-      if (telefono !== undefined) {
-        const telefonoExists = await this.contactoRepository.existsBy({
-          id: Not(id),
-          telefono,
-        });
-
-        if (telefonoExists) {
-          throw new ConflictException(
-            'Ya existe un contacto con ese telefono ' + telefono,
-          );
-        }
-
+      if (telefono !== undefined && telefono !== contacto.telefono) {
+        validations.push(
+          this.contactoRepository
+            .existsBy({
+              id: Not(id),
+              telefono,
+            })
+            .then((exists) => {
+              if (exists) {
+                throw new ConflictException(
+                  'Ya existe un contacto con ese telefono ' + telefono,
+                );
+              }
+              updateData.telefono = telefono;
+            }),
+        );
         updateData.telefono = telefono;
       }
-      if (correo !== undefined) {
-        const correoExists = await this.contactoRepository.existsBy({
-          id: Not(id),
-          correo,
-        });
 
-        if (correoExists) {
-          throw new ConflictException(
-            'Ya existe un contacto con ese correo ' + correo,
-          );
-        }
+      if (correo !== undefined && correo !== contacto.correo) {
+        validations.push(
+          this.contactoRepository
+            .existsBy({
+              id: Not(id),
+              correo,
+            })
+            .then((exists) => {
+              if (exists) {
+                throw new ConflictException(
+                  'Ya existe un contacto con ese correo ' + correo,
+                );
+              }
+              updateData.correo = correo;
+            }),
+        );
         updateData.correo = correo;
       }
 
-      if (proveedor_id !== undefined) {
-        const proveedorExists = await this.proveedorRepository.existsBy({
-          id: proveedor_id,
-        });
-
-        if (!proveedorExists) {
-          throw new NotFoundException(
-            'No existe un proveedor con id ' + proveedor_id,
-          );
-        }
-
+      if (
+        proveedor_id !== undefined &&
+        proveedor_id !== contacto.proveedor.id
+      ) {
+        validations.push(
+          this.proveedorRepository
+            .existsBy({
+              id: proveedor_id,
+            })
+            .then((exists) => {
+              if (!exists) {
+                throw new NotFoundException(
+                  'No existe un proveedor con id ' + proveedor_id,
+                );
+              }
+              updateData.proveedor = { id: proveedor_id };
+            }),
+        );
         updateData.proveedor = { id: proveedor_id };
+      }
+
+      if (validations.length > 0) {
+        await Promise.all(validations);
+      }
+
+      if (nombres !== undefined && nombres !== contacto.nombres) {
+        updateData.nombres = nombres;
+      }
+
+      if (apellidos !== undefined && apellidos !== contacto.apellidos) {
+        updateData.apellidos = apellidos;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -223,7 +252,10 @@ export class ContactoService {
 
       await this.contactoRepository.update(id, updateData);
 
-      return await this.contactoRepository.findOneBy({ id });
+      return await this.contactoRepository.findOne({
+        where: { id },
+        relations: ['proveedor'],
+      });
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -242,7 +274,7 @@ export class ContactoService {
         throw new BadRequestException('ID del contacto vacío');
       }
 
-      const contacto = await this.contactoRepository.findOneBy({ id });
+      const contacto = await this.contactoRepository.existsBy({ id });
 
       if (!contacto) {
         throw new NotFoundException(`Contacto con ID ${id} no encontrado`);
@@ -256,10 +288,15 @@ export class ContactoService {
         .execute();
 
       if (result.affected === 0) {
-        throw new NotFoundException(`No se afectaron registros al cambiar estado`);
+        throw new NotFoundException(
+          `No se afectaron registros al cambiar estado`,
+        );
       }
 
-      return this.contactoRepository.findOneBy({ id });
+      return this.contactoRepository.findOne({
+        where: { id },
+        relations: ['proveedor'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -267,7 +304,9 @@ export class ContactoService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error en la deshabilitación/habilitación de contacto');
+      throw new InternalServerErrorException(
+        'Error en la deshabilitación/habilitación de contacto',
+      );
     }
   }
 }
