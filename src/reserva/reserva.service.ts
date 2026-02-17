@@ -1015,10 +1015,10 @@ export class ReservaService {
       // Crear el grupo de reserva ANTES de crear las reservas individuales
       const grupoReserva = this.grupoReservaRepository.create({
         tipo: 'GENERAL_MULTIPLE',
-        recurso_id: recurso_id,
-        autor_id: autor_id,
-        clase_id: clase_id,
-        docente_id: docente_id,
+        // recurso_id: recurso_id,
+        // autor_id: autor_id,
+        // clase_id: clase_id,
+        // docente_id: docente_id,
         cantidad_reservas: rangos_fechas.length,
       });
 
@@ -1189,8 +1189,8 @@ export class ReservaService {
 
       const grupoReserva = this.grupoReservaRepository.create({
         tipo: 'MANTENIMIENTO_GENERAL_MULTIPLE',
-        recurso_id: recurso_id,
-        autor_id: autor_id,
+        // recurso_id: recurso_id,
+        // autor_id: autor_id,
         cantidad_reservas: rangos_fechas.length,
       });
 
@@ -1378,10 +1378,10 @@ export class ReservaService {
 
       const grupoReserva = this.grupoReservaRepository.create({
         tipo: 'MIXTO_MULTIPLE',
-        recurso_id: recurso_id,
-        autor_id: autor_id,
-        clase_id: clase_id,
-        docente_id: docente_id,
+        // recurso_id: recurso_id,
+        // autor_id: autor_id,
+        // clase_id: clase_id,
+        // docente_id: docente_id,
         cantidad_reservas: rangos_fechas.length,
       });
 
@@ -1583,8 +1583,8 @@ export class ReservaService {
 
       const grupoReserva = this.grupoReservaRepository.create({
         tipo: 'MANTENIMIENTO_MIXTO_MULTIPLE',
-        recurso_id: recurso_id,
-        autor_id: autor_id,
+        // recurso_id: recurso_id,
+        // autor_id: autor_id,
         cantidad_reservas: rangos_fechas.length,
       });
 

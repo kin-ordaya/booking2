@@ -21,17 +21,17 @@ export class GrupoReserva {
   @Column()
   tipo: string; // 'GENERAL_MULTIPLE', 'MIXTO_MULTIPLE', 'GENERAL_MANTENIMIENTO_MULTIPLE' , 'MIXTO_MANTENIMIENTO_MULTIPLE'
 
-  @Column()
-  recurso_id: string;
+  // @Column()
+  // recurso_id: string;
 
-  @Column()
-  autor_id: string;
+  // @Column()
+  // autor_id: string;
 
-  @Column({ nullable: true })
-  clase_id?: string;
+  // @Column({ nullable: true })
+  // clase_id?: string;
 
-  @Column({ nullable: true })
-  docente_id?: string;
+  // @Column({ nullable: true })
+  // docente_id?: string;
 
   @Column()
   cantidad_reservas: number;
