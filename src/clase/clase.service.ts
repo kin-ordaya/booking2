@@ -344,9 +344,9 @@ export class ClaseService {
         throw new BadRequestException('El ID de clase vacío');
       }
 
-      const clase = await this.claseRepository.existsBy({ id });
+      const claseExists = await this.claseRepository.existsBy({ id });
 
-      if (!clase) {
+      if (!claseExists) {
         throw new NotFoundException(`Clase con ID ${id} no encontrada`);
       }
 

@@ -28,7 +28,8 @@ export class CursoService {
 
   async create(createCursoDto: CreateCursoDto): Promise<Curso> {
     try {
-      const { codigo, eap_id, plan_id } = createCursoDto;
+      const { codigo, codigo_cruzado, nombre, descripcion, eap_id, plan_id } =
+        createCursoDto;
 
       const [codigoExiste, planExiste, eapExiste] = await Promise.all([
         this.cursoRepository.existsBy({ codigo }),
@@ -44,20 +45,20 @@ export class CursoService {
         throw new NotFoundException('No existe plan con ID ' + plan_id);
       }
 
-      if (eap_id && !eapExiste) {
+      if (!eapExiste) {
         throw new NotFoundException('No existe EAP con ese ID ' + eap_id);
       }
 
-      // Creación del curso
       const curso = this.cursoRepository.create({
-        ...createCursoDto,
-        eap: eap_id ? { id: eap_id } : undefined,
+        codigo,
+        codigo_cruzado,
+        nombre,
+        descripcion,
+        ...(eap_id && { eap: { id: eap_id } }),
         plan: { id: plan_id },
       });
 
-      const savedCurso = await this.cursoRepository.save(curso);
-
-      return savedCurso;
+      return await this.cursoRepository.save(curso);
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -113,12 +114,13 @@ export class CursoService {
         );
       }
 
-      const results= await query
+      const results = await query
         .offset((page - 1) * limit)
         .limit(limit)
         .getRawMany();
 
-      const count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+      const count =
+        results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
 
       return {
         results,
@@ -140,7 +142,10 @@ export class CursoService {
         throw new BadRequestException('El ID del curso no puede estar vacío');
       }
 
-      const curso = await this.cursoRepository.findOneBy({ id });
+      const curso = await this.cursoRepository.findOne({
+        where: { id },
+        relations: ['eap, plan'],
+      });
 
       if (!curso) {
         throw new NotFoundException(`Curso con ID ${id} no encontrado`);
@@ -164,7 +169,10 @@ export class CursoService {
         throw new BadRequestException('Codigo de curso no puede estar vacío');
       }
 
-      const curso = await this.cursoRepository.findOneBy({ codigo });
+      const curso = await this.cursoRepository.findOne({
+        where: { codigo },
+        relations: ['eap, plan'],
+      });
       if (!curso) {
         throw new NotFoundException('Curso no encontrado');
       }
@@ -182,58 +190,92 @@ export class CursoService {
 
   async update(id: string, updateCursoDto: UpdateCursoDto) {
     try {
-      const { codigo, nombre, descripcion, eap_id, plan_id } = updateCursoDto;
-
       if (!id) {
         throw new BadRequestException('ID del curso  vacío');
       }
 
-      const curso = await this.cursoRepository.findOneBy({ id });
+      const { codigo, codigo_cruzado, nombre, descripcion, eap_id, plan_id } =
+        updateCursoDto;
+
+      const curso = await this.cursoRepository.findOne({
+        where: { id },
+        relations: ['eap, plan'],
+      });
+
       if (!curso) {
         throw new NotFoundException(`Curso con ID ${id} no encontrado`);
       }
 
       const updateData: any = {};
+      const validations: Promise<any>[] = [];
 
-      if (codigo !== undefined) {
-        const codigoExistente = await this.cursoRepository.existsBy({
-          id: Not(id),
-          codigo,
-        });
-
-        if (codigoExistente) {
-          throw new ConflictException('Ya existe curso con codigo ' + codigo);
-        }
-        updateData.codigo = codigo;
+      if (codigo !== undefined && codigo !== curso.codigo) {
+        validations.push(
+          this.cursoRepository
+            .existsBy({
+              id: Not(id),
+              codigo,
+            })
+            .then((exists) => {
+              if (exists) {
+                throw new ConflictException(
+                  'Ya existe curso con codigo ' + codigo,
+                );
+              }
+              updateData.codigo = codigo;
+            }),
+        );
       }
 
-      if (eap_id !== undefined) {
-        const eapExists = await this.eapRepository.existsBy({
-          id: eap_id,
-        });
-
-        if (!eapExists) {
-          throw new NotFoundException('No existe EAP con ID ' + eap_id);
-        }
-        updateData.eap = { id: eap_id };
+      if (eap_id !== undefined && eap_id !== curso.eap?.id) {
+        validations.push(
+          this.eapRepository
+            .existsBy({
+              id: eap_id,
+            })
+            .then((exists) => {
+              if (!exists) {
+                throw new NotFoundException(
+                  'No existe un EAP con ese ID ' + eap_id,
+                );
+              }
+              updateData.eap = { id: eap_id };
+            }),
+        );
       }
 
-      if (plan_id !== undefined) {
-        const planExists = await this.planRepository.existsBy({
-          id: plan_id,
-        });
-
-        if (!planExists) {
-          throw new NotFoundException('No existe plan con ID ' + plan_id);
-        }
-        updateData.plan = { id: plan_id };
+      if (plan_id !== undefined && plan_id !== curso.plan.id) {
+        validations.push(
+          this.planRepository
+            .existsBy({
+              id: plan_id,
+            })
+            .then((exists) => {
+              if (!exists) {
+                throw new NotFoundException(
+                  'No existe un plan con ese ID ' + plan_id,
+                );
+              }
+              updateData.plan = { id: plan_id };
+            }),
+        );
       }
 
-      if (nombre !== undefined) {
+      if (validations.length > 0) {
+        await Promise.all(validations);
+      }
+      if (
+        codigo_cruzado !== undefined &&
+        codigo_cruzado !== curso.codigo_cruzado
+      ) {
+        updateData.codigo_cruzado = codigo_cruzado;
+      }
+
+      if (nombre !== undefined && nombre !== curso.nombre) {
         updateData.nombre = nombre;
       }
 
-      if (descripcion !== undefined) {
+      if (descripcion !== undefined && descripcion !== curso.descripcion) {
         updateData.descripcion = descripcion;
       }
 
@@ -243,7 +285,10 @@ export class CursoService {
 
       await this.cursoRepository.update(id, updateData);
 
-      return await this.cursoRepository.findOneBy({ id });
+      return await this.cursoRepository.findOne({
+        where: { id },
+        relations: ['eap, plan'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -262,7 +307,7 @@ export class CursoService {
         throw new BadRequestException('El ID del curso no puede estar vacío');
       }
 
-      const curso = await this.cursoRepository.findOneBy({ id });
+      const curso = await this.cursoRepository.existsBy({ id });
 
       if (!curso) {
         throw new NotFoundException(`Curso con ID ${id} no encontrado`);
@@ -281,7 +326,10 @@ export class CursoService {
         );
       }
 
-      return this.cursoRepository.findOneBy({ id });
+      return this.cursoRepository.findOne({
+        where: { id },
+        relations: ['eap, plan'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||

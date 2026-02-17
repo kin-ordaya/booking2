@@ -27,7 +27,7 @@ export class CredencialService {
     private readonly rolRepository: Repository<Rol>,
   ) {}
 
-  async create(createCredencialDto: CreateCredencialDto) {
+  async create(createCredencialDto: CreateCredencialDto): Promise<Credencial> {
     try {
       const { usuario, clave, recurso_id, rol_id } = createCredencialDto;
 
@@ -40,9 +40,7 @@ export class CredencialService {
       ]);
 
       if (!recursoExists) {
-        throw new NotFoundException(
-          'No existe recurso con ID ' + recurso_id,
-        );
+        throw new NotFoundException('No existe recurso con ID ' + recurso_id);
       }
 
       if (!rolExists) {
@@ -51,31 +49,30 @@ export class CredencialService {
 
       const tipoAcceso = recursoExists.tipoAcceso.nombre;
 
+      let credencialExists;
+
       // Validación según tipo de acceso
       if (tipoAcceso === 'USERPASS') {
-        if (!usuario || !clave) {
-          throw new BadRequestException('Campos usuario y clave vacíos');
-        }
-        const credencialExists = await this.credencialRepository.findOne({
-          where: { usuario, clave, recurso: { id: recurso_id } },
+        credencialExists = await this.credencialRepository.existsBy({
+          usuario,
+          clave,
+          recurso: { id: recurso_id },
         });
 
         if (credencialExists) {
           throw new ConflictException(
-            'Ya existe una credencial con usuario y clave ' +
+            'Ya existe una credencial con usuario ' +
               usuario +
-              ' y ' +
+              ' y clave ' +
               clave +
               ' en el recurso ' +
               recurso_id,
           );
         }
       } else if (tipoAcceso === 'KEY') {
-        if (!clave) {
-          throw new BadRequestException('Campo clave vacío');
-        }
-        const credencialExists = await this.credencialRepository.findOne({
-          where: { clave, recurso: { id: recurso_id } },
+        credencialExists = await this.credencialRepository.existsBy({
+          clave,
+          recurso: { id: recurso_id },
         });
 
         if (credencialExists) {
@@ -90,18 +87,6 @@ export class CredencialService {
         throw new BadRequestException('Tipo de acceso no válido ' + tipoAcceso);
       }
 
-      // // Construcción dinámica del objeto
-      // const credencialData: Credencial = {
-      //   clave,
-      //   recurso: { id: recurso_id },
-      //   rol: { id: rol_id },
-      // };
-
-      // // Solo agregamos 'usuario' si es USERPASS
-      // if (tipoAcceso === 'USERPASS') {
-      //   credencialData.usuario = usuario;
-      // }
-
       const credencial = this.credencialRepository.create({
         usuario,
         clave,
@@ -109,9 +94,7 @@ export class CredencialService {
         rol: { id: rol_id },
       });
 
-      const savedCredencial = await this.credencialRepository.save(credencial);
-
-      return savedCredencial;
+      return await this.credencialRepository.save(credencial);
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -128,7 +111,7 @@ export class CredencialService {
     try {
       const { page, limit, search, recurso_id, sort_state, rol_id } =
         paginationCredencialDto;
-        
+
       const query = this.credencialRepository
         .createQueryBuilder('credencial')
         .leftJoin('credencial.recurso', 'recurso')
@@ -170,12 +153,13 @@ export class CredencialService {
         );
       }
 
-      const results= await query
+      const results = await query
         .offset((page - 1) * limit)
         .limit(limit)
         .getRawMany();
 
-      const total_count = results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
+      const total_count =
+        results.length > 0 ? parseInt(results[0].total_count, 10) : 0;
 
       const formattedResults = results.map((row) => ({
         id: row.credencial_id,
@@ -219,7 +203,7 @@ export class CredencialService {
 
       const credencial = await this.credencialRepository.findOne({
         where: { id },
-        relations: ['rol'],
+        relations: ['recurso', 'rol'],
       });
 
       if (!credencial) {
@@ -240,16 +224,15 @@ export class CredencialService {
 
   async update(id: string, updateCredencialDto: UpdateCredencialDto) {
     try {
-      const { usuario, clave, rol_id } = updateCredencialDto;
-
       if (!id) {
         throw new BadRequestException('ID de la credencial vacío');
       }
 
-      // Obtener la credencial con relaciones necesarias
+      const { usuario, clave, rol_id } = updateCredencialDto;
+
       const credencial = await this.credencialRepository.findOne({
         where: { id },
-        relations: ['recurso', 'recurso.tipoAcceso'],
+        relations: ['recurso', 'rol'],
       });
 
       if (!credencial) {
@@ -264,18 +247,17 @@ export class CredencialService {
         }
       }
 
-      // Preparar datos para actualizar
       const updateData: any = {};
 
       if (usuario !== undefined && tipoAcceso === 'USERPASS') {
         updateData.usuario = usuario;
       }
 
-      if (clave !== undefined) {
+      if (clave !== undefined && clave !== credencial.clave) {
         updateData.clave = clave;
       }
 
-      if (rol_id !== undefined) {
+      if (rol_id !== undefined && rol_id !== credencial.rol.id) {
         const rolExists = await this.rolRepository.existsBy({
           id: rol_id,
         });
@@ -287,7 +269,6 @@ export class CredencialService {
         updateData.rol = { id: rol_id };
       }
 
-      // Si no hay cambios, retornar la credencial actual
       if (Object.keys(updateData).length === 0) {
         return credencial;
       }
@@ -319,12 +300,9 @@ export class CredencialService {
         );
       }
 
-      const credencial = await this.credencialRepository.findOne({
-        where: { id },
-        relations: ['recurso', 'recurso.tipoAcceso'],
-      });
+      const credencialExists = await this.credencialRepository.existsBy({ id });
 
-      if (!credencial) {
+      if (!credencialExists) {
         throw new NotFoundException(`Credencial con id ${id} no encontrada`);
       }
 
@@ -339,15 +317,20 @@ export class CredencialService {
         throw new NotFoundException('Credencial no encontrada');
       }
 
-      return this.credencialRepository.findOneBy({ id });
+      return this.credencialRepository.findOne({
+        where: { id },
+        relations: ['recurso', 'rol'],
+      });
     } catch (error) {
-      if(
+      if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
-      ){
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar credencial');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar credencial',
+      );
     }
   }
 }

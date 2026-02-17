@@ -22,7 +22,7 @@ export class AulaService {
     private readonly pabellonRepository: Repository<Pabellon>,
   ) {}
 
-  async create(createAulaDto: CreateAulaDto):Promise<Aula> {
+  async create(createAulaDto: CreateAulaDto): Promise<Aula> {
     try {
       const { nombre, codigo, pabellon_id } = createAulaDto;
 
@@ -164,7 +164,7 @@ export class AulaService {
         await Promise.all(validations);
       }
 
-      if (codigo !== undefined) {
+      if (codigo !== undefined && codigo !== aula.codigo) {
         updateData.codigo = codigo;
       }
 
@@ -215,7 +215,10 @@ export class AulaService {
         );
       }
 
-      return await this.aulaRepository.findOne({ where: { id } });
+      return await this.aulaRepository.findOne({
+        where: { id },
+        relations: ['pabellon'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||

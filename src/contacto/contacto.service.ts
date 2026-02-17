@@ -191,7 +191,6 @@ export class ContactoService {
               updateData.telefono = telefono;
             }),
         );
-        updateData.telefono = telefono;
       }
 
       if (correo !== undefined && correo !== contacto.correo) {
@@ -210,7 +209,6 @@ export class ContactoService {
               updateData.correo = correo;
             }),
         );
-        updateData.correo = correo;
       }
 
       if (
@@ -231,7 +229,6 @@ export class ContactoService {
               updateData.proveedor = { id: proveedor_id };
             }),
         );
-        updateData.proveedor = { id: proveedor_id };
       }
 
       if (validations.length > 0) {
@@ -274,9 +271,9 @@ export class ContactoService {
         throw new BadRequestException('ID del contacto vacío');
       }
 
-      const contacto = await this.contactoRepository.existsBy({ id });
+      const contactoExists = await this.contactoRepository.existsBy({ id });
 
-      if (!contacto) {
+      if (!contactoExists) {
         throw new NotFoundException(`Contacto con ID ${id} no encontrado`);
       }
 
