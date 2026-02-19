@@ -162,7 +162,6 @@ export class ContactoService {
 
       const { nombres, apellidos, telefono, correo, proveedor_id } =
         updateContactoDto;
-
       const contacto = await this.contactoRepository.findOne({
         where: { id },
         relations: ['proveedor'],

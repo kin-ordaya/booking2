@@ -179,8 +179,9 @@ export class CursoModalidadService {
           'El ID del cursoModalidad no puede estar vacío',
         );
 
-      const cursoModalidad = await this.cursoModalidadRepository.findOneBy({
-        id,
+      const cursoModalidad = await this.cursoModalidadRepository.findOne({
+        where: { id },
+        relations: ['curso', 'modalidad'],
       });
       if (!cursoModalidad)
         throw new NotFoundException('CursoModalidad no encontrado');
@@ -225,80 +226,91 @@ export class CursoModalidadService {
   }
 
   async update(id: string, updateCursoModalidadDto: UpdateCursoModalidadDto) {
-    try {
-      const { curso_id, modalidad_id } = updateCursoModalidadDto;
+  try {
+    if (!id) {
+      throw new BadRequestException('El ID del cursoModalidad no puede estar vacío');
+    }
 
-      if (!id) {
-        throw new BadRequestException(
-          'El ID del cursoModalidad no puede estar vacío',
-        );
-      }
+    const { curso_id, modalidad_id } = updateCursoModalidadDto;
 
-      const cursoModalidad = await this.cursoModalidadRepository.findOne({
-        where: { id },
-        relations: ['curso', 'modalidad'],
-      });
-      if (!cursoModalidad) {
-        throw new NotFoundException('CursoModalidad no encontrado');
-      }
+    // Buscar cursoModalidad existente
+    const cursoModalidad = await this.cursoModalidadRepository.findOne({
+      where: { id },
+      relations: ['curso', 'modalidad'],
+    });
 
-      const newCursoId =
-        curso_id !== undefined ? curso_id : cursoModalidad.curso.id;
-      const newModalidadId =
-        modalidad_id !== undefined ? modalidad_id : cursoModalidad.modalidad.id;
+    if (!cursoModalidad) {
+      throw new NotFoundException('CursoModalidad no encontrado');
+    }
 
-      if (curso_id !== undefined) {
-        const cursoExists = await this.cursoRepository.existsBy({
-          id: curso_id,
-        });
-        if (!cursoExists) {
-          throw new NotFoundException('No existe un curso con ese id');
-        }
-      }
+    // Si no hay cambios, retornar el existente
+    if (curso_id === undefined && modalidad_id === undefined) {
+      return cursoModalidad;
+    }
 
-      if (modalidad_id !== undefined) {
-        const modalidadExists = await this.modalidadRepository.existsBy({
-          id: modalidad_id,
-        });
-        if (!modalidadExists) {
-          throw new NotFoundException('No existe una modalidad con ese id');
-        }
-      }
+    // Verificar duplicados
+    const newCursoId = curso_id ?? cursoModalidad.curso.id;
+    const newModalidadId = modalidad_id ?? cursoModalidad.modalidad.id;
 
-      const existingAssignment = await this.cursoModalidadRepository.findOne({
-        where: {
-          id: Not(id),
-          curso: { id: newCursoId },
-          modalidad: { id: newModalidadId },
-        },
-      });
-      if (existingAssignment) {
-        throw new ConflictException(
-          'Ya existe una asignación de este curso a este modalidad',
-        );
-      }
+    const existingAssignment = await this.cursoModalidadRepository.existsBy({
+        id: Not(id),
+        curso: { id: newCursoId },
+        modalidad: { id: newModalidadId },
+    });
 
-      const updateData: any = {};
-      if (curso_id !== undefined) updateData.curso = { id: curso_id };
-      if (modalidad_id !== undefined)
-        updateData.modalidad = { id: modalidad_id };
+    if (existingAssignment) {
+      throw new ConflictException('Ya existe una asignación de este curso a esta modalidad');
+    }
 
-      await this.cursoModalidadRepository.update(id, updateData);
+    // Verificar existencia de curso y modalidad en paralelo si se proporcionaron
+    const updateData: any = {};
+    const validations: Promise<any>[] = [];
 
-      return await this.cursoModalidadRepository.findOneBy({ id });
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error al actualizar curso modalidad',
+    if (curso_id !== undefined && curso_id !== cursoModalidad.curso.id) {
+      validations.push(
+        this.cursoRepository.existsBy({ id: curso_id }).then(exists => {
+          if (!exists) throw new NotFoundException('No existe un curso con ese id');
+          updateData.curso = { id: curso_id };
+        })
       );
     }
+
+    if (modalidad_id !== undefined && modalidad_id !== cursoModalidad.modalidad.id) {
+      validations.push(
+        this.modalidadRepository.existsBy({ id: modalidad_id }).then(exists => {
+          if (!exists) throw new NotFoundException('No existe una modalidad con ese id');
+          updateData.modalidad = { id: modalidad_id };
+        })
+      );
+    }
+
+    if(validations.length > 0) {
+      await Promise.all(validations);
+    }
+
+    if(Object.keys(updateData).length === 0) {
+      return cursoModalidad;
+    }
+
+    // Ejecutar actualización
+    await this.cursoModalidadRepository.update(id, updateData);
+
+    // Retornar entidad actualizada
+    return await this.cursoModalidadRepository.findOne({
+      where: { id },
+      relations: ['curso', 'modalidad'],
+    });
+  } catch (error) {
+    if (
+      error instanceof NotFoundException ||
+      error instanceof BadRequestException ||
+      error instanceof ConflictException
+    ) {
+      throw error;
+    }
+    throw new InternalServerErrorException('Error al actualizar curso modalidad');
   }
+}
 
   async remove(id: string) {
     try {
@@ -317,7 +329,10 @@ export class CursoModalidadService {
       if (result.affected === 0)
         throw new NotFoundException('CursoModalidad no encontrado');
 
-      return this.cursoModalidadRepository.findOneBy({ id });
+      return this.cursoModalidadRepository.findOne({
+        where: { id },
+        relations: ['curso', 'modalidad'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
