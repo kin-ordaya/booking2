@@ -103,7 +103,9 @@ export class EapService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al obtener la EAP por nombre');
+      throw new InternalServerErrorException(
+        'Error al obtener la EAP por nombre',
+      );
     }
   }
 
@@ -115,7 +117,6 @@ export class EapService {
 
       const { nombre, facultad_id } = updateEapDto;
 
-      // Verificar si la EAP existe
       const eap = await this.eapRepository.findOne({
         where: { id },
         relations: ['facultad'],
@@ -124,44 +125,51 @@ export class EapService {
         throw new NotFoundException('EAP no encontrada');
       }
 
-      // Preparar objeto de actualización
       const updateData: any = {};
+      const validations: Promise<any>[] = [];
 
-      if (nombre !== undefined) {
-        // Verificar si el nombre ya existe (excluyendo la actual EAP)
-        const nombreExists = await this.eapRepository.existsBy({
-          id: Not(id),
-          nombre,
-        });
-
-        if (nombreExists) {
-          throw new ConflictException('Ya existe una EAP con ese nombre');
-        }
-        updateData.nombre = nombre;
+      if (nombre !== undefined && nombre !== eap.nombre) {
+        validations.push(
+          this.eapRepository
+            .existsBy({
+              id: Not(id),
+              nombre,
+            })
+            .then((exists) => {
+              if (exists) {
+                throw new ConflictException('Ya existe una EAP con ese nombre');
+              }
+              updateData.nombre = nombre;
+            }),
+        );
       }
 
-      if (facultad_id !== undefined) {
-        // Verificar si la facultad existe
-        const facultadExists = await this.facultadRepository.existsBy({
-          id: facultad_id,
-        });
-
-        if (!facultadExists) {
-          throw new NotFoundException('No existe una facultad con ese ID');
-        }
-        updateData.facultad = { id: facultad_id };
+      if (facultad_id !== undefined && facultad_id !== eap.facultad.id) {
+        validations.push(
+          this.facultadRepository
+            .existsBy({
+              id: facultad_id,
+            })
+            .then((exists) => {
+              if (!exists) {
+                throw new NotFoundException(
+                  'No existe una facultad con ese ID',
+                );
+              }
+              updateData.facultad = { id: facultad_id };
+            }),
+        );
       }
-
-      // Si no hay nada que actualizar
       if (Object.keys(updateData).length === 0) {
-        return eap; // O podrías lanzar un error
+        return eap;
       }
 
-      // Realizar la actualización
       await this.eapRepository.update(id, updateData);
 
-      // Retornar la EAP actualizada
-      return await this.eapRepository.findOneBy({ id });
+      return await this.eapRepository.findOne({
+        where: { id },
+        relations: ['facultad'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -170,9 +178,7 @@ export class EapService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error al actualizar la EAP',
-      );
+      throw new InternalServerErrorException('Error al actualizar la EAP');
     }
   }
 
@@ -191,14 +197,18 @@ export class EapService {
       if (result.affected === 0)
         throw new NotFoundException('Facultad no encontrada');
 
-      return this.eapRepository.findOneBy({ id });
+      return this.eapRepository.findOne(
+        { where: { id }, relations: ['facultad'] },
+      );
     } catch (error) {
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar EAP');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar EAP',
+      );
     }
   }
 }

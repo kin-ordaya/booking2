@@ -53,7 +53,9 @@ export class FacultadService {
           'El ID de la facultad no puede estar vacío',
         );
 
-      const facultad = await this.facultadRepository.findOneBy({ id });
+      const facultad = await this.facultadRepository.findOne({
+        where: { id },
+      });
       if (!facultad) throw new NotFoundException('Facultad no encontrada');
       return facultad;
     } catch (error) {
@@ -68,21 +70,21 @@ export class FacultadService {
 
   async update(id: string, updateFacultadDto: UpdateFacultadDto) {
     try {
-      const { nombre } = updateFacultadDto;
-
       if (!id)
         throw new BadRequestException(
           'El ID de la facultad no puede estar vacío',
         );
 
-      const facultad = await this.facultadRepository.findOneBy({ id });
+      const { nombre } = updateFacultadDto;
+
+      const facultad = await this.facultadRepository.findOne({ where: { id } });
       if (!facultad) {
         throw new NotFoundException('Facultad no encontrada');
       }
 
       const updateData: any = {};
 
-      if (nombre !== undefined) {
+      if (nombre !== undefined && nombre !== facultad.nombre) {
         const nombreExists = await this.facultadRepository.existsBy({
           id: Not(id),
           nombre,
@@ -103,7 +105,7 @@ export class FacultadService {
         nombre,
       });
 
-      return await this.facultadRepository.findOneBy({ id });
+      return await this.facultadRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -132,14 +134,16 @@ export class FacultadService {
 
       if (result.affected === 0)
         throw new NotFoundException('Facultad no encontrada');
-      return this.facultadRepository.findOneBy({ id });
+      return this.facultadRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar la facultad');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar la facultad',
+      );
     }
   }
 }

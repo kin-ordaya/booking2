@@ -25,17 +25,18 @@ export class LaboratorioService {
     try {
       const { nombre, codigo, campus_id } = createLaboratorioDto;
 
-      const campusExists = await this.campusRepository.existsBy({
-        id: campus_id,
-      });
+      const [campusExists, laboratorioExists] = await Promise.all([
+        this.campusRepository.existsBy({ id: campus_id }),
+        this.laboratorioRepository.existsBy({
+          codigo,
+          campus: { id: campus_id },
+        }),
+      ]);
+
       if (!campusExists) {
         throw new NotFoundException('No existe un campus con ese id');
       }
 
-      const laboratorioExists = await this.laboratorioRepository.existsBy({
-        codigo,
-        campus: { id: campus_id },
-      });
       if (laboratorioExists) {
         throw new ConflictException(
           'Ya existe un laboratorio con ese codigo y campus',
@@ -66,7 +67,9 @@ export class LaboratorioService {
         order: { nombre: 'ASC' },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error al obtener los laboratorios');
+      throw new InternalServerErrorException(
+        'Error al obtener los laboratorios',
+      );
     }
   }
 
@@ -81,6 +84,7 @@ export class LaboratorioService {
         where: { id },
         relations: ['campus'],
       });
+
       if (!laboratorio)
         throw new NotFoundException(`Laboratorio con id ${id} no encontrado`);
 
@@ -97,22 +101,20 @@ export class LaboratorioService {
 
   async update(id: string, updateLaboratorioDto: UpdateLaboratorioDto) {
     try {
-      const { nombre, codigo, campus_id } = updateLaboratorioDto;
-
       if (!id) {
         throw new BadRequestException(
           'El ID del laboratorio no puede estar vacío',
         );
       }
 
-      const laboratorio = await this.laboratorioRepository.findOneBy({ id });
+      const { nombre, codigo, campus_id } = updateLaboratorioDto;
+
+      const laboratorio = await this.laboratorioRepository.findOne({ where: { id } });
       if (!laboratorio) {
         throw new NotFoundException(`Laboratorio con id ${id} no encontrado`);
       }
 
-      // Validaciones para código y campus_id
       if (codigo !== undefined || campus_id !== undefined) {
-        // Verificar si el campus existe si se proporciona campus_id
         if (campus_id !== undefined) {
           const campusExists = await this.campusRepository.existsBy({
             id: campus_id,
@@ -207,7 +209,9 @@ export class LaboratorioService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al actualizar el laboratorio');
+      throw new InternalServerErrorException(
+        'Error al actualizar el laboratorio',
+      );
     }
   }
 
@@ -235,7 +239,9 @@ export class LaboratorioService {
         error instanceof BadRequestException
       )
         throw error;
-      throw new InternalServerErrorException('Error al deshabilitar/habilitar el laboratorio');
+      throw new InternalServerErrorException(
+        'Error al deshabilitar/habilitar el laboratorio',
+      );
     }
   }
 }
