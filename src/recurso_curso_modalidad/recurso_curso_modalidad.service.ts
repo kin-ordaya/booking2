@@ -84,20 +84,20 @@ export class RecursoCursoModalidadService {
         .createQueryBuilder('rcm')
         .leftJoin('rcm.recurso', 'recurso')
         .leftJoin('recurso.proveedor', 'proveedor')
-        .leftJoin('rcm.cursoModalidad', 'cursoModalidad')
-        .leftJoin('cursoModalidad.curso', 'curso')
-        .leftJoin('cursoModalidad.modalidad', 'modalidad')
+        // .leftJoin('rcm.cursoModalidad', 'cursoModalidad')
+        // .leftJoin('cursoModalidad.curso', 'curso')
+        // .leftJoin('cursoModalidad.modalidad', 'modalidad')
         .select([
           'rcm.id',
           'recurso.id',
           'recurso.nombre',
           'recurso.creacion',
-          'cursoModalidad.id',
-          'curso.id',
-          'curso.nombre',
-          'curso.codigo',
-          'modalidad.id',
-          'modalidad.nombre',
+          // 'cursoModalidad.id',
+          // 'curso.id',
+          // 'curso.nombre',
+          // 'curso.codigo',
+          // 'modalidad.id',
+          // 'modalidad.nombre',
           'proveedor.nombre',
         ])
         .addSelect('COUNT(*) OVER() AS total_count');
@@ -139,18 +139,18 @@ export class RecursoCursoModalidadService {
 
       const formattedResults = results.map((raw) => ({
         id: raw.rcm_id,
-        cursoModalidad: {
-          id: raw.cursoModalidad_id,
-          curso: {
-            id: raw.curso_id,
-            codigo: raw.curso_codigo,
-            nombre: raw.curso_nombre,
-          },
-          modalidad: {
-            id: raw.modalidad_id,
-            nombre: raw.modalidad_nombre,
-          },
-        },
+        // cursoModalidad: {
+        //   id: raw.cursoModalidad_id,
+        //   curso: {
+        //     id: raw.curso_id,
+        //     codigo: raw.curso_codigo,
+        //     nombre: raw.curso_nombre,
+        //   },
+        //   modalidad: {
+        //     id: raw.modalidad_id,
+        //     nombre: raw.modalidad_nombre,
+        //   },
+        // },
         recurso: {
           id: raw.recurso_id,
           creacion: raw.recurso_creacion,
