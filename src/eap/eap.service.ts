@@ -69,7 +69,10 @@ export class EapService {
       if (!id)
         throw new BadRequestException('El ID de la EAP no puede estar vacío');
 
-      const eap = await this.eapRepository.findOneBy({ id });
+      const eap = await this.eapRepository.findOne({
+        where: { id },
+        relations: ['facultad'],
+      });
       if (!eap) throw new NotFoundException('EAP no encontrado');
       return eap;
     } catch (error) {
@@ -106,14 +109,17 @@ export class EapService {
 
   async update(id: string, updateEapDto: UpdateEapDto) {
     try {
-      const { nombre, facultad_id } = updateEapDto;
-
       if (!id) {
         throw new BadRequestException('El ID de la EAP no puede estar vacío');
       }
 
+      const { nombre, facultad_id } = updateEapDto;
+
       // Verificar si la EAP existe
-      const eap = await this.eapRepository.findOneBy({ id });
+      const eap = await this.eapRepository.findOne({
+        where: { id },
+        relations: ['facultad'],
+      });
       if (!eap) {
         throw new NotFoundException('EAP no encontrada');
       }

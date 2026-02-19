@@ -83,6 +83,7 @@ export class RecursoCursoModalidadService {
       const query = this.recursoCursoModalidadRepository
         .createQueryBuilder('rcm')
         .leftJoin('rcm.recurso', 'recurso')
+        .leftJoin('recurso.proveedor', 'proveedor')
         .leftJoin('rcm.cursoModalidad', 'cursoModalidad')
         .leftJoin('cursoModalidad.curso', 'curso')
         .leftJoin('cursoModalidad.modalidad', 'modalidad')
@@ -97,6 +98,7 @@ export class RecursoCursoModalidadService {
           'curso.codigo',
           'modalidad.id',
           'modalidad.nombre',
+          'proveedor.nombre',
         ])
         .addSelect('COUNT(*) OVER() AS total_count');
 
@@ -153,6 +155,9 @@ export class RecursoCursoModalidadService {
           id: raw.recurso_id,
           creacion: raw.recurso_creacion,
           nombre: raw.recurso_nombre,
+          proveedor: {
+            nombre: raw.proveedor_nombre,
+          },
         },
       }));
 
