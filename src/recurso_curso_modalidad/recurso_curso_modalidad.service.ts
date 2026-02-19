@@ -84,7 +84,7 @@ export class RecursoCursoModalidadService {
         .createQueryBuilder('rcm')
         .leftJoin('rcm.recurso', 'recurso')
         .leftJoin('recurso.proveedor', 'proveedor')
-        // .leftJoin('rcm.cursoModalidad', 'cursoModalidad')
+        .leftJoin('rcm.cursoModalidad', 'cursoModalidad')
         // .leftJoin('cursoModalidad.curso', 'curso')
         // .leftJoin('cursoModalidad.modalidad', 'modalidad')
         .select([
