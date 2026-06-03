@@ -52,7 +52,7 @@ export class ModalidadService {
       if (!id)
         throw new ConflictException('El ID del modalidad no puede estar vacío');
 
-      const modalidad = await this.modalidadRepository.findOneBy({ id });
+      const modalidad = await this.modalidadRepository.findOne({ where: { id } });
       if (!modalidad) throw new NotFoundException('Modalidad no encontrado');
       return modalidad;
     } catch (error) {
@@ -73,7 +73,7 @@ export class ModalidadService {
           'El nombre del modalidad no puede estar vacío',
         );
 
-      const modalidad = await this.modalidadRepository.findOneBy({ nombre });
+      const modalidad = await this.modalidadRepository.findOne({ where: { nombre } });
       if (!modalidad) throw new NotFoundException('Modalidad no encontrado');
       return modalidad;
     } catch (error) {
@@ -89,22 +89,22 @@ export class ModalidadService {
 
   async update(id: string, updateModalidadDto: UpdateModalidadDto) {
     try {
-      const { nombre } = updateModalidadDto;
-
       if (!id) {
         throw new BadRequestException(
           'El ID del modalidad no puede estar vacío',
         );
       }
 
-      const modalidad = await this.modalidadRepository.findOneBy({ id });
+      const { nombre } = updateModalidadDto;
+
+      const modalidad = await this.modalidadRepository.findOne({ where: { id } });
       if (!modalidad) {
         throw new NotFoundException('Modalidad no encontrado');
       }
 
       const updateData: Partial<Modalidad> = {};
 
-      if (nombre !== undefined) {
+      if (nombre !== undefined && nombre !== modalidad.nombre) {
         const nombreExists = await this.modalidadRepository.existsBy({
           id: Not(id),
           nombre,
@@ -121,7 +121,7 @@ export class ModalidadService {
       }
 
       await this.modalidadRepository.update(id, updateData);
-      return await this.modalidadRepository.findOneBy({ id });
+      return await this.modalidadRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -150,7 +150,7 @@ export class ModalidadService {
 
       if (result.affected === 0)
         throw new NotFoundException('Modalidad no encontrado');
-      return this.modalidadRepository.findOneBy({ id });
+      return this.modalidadRepository.findOne({ where: { id } });
     } catch (error) {
       if (
         error instanceof NotFoundException ||

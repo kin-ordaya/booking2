@@ -26,31 +26,31 @@ export class LaboratorioAulaService {
     try {
       const { laboratorio_id, aula_id } = createLaboratorioAulaDto;
 
-      const [laboratorioAulaExist, laboratorioExiste, aulaExiste] =
+      const [laboratorioAulaExists, laboratorioExists, aulaExists] =
         await Promise.all([
           this.laboratorioAulaRepository.existsBy({
             laboratorio: { id: laboratorio_id },
             aula: { id: aula_id },
-            estado: 1,
           }),
           this.laboratorioRepository.existsBy({ id: laboratorio_id }),
           this.aulaRepository.existsBy({ id: aula_id }),
         ]);
 
-      if (laboratorioAulaExist)
+      if (laboratorioAulaExists)
         throw new ConflictException(
           'Ya existe una asignacion de laboratorio a aula',
         );
 
-      if (!laboratorioExiste)
+      if (!laboratorioExists)
         throw new NotFoundException('Laboratorio no encontrado');
 
-      if (!aulaExiste) throw new NotFoundException('Aula no encontrada');
+      if (!aulaExists) throw new NotFoundException('Aula no encontrada');
 
       const laboratorioAula = this.laboratorioAulaRepository.create({
         laboratorio: { id: laboratorio_id },
         aula: { id: aula_id },
       });
+      
       return await this.laboratorioAulaRepository.save(laboratorioAula);
     } catch (error) {
       if (
@@ -59,7 +59,9 @@ export class LaboratorioAulaService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error al crear asignación de laboratorio a aula');
+      throw new InternalServerErrorException(
+        'Error al crear asignación de laboratorio a aula',
+      );
     }
   }
 
@@ -67,7 +69,9 @@ export class LaboratorioAulaService {
     try {
       return await this.laboratorioAulaRepository.find();
     } catch (error) {
-      throw new InternalServerErrorException('Error al recuperar asignaciones de laboratorio a aula');
+      throw new InternalServerErrorException(
+        'Error al recuperar asignaciones de laboratorio a aula',
+      );
     }
   }
 }

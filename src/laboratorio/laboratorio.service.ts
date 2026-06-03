@@ -27,10 +27,7 @@ export class LaboratorioService {
 
       const [campusExists, laboratorioExists] = await Promise.all([
         this.campusRepository.existsBy({ id: campus_id }),
-        this.laboratorioRepository.existsBy({
-          codigo,
-          campus: { id: campus_id },
-        }),
+        this.laboratorioRepository.existsBy({ codigo }),
       ]);
 
       if (!campusExists) {
@@ -38,9 +35,7 @@ export class LaboratorioService {
       }
 
       if (laboratorioExists) {
-        throw new ConflictException(
-          'Ya existe un laboratorio con ese codigo y campus',
-        );
+        throw new ConflictException('Ya existe un laboratorio con ese codigo');
       }
 
       const laboratorio = this.laboratorioRepository.create({
@@ -109,85 +104,56 @@ export class LaboratorioService {
 
       const { nombre, codigo, campus_id } = updateLaboratorioDto;
 
-      const laboratorio = await this.laboratorioRepository.findOne({ where: { id } });
+      const laboratorio = await this.laboratorioRepository.findOne({
+        where: { id },
+        relations: ['campus'],
+      });
       if (!laboratorio) {
         throw new NotFoundException(`Laboratorio con id ${id} no encontrado`);
       }
 
-      if (codigo !== undefined || campus_id !== undefined) {
-        if (campus_id !== undefined) {
-          const campusExists = await this.campusRepository.existsBy({
-            id: campus_id,
-          });
-          if (!campusExists) {
-            throw new ConflictException('No existe un campus con ese id');
-          }
-        }
-
-        // Si se proporciona tanto código como campus_id, verificar la combinación única
-        if (codigo !== undefined && campus_id !== undefined) {
-          const existingLab = await this.laboratorioRepository.findOne({
-            where: {
-              codigo,
-              campus: { id: campus_id },
-              id: Not(id),
-            },
-            relations: ['campus'],
-          });
-
-          if (existingLab) {
-            throw new ConflictException(
-              'Ya existe un laboratorio con el mismo código en este campus',
-            );
-          }
-        }
-        // Verificar solo código si se proporciona
-        else if (codigo !== undefined) {
-          const existingLab = await this.laboratorioRepository.findOne({
-            where: {
-              codigo,
-              id: Not(id),
-            },
-          });
-
-          if (existingLab) {
-            throw new ConflictException(
-              'Ya existe un laboratorio con el mismo código',
-            );
-          }
-        }
-        // Verificar solo campus si se proporciona (si tu lógica lo requiere)
-        else if (campus_id !== undefined) {
-          // Esta validación depende de tus reglas de negocio
-          // Si no quieres permitir múltiples laboratorios en el mismo campus
-          // con el mismo código, aquí deberías verificar junto con el código actual
-          const existingLab = await this.laboratorioRepository.findOne({
-            where: {
-              campus: { id: campus_id },
-              codigo: laboratorio.codigo, // Usar el código actual
-              id: Not(id),
-            },
-            relations: ['campus'],
-          });
-
-          if (existingLab) {
-            throw new ConflictException(
-              'Ya existe un laboratorio con el mismo código en este campus',
-            );
-          }
-        }
-      }
-
-      // Preparar datos para actualización
       const updateData: Partial<Laboratorio> & { campus?: any } = {};
-      if (nombre !== undefined) {
+      const validations: Promise<any>[] = [];
+
+      if (codigo !== undefined && codigo !== laboratorio.codigo) {
+        validations.push(
+          this.laboratorioRepository
+            .existsBy({
+              id: Not(id),
+              codigo,
+            })
+            .then((exists) => {
+              if (exists) {
+                throw new ConflictException(
+                  'Ya existe un laboratorio con el mismo código',
+                );
+              }
+              updateData.codigo = codigo;
+            }),
+        );
+      }
+
+      if (campus_id !== undefined && campus_id !== laboratorio.campus.id) {
+        validations.push(
+          this.campusRepository
+            .existsBy({
+              id: campus_id,
+            })
+            .then((exists) => {
+              if (!exists) {
+                throw new ConflictException('No existe un campus con ese id');
+              }
+              updateData.campus = { id: campus_id };
+            }),
+        );
+      }
+
+      if (validations.length > 0) {
+        await Promise.all(validations);
+      }
+
+      if (nombre !== undefined && nombre !== laboratorio.nombre) {
         updateData.nombre = nombre;
-      }
-      if (codigo !== undefined) {
-        updateData.codigo = codigo;
-      }
-      if (campus_id !== undefined) {
-        updateData.campus = { id: campus_id };
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -196,7 +162,6 @@ export class LaboratorioService {
 
       await this.laboratorioRepository.update(id, updateData);
 
-      // Recargar el laboratorio con sus relaciones si es necesario
       return await this.laboratorioRepository.findOne({
         where: { id },
         relations: ['campus'],
@@ -232,7 +197,10 @@ export class LaboratorioService {
       if (result.affected === 0)
         throw new NotFoundException('Laboratorio no encontrado');
 
-      return this.laboratorioRepository.findOneBy({ id });
+      return this.laboratorioRepository.findOne({
+        where: { id },
+        relations: ['campus'],
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
